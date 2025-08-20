@@ -36,3 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 /codebase-txt
+copy-codebase-and-change-extension.ps1
+copy-synaxic.bat
