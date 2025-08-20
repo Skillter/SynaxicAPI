@@ -407,14 +407,15 @@ synaxic/
 │       │                   └── LocalCacheUtil.java
 │       │
 │       └── resources/
-│           ├── application.properties        ← You have this
-│           ├── application-dev.properties    ← Create if needed
-│           ├── application-prod.properties   ← Create if needed
+│           ├── application.properties       
+│           ├── application-dev.properties  
+│           ├── application-prod.properties  
 │           │
 │           ├── static/                       ← For CSS/JS/images (future dashboard/docs assets)
 │           ├── templates/                    ← For Thymeleaf (Google login page, admin UI)
 │           │
-│           ├── db.migration/                 ← Rename files to Flyway format!
+│           ├── db/
+│           │   ├──migration/                 ← Rename files to Flyway format!
 │           │   └── V1__init.sql              ← e.g., create users, api_keys tables
 │           │
 │           ├── disposable-domains.txt        ← Embedded list of disposable domains
