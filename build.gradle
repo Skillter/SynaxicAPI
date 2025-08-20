@@ -28,7 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -47,6 +47,44 @@ dependencies {
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // API Documentation (Swagger UI + OpenAPI)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+    // Caffeine for in-memory caching
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'
+    // Bucket4j for rate limiting
+    implementation 'com.bucket4j:bucket4j_jdk17-core:8.14.0'
+    implementation 'com.bucket4j:bucket4j_jdk17-jcache:8.14.0'
+    implementation 'javax.cache:cache-api:1.1.1'
+    // Metrics for Prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.15.3'
+    // Email validation utilities
+    implementation 'commons-validator:commons-validator:1.10.0'
+    // DNS querys
+    implementation 'dnsjava:dnsjava:3.6.3'
+    // Google Guava utilities
+    implementation 'com.google.guava:guava:33.4.8-jre'
+    // Units of Measurement API (for unit conversions)
+    implementation 'tech.units:indriya:2.2.3'
+    // Enhanced testing capabilities
+    testImplementation 'io.rest-assured:rest-assured:5.5.6'
+//    testImplementation 'com.redis:testcontainers-redis:2.2.4'
+    // RFC 7807 problem+json for standardized error responses
+    implementation 'org.zalando:problem-spring-web:0.29.1'
+    // For proper request/response logging with JSON format
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+    // For secure API key generation and validation
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+    // IP Geolocation
+    implementation 'com.maxmind.geoip2:geoip2:4.3.1'
+    // For Redis connection pooling (recommended for production)
+//    implementation 'org.apache.commons:commons-pool2:2.12.1'
+    // For better Jackson JSON handling with Java 8+ time types
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.2'
+    // Useful string/collection utilities
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
 }
 
 tasks.named('test') {
