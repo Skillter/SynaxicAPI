@@ -1,0 +1,1 @@
+powershell .\copy-codebase-and-change-extension.ps1 -Map "java=txt","md=txt","gradle=txt","gitignore=txt","properties=txt","html=txt","js=txt","css=txt","sql=txt" -NonInteractive
