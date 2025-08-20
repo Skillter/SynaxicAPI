@@ -79,7 +79,7 @@ function Get-SafeFileName {
     )
     
     # Insert .txt before the extension
-    $ModifiedName = "$BaseName.txt$Extension"
+    $ModifiedName = "$BaseName$Extension.txt"
     $FullPath = Join-Path $DestPath $ModifiedName
     
     if (-not (Test-Path $FullPath)) {
@@ -88,7 +88,7 @@ function Get-SafeFileName {
     
     # Find available number for duplicates
     for ($i = 1; $i -lt 1000; $i++) {
-        $ModifiedName = "$BaseName.txt($i)$Extension"
+        $ModifiedName = "$BaseName$Extension($i).txt"
         $FullPath = Join-Path $DestPath $ModifiedName
         if (-not (Test-Path $FullPath)) {
             return $FullPath
@@ -231,7 +231,7 @@ else {
         Write-Host "=================================================" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "Enter extensions to convert (or press Enter to exit)" -ForegroundColor White
-        Write-Host "Note: Files will be saved as filename.txt.extension" -ForegroundColor DarkGray
+        Write-Host "Note: Files will be saved as filename.extension.txt" -ForegroundColor DarkGray
         Write-Host ""
         
         # Get source extension
