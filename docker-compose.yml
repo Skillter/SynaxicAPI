@@ -1,37 +1,71 @@
-version: '3.8'
-
 services:
   app:
     build: .
+    container_name: synaxic-app
+    profiles: ["prod"]
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-    volumes:
-      - ./logs:/app/logs
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/synaxic
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTG-RES_PASSWORD}
+      - SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    depends_on:
+      - postgres
     networks:
       - synaxic-network
 
-  prometheus:
-    image: prom/prometheus:latest
+  postgres:
+    image: postgres:16-alpine
+    container_name: synaxic-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "9090:9090"
+      - "5432:5432"
+    networks:
+      - synaxic-network
+
+  prometheus-prod:
+    image: prom/prometheus:latest
+    container_name: synaxic-prometheus
+    profiles: ["prod"]
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    networks:
+      - synaxic-network
+
+  prometheus-dev:
+    image: prom/prometheus:latest
+    container_name: synaxic-prometheus-dev
+    profiles: ["dev"]
+    volumes:
+      - ./prometheus-dev.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
     networks:
       - synaxic-network
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana-oss:latest
+    container_name: synaxic-grafana
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
     networks:
       - synaxic-network
+
+volumes:
+  postgres_data:
+  grafana_data:
 
 networks:
   synaxic-network:
