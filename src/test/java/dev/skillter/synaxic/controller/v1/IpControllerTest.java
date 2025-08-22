@@ -59,4 +59,17 @@ class IpControllerTest {
                 .andExpect(jsonPath("$.size", is(0)))
                 .andExpect(jsonPath("$.isEmpty", is(true)));
     }
+
+    @Test
+    void whoAmI_ShouldRedactSensitiveHeaders() throws Exception {
+        mockMvc.perform(get("/v1/whoami")
+                        .header("Authorization", "Bearer some-secret-token")
+                        .header("X-API-Key", "syn_live_12345")
+                        .header("Accept", "application/json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.headers.authorization", is("[REDACTED]")))
+                .andExpect(jsonPath("$.headers['x-api-key']", is("[REDACTED]")))
+                .andExpect(jsonPath("$.headers.accept", is("application/json")));
+    }
+
 }
