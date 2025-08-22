@@ -1,6 +1,7 @@
 package dev.skillter.synaxic.config;
 
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
+import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,26 +17,37 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final ApiKeyAuthFilter apiKeyAuthFilter;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/",
+            "/error",
+            "/v1/ip",
+            "/v1/whoami",
+            "/v1/echo",
+            "/v1/auth/login-success",
+            "/login",
+            "/oauth2/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/actuator/**"
+    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers(
-                                "/v1/ip",
-                                "/v1/whoami",
-                                "/v1/echo",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/actuator/**"
-                        ).permitAll()
-                        // All other endpoints can be secured later
-                        .anyRequest().permitAll() // Or .authenticated() in Phase 2
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/v1/auth/me").authenticated()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                );
 
         return http.build();
     }
