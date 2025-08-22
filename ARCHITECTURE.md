@@ -1,5 +1,5 @@
 
-For my project I want to use:
+Details of the project:
 
 1. Tech stack and features:
 - Spring boot
@@ -25,6 +25,10 @@ rootProject.name = 'synaxic'
   version = '0.0.1-SNAPSHOT'
   description = 'Synaxic is a innovative API Hub for developers'
 package to the main application class is dev.skillter.synaxic
+Developing on JDK 21
+Targeting Java 21
+I'm using Intellij IDEA
+Developing on Windows 11, but the server will be hosted on Linux Debian for production.
 
 2. The actual APIs we want to implement, host and serve:
 - "My IP" + lightweight request inspector api, don’t log sensitive data.
