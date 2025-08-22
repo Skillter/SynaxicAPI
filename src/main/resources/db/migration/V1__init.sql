@@ -1,19 +1,19 @@
-CREATE TABLE "user" (
+CREATE TABLE api_user (
     id BIGSERIAL PRIMARY KEY,
     google_sub VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE api_key (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES api_user(id) ON DELETE CASCADE,
     prefix VARCHAR(16) NOT NULL UNIQUE,
     key_hash VARCHAR(64) NOT NULL, -- SHA-256 of full key
     quota_limit INT NOT NULL DEFAULT 1000,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_used_at TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    last_used_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_api_key_prefix ON api_key(prefix);
-CREATE INDEX idx_user_google_sub ON "user"(google_sub);
+CREATE INDEX idx_user_google_sub ON api_user(google_sub);
