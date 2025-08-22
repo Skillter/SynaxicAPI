@@ -1,38 +1,77 @@
+# ===================================================================
+# Build Artifacts & Packaged Files
+# ===================================================================
 HELP.md
-.gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+out/
+target/
+dist/
 bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
 
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ===================================================================
+# Dependency Management
+# ===================================================================
+# Ignore the .gradle directory, but keep the wrapper
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===================================================================
+# IDE Specific Files
+# ===================================================================
 ### IntelliJ IDEA ###
-.idea
-*.iws
+.idea/
 *.iml
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+*.iws
+shelf/
+
+### Eclipse / Spring Tool Suite (STS) ###
+.classpath
+.project
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
 
 ### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
 
 ### VS Code ###
 .vscode/
-/codebase-txt
+codebase-txt
+
+### BlueJ ###
+*.ctxt
+
+# ===================================================================
+# Logs, Temporary Files & Runtime Data
+# ===================================================================
+# Log files
+*.log
+
+# JVM crash logs
+hs_err_pid*
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Temporary files
+*.tmp
+
+# ===================================================================
+# OS Specific Files
+# ===================================================================
+# macOS
+.DS_Store
