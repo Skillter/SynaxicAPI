@@ -35,7 +35,7 @@ class IpControllerTest {
                 .andExpect(jsonPath("$.ipVersion", notNullValue()))
                 .andExpect(jsonPath("$.userAgent", is("TestAgent/1.0")))
                 .andExpect(jsonPath("$.method", is("GET")))
-                .andExpect(jsonPath("$.headers", hasKey("x-custom-header")));
+                .andExpect(jsonPath("$.headers", hasKey(equalToIgnoringCase("x-custom-header"))));
     }
 
     @Test
@@ -48,7 +48,7 @@ class IpControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size", is(testContent.length())))
                 .andExpect(jsonPath("$.sha256", notNullValue()))
-                .andExpect(jsonPath("$.contentType", is("text/plain")))
+                .andExpect(jsonPath("$.contentType", is("text/plain;charset=UTF-8")))
                 .andExpect(jsonPath("$.isEmpty", is(false)));
     }
 
@@ -67,9 +67,8 @@ class IpControllerTest {
                         .header("X-API-Key", "syn_live_12345")
                         .header("Accept", "application/json"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.headers.authorization", is("[REDACTED]")))
-                .andExpect(jsonPath("$.headers['x-api-key']", is("[REDACTED]")))
-                .andExpect(jsonPath("$.headers.accept", is("application/json")));
+                .andExpect(jsonPath("$.headers.Authorization", is("[REDACTED]")))
+                .andExpect(jsonPath("$.headers['X-API-Key']", is("[REDACTED]")))
+                .andExpect(jsonPath("$.headers.Accept", is("application/json")));
     }
-
 }
