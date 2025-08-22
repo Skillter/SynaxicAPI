@@ -1,6 +1,7 @@
 package dev.skillter.synaxic.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +26,7 @@ public class EchoResponse {
     private String contentType;
 
     @Schema(description = "Whether the request body was empty", example = "false")
-    private boolean isEmpty;
+    @JsonProperty("isEmpty")
+    @Builder.Default // ensure builder works with default values if needed
+    private boolean isEmpty = false;
 }
