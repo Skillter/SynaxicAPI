@@ -267,9 +267,9 @@ id 'org.springframework.boot' version '3.5.4'
 id 'io.spring.dependency-management' version '1.1.7'
 }
 
-Perfect — since **Synaxic API will run on a single machine** (not distributed, not horizontally scalable), we can simplify several architectural decisions while keeping all the core functionality intact.
+Perfect — since **Synaxic API will run on multiple servers** (distributed, horizontally scalable), we need to ensure proper state management and coordination across instances.
 
-Here’s your **updated roadmap and directory structure**, optimized for **single-node deployment** — no need for Redis clustering, distributed locks, or complex service separation. Everything runs in one Spring Boot app.
+Here's your **updated roadmap and directory structure**, optimized for **multi-server deployment** — using Redis for distributed caching, rate limiting, and session management. Each server runs the same Spring Boot app.
 
 ---
 
@@ -287,19 +287,19 @@ Here’s your **updated roadmap and directory structure**, optimized for **singl
 
 ### 🟡 Phase 2: API Key Auth + Google OAuth Flow
 
-    - ✅ No need to worry about session replication or distributed user state.
+    - ✅ Use Redis for session storage to share user state across servers
     - ✅ Store API keys in local PostgreSQL
-    - ✅ Session affinity is automatic — you’re on one machine!
+    - ✅ Configure Spring Session Redis for automatic session replication
     - ✅ Google OAuth callback can directly create/update user in DB — no sync needed.
 
 ---
 
 ### 🟡 Phase 3: Rate Limiting with Bucket4j
 
-- Use **Caffeine-backed JCache** only — **no Redis needed**.
-- Bucket4j + Caffeine is perfect for single-node rate limiting.
-- Since all requests hit one JVM, per-IP and per-API-key buckets are accurate and consistent.
-- ✅ Skip Redis integration entirely unless you later want persistence across restarts (optional).
+- Use **Redis-backed JCache** for distributed rate limiting.
+- Bucket4j + Redis ensures consistent rate limits across all servers.
+- Per-IP and per-API-key buckets are shared and accurate across all instances.
+- ✅ Redis is required for consistent rate limiting across servers.
 
 > ⚠️ If you restart the server, rate limit counters reset — acceptable for v1. Document it.
 
@@ -313,7 +313,7 @@ Here’s your **updated roadmap and directory structure**, optimized for **singl
 ### 🟡 Phase 5: Disposable Email Detection
 
 - Load disposable domain list into **in-memory Guava BloomFilter or HashSet** at startup.
-- Skip Redis caching for MX lookups — just use **local Caffeine cache** with TTL.
+- Use Redis caching for MX lookups — shared cache across all servers with TTL.
 - DNS lookups (if enabled) are cached locally → fast, no network overhead.
 
 > 💡 Optional: Warm up cache on startup with top 1000 domains.
@@ -322,7 +322,7 @@ Here’s your **updated roadmap and directory structure**, optimized for **singl
 
 ### 🔵 Phase 6: Observability & Analytics 
 
-- Still use **Micrometer + Prometheus** — single node doesn’t mean no metrics!
+- Use **Micrometer + Prometheus** — each server exposes metrics, aggregate in Prometheus.
 - Expose `/actuator/prometheus` → scrape with local Prometheus via `docker-compose`.
 - Grafana dashboards work exactly the same.
 - Add simple **in-memory counters** for key usage, errors, geo-stats — no need for external TSDB unless you want long-term retention.
@@ -336,17 +336,15 @@ Here’s your **updated roadmap and directory structure**, optimized for **singl
 
 ---
 
-### ⚫ Phase 8: Redis? → ❌ SKIP ENTIRELY (Unless You Want Persistence)
+### ⚫ Phase 8: Redis Configuration → ✅ REQUIRED
 
-> 🚫 **No Redis required** for single-node deployment.
+> ✅ **Redis is essential** for multi-server deployment.
 
-- Caching: Use **Caffeine** for everything — email MX, expensive calcs, rate limit state.
-- Persistence across restarts? Not needed for v1. If you want it later:
-    - Serialize caches to disk on shutdown (advanced).
-    - Or add Redis then — but it’s optional.
-
-> ✅ You save complexity, memory, and ops overhead.
-
+- Caching: Use **Redis + Caffeine** two-tier caching strategy.
+- Session storage: Spring Session Redis for shared sessions.
+- Rate limiting: Distributed buckets via Redis.
+- Consider Redis Sentinel or Cluster for HA in production.
+- 
 ---
 
 ### ⚫ Phase 9: Abuse Controls + Dashboard
@@ -371,8 +369,8 @@ synaxic/
 │       │               ├── config/
 │       │               │   ├── WebConfig.java
 │       │               │   ├── SecurityConfig.java
-│       │               │   ├── CacheConfig.java          // Caffeine only
-│       │               │   ├── RateLimitConfig.java       // Bucket4j + Caffeine
+│       │               │   ├── CacheConfig.java          // Caffeine + Redis
+│       │               │   ├── RateLimitConfig.java       // Bucket4j + Redis
 │       │               │   └── OpenApiConfig.java
 │       │               │
 │       │               ├── controller/
