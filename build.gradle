@@ -28,7 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-//	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -68,7 +68,7 @@ dependencies {
     implementation 'tech.units:indriya:2.2.3'
     // Enhanced testing capabilities
     testImplementation 'io.rest-assured:rest-assured:5.5.6'
-//    testImplementation 'com.redis:testcontainers-redis:2.2.4'
+    testImplementation 'com.redis:testcontainers-redis:2.2.4'
     // RFC 7807 problem+json for standardized error responses
     implementation 'org.zalando:problem-spring-web:0.29.1'
     // For proper request/response logging with JSON format
@@ -80,11 +80,12 @@ dependencies {
     // IP Geolocation
     implementation 'com.maxmind.geoip2:geoip2:4.3.1'
     // For Redis connection pooling (recommended for production)
-//    implementation 'org.apache.commons:commons-pool2:2.12.1'
+    implementation 'org.apache.commons:commons-pool2:2.12.1'
     // For better Jackson JSON handling with Java 8+ time types
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.2'
     // Useful string/collection utilities
     implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.springframework.session:spring-session-data-redis'
 }
 
 tasks.named('test') {
