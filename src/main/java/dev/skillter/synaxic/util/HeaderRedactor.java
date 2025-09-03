@@ -15,33 +15,20 @@ public class HeaderRedactor {
             "cookie",
             "set-cookie",
             "proxy-authorization",
-            "x-auth-token",
-            "api-key",
-            "secret",
-            "password",
-            "token"
+            "x-auth-token"
     );
 
-    private static final String REDACTED = "[REDACTED]";
+    private static final String REDACTED_VALUE = "[REDACTED]";
 
     public Map<String, String> redactSensitiveHeaders(Map<String, String> headers) {
-        Map<String, String> redacted = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
+        Map<String, String> redactedHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         headers.forEach((key, value) -> {
-            if (shouldRedact(key)) {
-                redacted.put(key, REDACTED);
+            if (SENSITIVE_HEADERS.contains(key.toLowerCase())) {
+                redactedHeaders.put(key, REDACTED_VALUE);
             } else {
-                redacted.put(key, value);
+                redactedHeaders.put(key, value);
             }
         });
-
-        return redacted;
-    }
-
-    private boolean shouldRedact(String headerName) {
-        if (headerName == null) return false;
-        String lowerName = headerName.toLowerCase();
-        return SENSITIVE_HEADERS.stream()
-                .anyMatch(lowerName::contains);
+        return redactedHeaders;
     }
 }

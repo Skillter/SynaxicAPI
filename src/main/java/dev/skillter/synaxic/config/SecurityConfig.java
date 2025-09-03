@@ -2,15 +2,17 @@ package dev.skillter.synaxic.config;
 
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
 import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
+import dev.skillter.synaxic.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import dev.skillter.synaxic.security.RateLimitFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -39,15 +41,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                // use IF_REQUIRED for distributed oauth2 sessions
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .addFilterBefore(rateLimitFilter, ApiKeyAuthFilter.class) // Add RateLimitFilter
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/v1/auth/me").authenticated()
-                        .anyRequest().authenticated()
+                        .requestMatchers(HttpMethod.POST, "/v1/auth/api-key").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)

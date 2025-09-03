@@ -18,11 +18,13 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
+        final String securitySchemeName = "ApiKeyAuth";
+
         return new OpenAPI()
                 .info(new Info()
                         .title("Synaxic API")
                         .version("1.0.0")
-                        .description("An innovative API Hub for developers")
+                        .description("An innovative API Hub for developers. Obtain your API key by signing in with Google.")
                         .contact(new Contact()
                                 .name("Skillter Dev")
                                 .email("api@skillter.dev")
@@ -31,15 +33,16 @@ public class OpenApiConfig {
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Local development"),
-                        new Server().url("https://api.synaxic.skillter.dev").description("Production")
+                        new Server().url("http://localhost:8080").description("Local development server"),
+                        new Server().url("https://api.synaxic.skillter.dev").description("Production server")
                 ))
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
-                        .addSecuritySchemes("ApiKey", new SecurityScheme()
+                        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name("X-API-Key")
-                                .description("API Key authentication")))
-                .addSecurityItem(new SecurityRequirement().addList("ApiKey"));
+                                .name("Authorization")
+                                .description("Enter your API key prefixed with 'ApiKey '. Example: `ApiKey syn_live_...`." +
+                                        "<br>Alternatively, you can use the `X-API-Key` header.")));
     }
 }
