@@ -1,13 +1,11 @@
 package dev.skillter.synaxic.security;
 
-import com.bucket4j.Bucket;
-import io.github.bucket4j.Bucket;
-import io.github.bucket4j.ConsumptionProbe;
-import com.bucket4j.ConsumptionProbe;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.skillter.synaxic.model.entity.User;
 import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.util.IpExtractor;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,8 +44,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User) {
-            User user = (User) authentication.getPrincipal();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
             key = user.getId().toString();
             isApiKeyUser = true;
         } else {

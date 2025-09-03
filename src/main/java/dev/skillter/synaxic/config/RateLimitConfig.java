@@ -1,7 +1,8 @@
 package dev.skillter.synaxic.config;
 
+import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
-import io.github.bucket4j.redis.redisson.cas.RedissonBasedProxyManager;
+import io.github.bucket4j.redis.redisson.Bucket4jRedisson;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -16,10 +17,6 @@ import java.time.Duration;
 @Configuration
 public class RateLimitConfig {
 
-    /**
-     * Only create this bean if RedissonClient is not already auto-configured
-     * by redisson-spring-boot-starter
-     */
     @Bean
     @ConditionalOnMissingBean(RedissonClient.class)
     public RedissonClient redissonClient(
@@ -39,17 +36,14 @@ public class RateLimitConfig {
         var serverConfig = config.useSingleServer()
                 .setAddress(redisAddress);
 
-        // Set password if provided
         if (StringUtils.hasText(redisPassword)) {
             serverConfig.setPassword(redisPassword);
         }
 
-        // Production-ready settings
         serverConfig
-                .setConnectionPoolSize(10)
-                .setConnectionMinimumIdleSize(5)
-                .setSubscriptionConnectionPoolSize(5)
-                .setSubscriptionConnectionMinimumIdleSize(1)
+                .setConnectionPoolSize(64)
+                .setConnectionMinimumIdleSize(24)
+                .setSubscriptionConnectionPoolSize(50)
                 .setTimeout(3000)
                 .setRetryAttempts(3)
                 .setRetryInterval(1500);
@@ -59,8 +53,15 @@ public class RateLimitConfig {
 
     @Bean
     public ProxyManager<String> proxyManager(RedissonClient redissonClient) {
-        return RedissonBasedProxyManager.builderFor(redissonClient)
-                .withExpirationAfterWrite(Duration.ofHours(1))
+        // Cast to Redisson implementation to access getCommandExecutor()
+        Redisson redisson = (Redisson) redissonClient;
+
+        return Bucket4jRedisson.casBasedBuilder(redisson.getCommandExecutor())
+                .expirationAfterWrite(
+                        ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
+                                Duration.ofSeconds(10)
+                        )
+                )
                 .build();
     }
 }

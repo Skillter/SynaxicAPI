@@ -16,7 +16,7 @@ import java.util.HexFormat;
 public class KeyGenerator {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String PREFIX = "syn_live_";
+    public static final String PREFIX = "syn_live_";
     private static final int KEY_LENGTH = 32;
 
     public GeneratedApiKey generate(User user) {

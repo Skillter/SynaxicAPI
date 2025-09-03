@@ -1,9 +1,10 @@
 package dev.skillter.synaxic.service;
 
-import com.bucket4j.Bandwidth;
-import com.bucket4j.Bucket;
-import com.bucket4j.Refill;
-import com.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.Refill;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class RateLimitService {
 
     public Bucket resolveBucket(String key, boolean isApiKey) {
         Bandwidth limit = isApiKey ? getApiKeyPlan() : getAnonymousPlan();
-        return proxyManager.builder().build(key, () -> limit);
+        return proxyManager.builder().build(key, () -> BucketConfiguration.builder().addLimit(limit).build());
     }
 
     private Bandwidth getAnonymousPlan() {

@@ -12,6 +12,9 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Authenticated user information")
 public class UserDto {
+    @Schema(description = "User's unique identifier", example = "1")
+    private Long id;
+
     @Schema(description = "User's email address", example = "developer@example.com")
     private String email;
 
@@ -21,6 +24,6 @@ public class UserDto {
     @Schema(description = "The prefix of the user's current API key", example = "syn_live_abc")
     private String apiKeyPrefix;
 
-    @Schema(description = "A message confirming API key status", example = "API key is active")
-    private String apiKeyStatus;
+    @Schema(description = "Timestamp when the API key was last used")
+    private Instant apiKeyLastUsed;
 }
