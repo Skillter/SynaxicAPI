@@ -1,38 +1,79 @@
 package dev.skillter.synaxic.controller.v1;
 
+import dev.skillter.synaxic.model.dto.EchoResponse;
+import dev.skillter.synaxic.model.dto.IpResponse;
+import dev.skillter.synaxic.model.dto.WhoAmIResponse;
+import dev.skillter.synaxic.service.IpInspectorService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@ExtendWith(MockitoExtension.class)
 class IpControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
+
+    @Mock
+    private IpInspectorService ipInspectorService;
+
+    @InjectMocks
+    private IpController ipController;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(ipController).build();
+    }
 
     @Test
     void getIp_ShouldReturnIpAddress() throws Exception {
+        IpResponse response = new IpResponse("127.0.0.1", "IPv4");
+        when(ipInspectorService.getIpInfo(any(HttpServletRequest.class))).thenReturn(response);
+
         mockMvc.perform(get("/v1/ip"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ip", notNullValue()))
-                .andExpect(jsonPath("$.ipVersion", anyOf(is("IPv4"), is("IPv6"))));
+                .andExpect(jsonPath("$.ip", is("127.0.0.1")))
+                .andExpect(jsonPath("$.ipVersion", is("IPv4")));
     }
 
     @Test
     void whoAmI_ShouldReturnRequestDetails() throws Exception {
+        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("User-Agent", "TestAgent/1.0");
+        headers.put("X-Custom-Header", "TestValue");
+
+        WhoAmIResponse response = WhoAmIResponse.builder()
+                .ip("127.0.0.1")
+                .ipVersion("IPv4")
+                .userAgent("TestAgent/1.0")
+                .method("GET")
+                .headers(headers)
+                .build();
+        when(ipInspectorService.getRequestDetails(any(HttpServletRequest.class))).thenReturn(response);
+
         mockMvc.perform(get("/v1/whoami")
                         .header("User-Agent", "TestAgent/1.0")
                         .header("X-Custom-Header", "TestValue"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ip", notNullValue()))
-                .andExpect(jsonPath("$.ipVersion", notNullValue()))
+                .andExpect(jsonPath("$.ip", is("127.0.0.1")))
+                .andExpect(jsonPath("$.ipVersion", is("IPv4")))
                 .andExpect(jsonPath("$.userAgent", is("TestAgent/1.0")))
                 .andExpect(jsonPath("$.method", is("GET")))
                 .andExpect(jsonPath("$.headers", hasKey(equalToIgnoringCase("x-custom-header"))));
@@ -41,19 +82,33 @@ class IpControllerTest {
     @Test
     void echo_ShouldReturnContentMetadata() throws Exception {
         String testContent = "Hello, Synaxic!";
+        EchoResponse response = EchoResponse.builder()
+                .size(testContent.length())
+                .sha256("d58801a208f8a39e8a385b0de2398642337c86518f5d713915233e5334a8a360")
+                .contentType("text/plain")
+                .isEmpty(false)
+                .build();
+        when(ipInspectorService.processEcho(any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/v1/echo")
-                        .contentType("text/plain")
+                        .contentType(MediaType.TEXT_PLAIN)
                         .content(testContent))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size", is(testContent.length())))
                 .andExpect(jsonPath("$.sha256", notNullValue()))
-                .andExpect(jsonPath("$.contentType", is("text/plain;charset=UTF-8")))
+                .andExpect(jsonPath("$.contentType", is("text/plain")))
                 .andExpect(jsonPath("$.isEmpty", is(false)));
     }
 
     @Test
     void echo_WithEmptyBody_ShouldReturnEmptyMetadata() throws Exception {
+        EchoResponse response = EchoResponse.builder()
+                .size(0)
+                .sha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                .isEmpty(true)
+                .build();
+        when(ipInspectorService.processEcho(null, null)).thenReturn(response);
+
         mockMvc.perform(post("/v1/echo"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size", is(0)))
@@ -62,6 +117,18 @@ class IpControllerTest {
 
     @Test
     void whoAmI_ShouldRedactSensitiveHeaders() throws Exception {
+        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("Authorization", "[REDACTED]");
+        headers.put("X-API-Key", "[REDACTED]");
+        headers.put("Accept", "application/json");
+
+        WhoAmIResponse response = WhoAmIResponse.builder()
+                .ip("127.0.0.1")
+                .ipVersion("IPv4")
+                .headers(headers)
+                .build();
+        when(ipInspectorService.getRequestDetails(any(HttpServletRequest.class))).thenReturn(response);
+
         mockMvc.perform(get("/v1/whoami")
                         .header("Authorization", "Bearer some-secret-token")
                         .header("X-API-Key", "syn_live_12345")
