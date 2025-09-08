@@ -22,6 +22,7 @@ import java.util.Optional;
 public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private final ApiKeyService apiKeyService;
+    public static final String API_KEY_PREFIX_ATTRIBUTE = "apiKeyPrefix";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,9 +34,11 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         if (apiKey != null) {
             Optional<ApiKey> apiKeyOptional = apiKeyService.validateApiKey(apiKey);
             if (apiKeyOptional.isPresent()) {
-                ApiKeyAuthentication auth = new ApiKeyAuthentication(apiKeyOptional.get());
+                ApiKey validApiKey = apiKeyOptional.get();
+                ApiKeyAuthentication auth = new ApiKeyAuthentication(validApiKey);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("API key authenticated for user {}", apiKeyOptional.get().getUser().getId());
+                request.setAttribute(API_KEY_PREFIX_ATTRIBUTE, validApiKey.getPrefix());
+                log.debug("API key authenticated for user {}", validApiKey.getUser().getId());
             } else {
                 log.warn("Invalid API Key provided");
             }

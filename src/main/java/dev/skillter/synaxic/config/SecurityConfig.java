@@ -33,6 +33,7 @@ public class SecurityConfig {
             "/v1/echo",
             "/v1/convert/**",
             "/v1/color/**",
+            "/v1/email/validate",
             "/v1/auth/login-success",
             "/login",
             "/oauth2/**",
