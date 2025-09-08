@@ -54,36 +54,43 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Bucket bucket = rateLimitService.resolveBucket(key, isApiKeyUser);
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
+        long limit = rateLimitService.getLimit(isApiKeyUser);
+        response.addHeader("X-RateLimit-Limit", String.valueOf(limit));
+
         if (probe.isConsumed()) {
             response.addHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
             filterChain.doFilter(request, response);
         } else {
-            long waitForRefillNanos = probe.getNanosToWaitForRefill();
-            long retryAfterSeconds = TimeUnit.NANOSECONDS.toSeconds(waitForRefillNanos) + 1;
-
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-            response.addHeader("X-RateLimit-Remaining", "0");
-            response.addHeader("Retry-After", String.valueOf(retryAfterSeconds));
-
-            ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                    HttpStatus.TOO_MANY_REQUESTS,
-                    "You have exhausted your API request quota. Please try again later."
-            );
-            problemDetail.setTitle("Too Many Requests");
-            problemDetail.setType(URI.create("https://synaxic.skillter.dev/errors/too-many-requests"));
-            problemDetail.setProperty("timestamp", Instant.now());
-            problemDetail.setProperty("path", request.getRequestURI());
-            problemDetail.setProperty("retryAfterSeconds", retryAfterSeconds);
-
-            response.getWriter().write(objectMapper.writeValueAsString(problemDetail));
-            log.warn("Rate limit exceeded for key: {}", key);
+            handleRateLimitExceeded(request, response, probe);
         }
+    }
+
+    private void handleRateLimitExceeded(HttpServletRequest request, HttpServletResponse response, ConsumptionProbe probe) throws IOException {
+        long waitForRefillNanos = probe.getNanosToWaitForRefill();
+        long retryAfterSeconds = TimeUnit.NANOSECONDS.toSeconds(waitForRefillNanos) + 1;
+
+        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.addHeader("X-RateLimit-Remaining", "0");
+        response.addHeader("Retry-After", String.valueOf(retryAfterSeconds));
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "You have exhausted your API request quota. Please try again later."
+        );
+        problemDetail.setTitle("Too Many Requests");
+        problemDetail.setType(URI.create("https://synaxic.skillter.dev/errors/too-many-requests"));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("path", request.getRequestURI());
+        problemDetail.setProperty("retryAfterSeconds", retryAfterSeconds);
+
+        response.getWriter().write(objectMapper.writeValueAsString(problemDetail));
+        log.warn("Rate limit exceeded for key associated with path: {}", request.getRequestURI());
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs");
+        return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/error");
     }
 }

@@ -30,8 +30,14 @@ public class RateLimitService {
     private long apiKeyRefillMinutes;
 
     public Bucket resolveBucket(String key, boolean isApiKey) {
-        Bandwidth limit = isApiKey ? getApiKeyPlan() : getAnonymousPlan();
-        return proxyManager.builder().build(key, () -> BucketConfiguration.builder().addLimit(limit).build());
+        BucketConfiguration configuration = BucketConfiguration.builder()
+                .addLimit(isApiKey ? getApiKeyPlan() : getAnonymousPlan())
+                .build();
+        return proxyManager.builder().build(key, () -> configuration);
+    }
+
+    public long getLimit(boolean isApiKey) {
+        return isApiKey ? apiKeyCapacity : anonymousCapacity;
     }
 
     private Bandwidth getAnonymousPlan() {

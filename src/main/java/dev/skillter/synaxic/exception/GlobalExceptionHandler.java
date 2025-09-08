@@ -25,6 +25,18 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(ConversionException.class)
+    public ResponseEntity<ProblemDetail> handleConversionException(ConversionException ex, WebRequest request) {
+        log.warn("Conversion failed: {}", ex.getMessage());
+        ProblemDetail problemDetail = createProblemDetail(
+                HttpStatus.BAD_REQUEST,
+                "Invalid Conversion Request",
+                ex.getMessage(),
+                request
+        );
+        return ResponseEntity.badRequest().body(problemDetail);
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ProblemDetail> handleMaxSizeException(MaxUploadSizeExceededException ex, WebRequest request) {
         log.warn("Max upload size exceeded: {}", ex.getMessage());
