@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -22,6 +23,7 @@ public class SecurityConfig {
     private final ApiKeyAuthFilter apiKeyAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final RateLimitFilter rateLimitFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/",
@@ -29,6 +31,8 @@ public class SecurityConfig {
             "/v1/ip",
             "/v1/whoami",
             "/v1/echo",
+            "/v1/convert/**",
+            "/v1/color/**",
             "/v1/auth/login-success",
             "/login",
             "/oauth2/**",
@@ -41,13 +45,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/v1/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/v1/auth/api-key").authenticated()
                         .anyRequest().permitAll()
                 )
