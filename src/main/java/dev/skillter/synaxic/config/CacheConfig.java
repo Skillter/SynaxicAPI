@@ -19,10 +19,10 @@ import java.util.concurrent.TimeUnit;
 @EnableCaching
 public class CacheConfig {
 
-    // --- Cache Names ---
     public static final String CACHE_EMAIL_VALIDATION = "emailValidation";
     public static final String CACHE_GEO_IP = "geoIp";
     public static final String CACHE_API_KEYS = "apiKeys";
+    public static final String CACHE_MX_RECORDS = "mxRecords";
 
     @Bean
     @Primary
@@ -41,7 +41,9 @@ public class CacheConfig {
                 .withCacheConfiguration(CACHE_GEO_IP,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
                 .withCacheConfiguration(CACHE_API_KEYS,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)));
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))
+                .withCacheConfiguration(CACHE_MX_RECORDS,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(24)));
     }
 
 
