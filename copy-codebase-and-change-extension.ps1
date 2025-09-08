@@ -1,58 +1,39 @@
-# =============================================================================
-# Title:       Fast Recursive File Copier (PowerShell Edition)
-# Description: High-performance file copier with .codeignore support
-# Notes:
-#   - Filename format: BaseName.OriginalExt.InsertToken.DestExt
-#     Example: "foo.py" -> "foo.py.txt.md" when -InsertToken txt and -DestExt md
-#   - No hardcoded "txt" — provide your own via -InsertToken or interactively.
-#   - Supports non-interactive parameters and multiple mappings.
-#   - Supports -Ignore parameter for filename patterns with wildcards
-# =============================================================================
-
 [CmdletBinding()]
 param(
-    # Provide explicit mappings like "py=md", "js=txt"
     [Parameter(Mandatory = $false)]
     [string[]]$Map,
 
-    # Or provide a list of source extensions with a single destination extension
     [Parameter(Mandatory = $false)]
     [string[]]$SourceExts,
 
     [Parameter(Mandatory = $false)]
     [string]$DestExt,
 
-    # Token inserted after the original extension and before the destination extension
-    # Example: -InsertToken txt => BaseName.OriginalExt.txt.DestExt
     [Parameter(Mandatory = $false)]
     [string]$InsertToken,
 
-    # Optional: filename patterns to ignore (supports wildcards)
-    # Example: -Ignore "*.test.*","*.spec.*","LICENSE*","README*"
     [Parameter(Mandatory = $false)]
     [string[]]$Ignore,
 
-    # Optional: change destination folder name
     [Parameter(Mandatory = $false)]
     [string]$DestFolderName = "codebase-txt",
 
-    # Optional: search root (defaults to script folder)
     [Parameter(Mandatory = $false)]
     [string]$Root = $PSScriptRoot,
 
-    # If set, skips final "Press any key to exit..." pause
-    [switch]$NonInteractive
+    [switch]$NonInteractive,
+
+    [switch]$NoPath,
+
+    [switch]$MergeToSingleFile,
+
+    [Parameter(Mandatory = $false)]
+    [string]$MergedFileName = "merged_codebase.txt"
 )
 
-# =============================================================================
-# Preferences
-# =============================================================================
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "Continue"
 
-# =============================================================================
-# Helpers
-# =============================================================================
 function Normalize-Ext {
     param([string]$Ext)
     if ([string]::IsNullOrWhiteSpace($Ext)) { return $null }
@@ -66,22 +47,33 @@ function Normalize-NameSegment {
     return $Seg.Trim().TrimStart(".")
 }
 
-function Test-ShouldIgnorePath {
-    param([string]$Path)
-    foreach ($pattern in $IgnorePathPatterns) {
-        if ([string]::IsNullOrWhiteSpace($pattern)) { continue }
-        # Treat pattern as a wildcard fragment (e.g., "node_modules", "dist", "bin*")
-        if ($Path -like "*$pattern*") { return $true }
-    }
-    return $false
-}
+function Test-ShouldIgnore {
+    param(
+        [string]$FullPath,
+        [string]$FileName
+    )
 
-function Test-ShouldIgnoreFile {
-    param([string]$FileName)
-    foreach ($pattern in $IgnoreFilePatterns) {
+    $relativePath = $FullPath.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
+
+    foreach ($pattern in $IgnorePatterns) {
         if ([string]::IsNullOrWhiteSpace($pattern)) { continue }
-        # Use PowerShell's wildcard matching
+
+        $pattern = $pattern.Replace('\', '/')
+
+        if ($pattern.EndsWith('/')) {
+            $pattern = $pattern.TrimEnd('/') + '/*'
+        }
+
+        if ($relativePath -like $pattern) { return $true }
+
         if ($FileName -like $pattern) { return $true }
+
+        if ($pattern -notlike "*/*") {
+            $pathParts = $relativePath -split '/'
+            foreach ($part in $pathParts[0..($pathParts.Count-2)]) {
+                if ($part -like $pattern) { return $true }
+            }
+        }
     }
     return $false
 }
@@ -128,11 +120,10 @@ function Process-Mapping {
     Write-Host "Searching for $SourceExt files..." -ForegroundColor Yellow
 
     $Files = Get-ChildItem -Path $Root -Filter "*$SourceExt" -Recurse -File |
-        Where-Object {
-            -not (Test-ShouldIgnorePath $_.DirectoryName) -and
-            -not (Test-ShouldIgnoreFile $_.Name) -and
-            ($_.FullName -notlike (Join-Path $DestDir "*"))
-        }
+            Where-Object {
+                -not (Test-ShouldIgnore -FullPath $_.FullName -FileName $_.Name) -and
+                        ($_.FullName -notlike (Join-Path $DestDir "*"))
+            }
 
     $FileCount = @($Files).Count
     if ($FileCount -eq 0) {
@@ -153,7 +144,6 @@ function Process-Mapping {
             -CurrentOperation "$i of $FileCount files"
 
         try {
-            # Compose: BaseName.OriginalExt[.InsertToken] + DestExt
             $srcExtNoDot = $File.Extension.TrimStart(".")
             $segments = @()
             if ($srcExtNoDot) { $segments += $srcExtNoDot }
@@ -165,8 +155,30 @@ function Process-Mapping {
                 $File.BaseName
             }
 
-            $SafePath = Get-SafeFileName -DestPath $DestDir -BaseName $AugBase -Extension $DestExt
-            Copy-Item -Path $File.FullName -Destination $SafePath -Force
+            $relativePath = $File.FullName.Substring($Root.Length).TrimStart('\', '/')
+            $fileContent = Get-Content -Path $File.FullName -Raw
+
+            if ($MergeToSingleFile) {
+                $script:MergedContent += "`n`n"
+                if (-not $NoPath) {
+                    $script:MergedContent += "=" * 80 + "`n"
+                    $script:MergedContent += "FILE PATH: $relativePath`n"
+                    $script:MergedContent += "=" * 80 + "`n"
+                }
+                $script:MergedContent += $fileContent
+            } else {
+                $SafePath = Get-SafeFileName -DestPath $DestDir -BaseName $AugBase -Extension $DestExt
+
+                if (-not $NoPath) {
+                    $finalContent = "=" * 80 + "`n"
+                    $finalContent += "FILE PATH: $relativePath`n"
+                    $finalContent += "=" * 80 + "`n"
+                    $finalContent += $fileContent
+                    Set-Content -Path $SafePath -Value $finalContent -Force
+                } else {
+                    Copy-Item -Path $File.FullName -Destination $SafePath -Force
+                }
+            }
 
             $SessionCount++
             $script:TotalFileCount++
@@ -180,12 +192,10 @@ function Process-Mapping {
     Write-Host "Copied $SessionCount file(s) from $SourceExt to $DestExt" -ForegroundColor Green
 }
 
-# =============================================================================
-# Setup
-# =============================================================================
 $DestDir = Join-Path $Root $DestFolderName
 $CodeIgnoreFile = Join-Path $Root ".codeignore"
 $TotalFileCount = 0
+$MergedContent = ""
 
 $UsingArgs = ($Map -and $Map.Count -gt 0) -or ($SourceExts -and $DestExt)
 
@@ -195,51 +205,45 @@ Write-Host "  Fast Recursive File Copier - PowerShell Edition" -ForegroundColor 
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Load .codeignore patterns (for paths)
-$IgnorePathPatterns = @()
+$IgnorePatterns = @()
+
 if (Test-Path $CodeIgnoreFile) {
     Write-Host "Loading .codeignore file from $CodeIgnoreFile..." -ForegroundColor Yellow
-    $IgnorePathPatterns = Get-Content $CodeIgnoreFile | ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -and ($_ -notmatch '^\s*#') }  # keep non-empty, non-comment lines
-    foreach ($pattern in $IgnorePathPatterns) {
-        Write-Host "  Ignoring path pattern: $pattern" -ForegroundColor DarkGray
+    $codeIgnorePatterns = Get-Content $CodeIgnoreFile | ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -and ($_ -notmatch '^\s*#') }
+    $IgnorePatterns += $codeIgnorePatterns
+    foreach ($pattern in $codeIgnorePatterns) {
+        Write-Host "  Ignoring pattern: $pattern" -ForegroundColor DarkGray
     }
     Write-Host ""
 }
 
-# Also ignore the destination folder itself
-$IgnorePathPatterns += $DestFolderName
+$IgnorePatterns += $DestFolderName
+$IgnorePatterns += "$DestFolderName/*"
 
-# Load filename ignore patterns from -Ignore parameter
-$IgnoreFilePatterns = @()
 if ($Ignore -and $Ignore.Count -gt 0) {
-    Write-Host "Loading filename ignore patterns..." -ForegroundColor Yellow
-    $IgnoreFilePatterns = $Ignore | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    foreach ($pattern in $IgnoreFilePatterns) {
-        Write-Host "  Ignoring files matching: $pattern" -ForegroundColor DarkGray
+    Write-Host "Loading ignore patterns from parameters..." -ForegroundColor Yellow
+    $paramIgnorePatterns = $Ignore | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    $IgnorePatterns += $paramIgnorePatterns
+    foreach ($pattern in $paramIgnorePatterns) {
+        Write-Host "  Ignoring pattern: $pattern" -ForegroundColor DarkGray
     }
     Write-Host ""
 }
 
-# Remove old destination folder if exists
 if (Test-Path $DestDir) {
     Write-Host "Removing old '$DestFolderName' folder..." -ForegroundColor Yellow
     Remove-Item -Path $DestDir -Recurse -Force
 }
 
-# Create new destination folder
 New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
 Write-Host "Created destination folder: $DestFolderName" -ForegroundColor Green
 Write-Host ""
 
-# =============================================================================
-# Build mappings
-# =============================================================================
 $Mappings = New-Object System.Collections.Generic.List[object]
 
 if ($Map -and $Map.Count -gt 0) {
     foreach ($m in $Map) {
-        # Accept "py=md", "js:txt", ".ts = .md"
         if ($m -match '^\s*\.?([^:=\s]+)\s*[:=]\s*\.?([^;\s]+)\s*$') {
             $Mappings.Add([pscustomobject]@{
                 SourceExt = $Matches[1]
@@ -262,16 +266,12 @@ elseif ($SourceExts -and $DestExt) {
     }
 }
 
-# =============================================================================
-# Execute
-# =============================================================================
 if ($Mappings.Count -gt 0) {
     foreach ($mapEntry in $Mappings) {
         Process-Mapping -SourceExt $mapEntry.SourceExt -DestExt $mapEntry.DestExt -InsertToken $InsertToken
     }
 }
 else {
-    # Interactive mode (no args provided)
     while ($true) {
         Write-Host "=================================================" -ForegroundColor Cyan
         Write-Host " Total files copied: $TotalFileCount" -ForegroundColor White
@@ -291,12 +291,11 @@ else {
         }
 
         $InsertT = Read-Host "MIDDLE token to insert after original extension (e.g., txt). Leave blank to omit"
-        
-        # Ask for ignore patterns in interactive mode
-        $IgnoreInput = Read-Host "Files to ignore (wildcards OK, comma-separated). Leave blank to skip"
+
+        $IgnoreInput = Read-Host "Files/paths to ignore (wildcards OK, comma-separated). Leave blank to skip"
         if (-not [string]::IsNullOrWhiteSpace($IgnoreInput)) {
             $NewPatterns = $IgnoreInput -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-            $IgnoreFilePatterns = $IgnoreFilePatterns + $NewPatterns
+            $IgnorePatterns += $NewPatterns
             Write-Host "  Added ignore patterns: $($NewPatterns -join ', ')" -ForegroundColor DarkGray
         }
 
@@ -308,9 +307,13 @@ else {
     }
 }
 
-# =============================================================================
-# Cleanup and exit
-# =============================================================================
+if ($MergeToSingleFile -and $MergedContent) {
+    $MergedFilePath = Join-Path $DestDir $MergedFileName
+    Set-Content -Path $MergedFilePath -Value $MergedContent.TrimStart() -Force
+    Write-Host ""
+    Write-Host "All files merged into: $MergedFileName" -ForegroundColor Green
+}
+
 if (-not $UsingArgs -and -not $NonInteractive) {
     Clear-Host
     Write-Host ""
@@ -320,6 +323,9 @@ if (-not $UsingArgs -and -not $NonInteractive) {
     Write-Host ""
     Write-Host "Total files copied: $TotalFileCount" -ForegroundColor Green
     Write-Host "Destination folder: $DestFolderName" -ForegroundColor White
+    if ($MergeToSingleFile -and $MergedContent) {
+        Write-Host "Merged file: $MergedFileName" -ForegroundColor White
+    }
     Write-Host ""
     Write-Host "Press any key to exit..." -ForegroundColor DarkGray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -331,4 +337,7 @@ if (-not $UsingArgs -and -not $NonInteractive) {
     Write-Host ""
     Write-Host "Total files copied: $TotalFileCount" -ForegroundColor Green
     Write-Host "Destination folder: $DestFolderName" -ForegroundColor White
+    if ($MergeToSingleFile -and $MergedContent) {
+        Write-Host "Merged file: $MergedFileName" -ForegroundColor White
+    }
 }
