@@ -246,7 +246,6 @@ Gradle: commons-beanutils:commons-beanutils:1.11.0
 Gradle: commons-codec:commons-codec:1.18.0
 Gradle: commons-collections:commons-collections:3.2.2
 Gradle: commons-digester:commons-digester:2.1
-Gradle: commons-logging:commons-logging:1.3.5
 Gradle: commons-validator:commons-validator:1.10.0
 Gradle: dnsjava:dnsjava:3.6.3
 Gradle: io.jsonwebtoken:jjwt-api:0.12.7
@@ -429,6 +428,9 @@ Gradle: org.zalando:problem-spring-web:0.29.1
 Gradle: org.zalando:problem-violations:0.29.1
 Gradle: org.zalando:problem:0.27.1
 Gradle: redis.clients.authentication:redis-authx-core:0.1.1-beta2
+Gradle: si.uom:si-quantity:2.2.2
+Gradle: si.uom:si-units:2.2.2
+Gradle: systems.uom:systems-common:2.2
 Gradle: tech.units:indriya:2.2.3
 Gradle: tech.uom.lib:uom-lib-common:2.2
 
