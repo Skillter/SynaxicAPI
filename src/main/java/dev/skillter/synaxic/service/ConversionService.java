@@ -23,6 +23,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+
+import static javax.measure.MetricPrefix.KILO;
+import static systems.uom.common.USCustomary.*;
+import static tech.units.indriya.unit.Units.*;
+
 @Service
 public class ConversionService {
 
@@ -55,6 +60,16 @@ public class ConversionService {
     private static final Pattern RGB_PATTERN = Pattern.compile("rgb\\s*\\(\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*\\)");
     private static final Pattern HSL_PATTERN = Pattern.compile("hsl\\s*\\(\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})%?\\s*,\\s*(\\d{1,3})%?\\s*\\)");
     private static final UnitFormat UNIT_FORMAT = SimpleUnitFormat.getInstance();
+
+    static {
+        UNIT_FORMAT.label(MILE, "mi");
+        UNIT_FORMAT.label(POUND, "lb");
+        UNIT_FORMAT.label(FAHRENHEIT, "F");
+        UNIT_FORMAT.label(CELSIUS, "C");
+        UNIT_FORMAT.label(KILOGRAM, "kg");
+        UNIT_FORMAT.label(METRE, "m");
+        UNIT_FORMAT.label(KILO(METRE), "km");
+    }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public UnitConversionResponse convertUnits(String from, String to, double value) {
