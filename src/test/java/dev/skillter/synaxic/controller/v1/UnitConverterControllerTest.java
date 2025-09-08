@@ -2,13 +2,21 @@ package dev.skillter.synaxic.controller.v1;
 
 import dev.skillter.synaxic.model.dto.ByteConversionResponse;
 import dev.skillter.synaxic.model.dto.UnitConversionResponse;
+import dev.skillter.synaxic.security.ApiKeyAuthFilter;
+import dev.skillter.synaxic.security.RateLimitFilter;
+import dev.skillter.synaxic.service.ApiKeyService;
 import dev.skillter.synaxic.service.ConversionService;
+import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.util.IpExtractor;
 import dev.skillter.synaxic.util.RequestLoggingInterceptor;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -22,7 +30,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UnitConverterController.class)
+@WebMvcTest(
+        controllers = UnitConverterController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = {ApiKeyAuthFilter.class, RateLimitFilter.class}
+        )
+)
+@AutoConfigureMockMvc(addFilters = false)
+
 class UnitConverterControllerTest {
 
     @Autowired
@@ -30,6 +46,12 @@ class UnitConverterControllerTest {
 
     @MockBean
     private ConversionService conversionService;
+
+    @MockBean
+    private ApiKeyService apiKeyService;
+
+    @MockBean
+    private RateLimitService rateLimitService; // Add this
 
     @MockBean
     private RequestLoggingInterceptor requestLoggingInterceptor;
