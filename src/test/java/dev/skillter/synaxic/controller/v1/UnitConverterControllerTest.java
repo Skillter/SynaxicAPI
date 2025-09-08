@@ -2,18 +2,13 @@ package dev.skillter.synaxic.controller.v1;
 
 import dev.skillter.synaxic.model.dto.ByteConversionResponse;
 import dev.skillter.synaxic.model.dto.UnitConversionResponse;
-import dev.skillter.synaxic.security.ApiKeyAuthFilter;
-import dev.skillter.synaxic.security.RateLimitFilter;
 import dev.skillter.synaxic.service.ConversionService;
 import dev.skillter.synaxic.util.IpExtractor;
 import dev.skillter.synaxic.util.RequestLoggingInterceptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.MockBeans;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -27,13 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = UnitConverterController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
-@Import(IpExtractor.class)
-@MockBeans({
-        @MockBean(ApiKeyAuthFilter.class),
-        @MockBean(RateLimitFilter.class),
-        @MockBean(RequestLoggingInterceptor.class)
-})
+@WebMvcTest(controllers = UnitConverterController.class)
 class UnitConverterControllerTest {
 
     @Autowired
@@ -41,6 +30,12 @@ class UnitConverterControllerTest {
 
     @MockBean
     private ConversionService conversionService;
+
+    @MockBean
+    private RequestLoggingInterceptor requestLoggingInterceptor;
+
+    @MockBean
+    private IpExtractor ipExtractor;
 
     @Test
     void convertUnits_shouldReturnSuccess() throws Exception {
