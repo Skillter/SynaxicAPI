@@ -1,9 +1,11 @@
 package dev.skillter.synaxic.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -11,6 +13,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
@@ -23,6 +26,35 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("path", request.getDescription(false).replace("uri=", ""));
         return problemDetail;
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException ex, WebRequest request) {
+        log.warn("Validation failed: {}", ex.getMessage());
+        String violations = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .collect(Collectors.joining(", "));
+
+        ProblemDetail problemDetail = createProblemDetail(
+                HttpStatus.BAD_REQUEST,
+                "Validation Failed",
+                "Invalid request parameters: " + violations,
+                request
+        );
+        return ResponseEntity.badRequest().body(problemDetail);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ProblemDetail> handleMissingParameter(MissingServletRequestParameterException ex, WebRequest request) {
+        log.warn("Missing required parameter: {}", ex.getParameterName());
+        ProblemDetail problemDetail = createProblemDetail(
+                HttpStatus.BAD_REQUEST,
+                "Missing Required Parameter",
+                String.format("Required parameter '%s' of type '%s' is missing",
+                        ex.getParameterName(), ex.getParameterType()),
+                request
+        );
+        return ResponseEntity.badRequest().body(problemDetail);
     }
 
     @ExceptionHandler(ConversionException.class)
