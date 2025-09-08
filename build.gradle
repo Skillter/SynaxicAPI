@@ -74,6 +74,7 @@ dependencies {
     implementation 'com.google.guava:guava:33.4.8-jre'
     // Units of Measurement API (for unit conversions)
     implementation 'tech.units:indriya:2.2.3'
+    implementation 'systems.uom:systems-common:2.2'
     // Enhanced testing capabilities
     testImplementation 'io.rest-assured:rest-assured:5.5.6'
     testImplementation 'com.redis:testcontainers-redis:2.2.4'
