@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.stream.Collectors;
@@ -102,73 +101,4 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
-}```
-
-        ### 4. Configuration Files
-
-#### `application.properties` (Modified)
-We add tags to all metrics for easier filtering in Grafana.
-
-        **`src/main/resources/application.properties`**
-        ```properties
-# ===================================================================
-        # BASE CONFIGURATION (Shared across all environments)
-# ===================================================================
-
-        # --- Application ---
-spring.application.name=Synaxic API
-server.port=8080
-server.servlet.context-path=/
-
-        # --- API Documentation ---
-springdoc.api-docs.path=/v3/api-docs
-springdoc.swagger-ui.path=/swagger-ui.html
-springdoc.swagger-ui.operationsSorter=method
-springdoc.default-produces-media-type=application/json
-springdoc.default-consumes-media-type=application/json
-
-# --- Jackson ---
-spring.jackson.serialization.write-dates-as-timestamps=false
-spring.jackson.serialization.indent-output=true
-spring.jackson.default-property-inclusion=non_null
-
-# --- Actuator ---
-management.endpoints.web.exposure.include=health,info,prometheus,metrics,caches
-management.endpoint.health.show-details=always
-management.metrics.export.prometheus.enabled=true
-management.metrics.tags.application=${spring.application.name}
-
-# --- Problem Details ---
-spring.mvc.problemdetails.enabled=true
-
-        # --- Compression & Request Size ---
-server.compression.enabled=true
-server.compression.mime-types=application/json,application/xml,text/html,text/xml,text/plain
-server.compression.min-response-size=1024
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-server.tomcat.max-http-form-post-size=10MB
-
-# --- Cache ---
-spring.cache.type=caffeine
-spring.cache.caffeine.spec=maximumSize=10000,expireAfterWrite=10m
-
-# --- Redis ---
-spring.data.redis.host=localhost
-spring.data.redis.port=6379
-spring.data.redis.timeout=2000ms
-
-# --- Rate Limiting (Bucket4j) ---
-synaxic.rate-limit.anonymous.capacity=100
-synaxic.rate-limit.anonymous.refill-minutes=60
-synaxic.rate-limit.api-key.capacity=1000
-synaxic.rate-limit.api-key.refill-minutes=60
-
-        # --- JPA ---
-spring.jpa.open-in-view=false
-
-
-        # --- Secrets ---
-spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID}
-spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET}
-spring.security.oauth2.client.registration.google.scope=openid,profile,email
+}

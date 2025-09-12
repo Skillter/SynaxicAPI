@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/v1/auth/api-key").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/v1/admin/stats").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
