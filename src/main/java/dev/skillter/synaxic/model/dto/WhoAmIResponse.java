@@ -14,24 +14,25 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Detailed request information")
+@Schema(description = "Detailed information about the incoming client request.")
 public class WhoAmIResponse {
 
-    @Schema(description = "Client IP address", example = "192.168.1.1")
+    @Schema(description = "The client's public IP address.", example = "203.0.113.195")
     private String ip;
 
-    @Schema(description = "IP version", example = "IPv4")
+    @Schema(description = "The version of the IP address.", example = "IPv4")
     private String ipVersion;
 
-    @Schema(description = "HTTP headers (sensitive headers redacted)")
+    @Schema(description = "A map of HTTP headers from the request. Sensitive headers are redacted.",
+            example = "{\"host\": \"api.synaxic.skillter.dev\", \"user-agent\": \"curl/7.81.0\", \"authorization\": \"[REDACTED]\"}")
     private Map<String, String> headers;
 
-    @Schema(description = "User-Agent string", example = "Mozilla/5.0...")
+    @Schema(description = "The User-Agent string from the request headers.", example = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...")
     private String userAgent;
 
-    @Schema(description = "HTTP method", example = "GET")
+    @Schema(description = "The HTTP method used for the request.", example = "GET")
     private String method;
 
-    @Schema(description = "HTTP protocol", example = "HTTP/1.1")
+    @Schema(description = "The protocol used for the request.", example = "HTTP/1.1")
     private String protocol;
 }

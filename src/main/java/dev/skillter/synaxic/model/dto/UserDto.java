@@ -10,20 +10,20 @@ import java.time.Instant;
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Authenticated user information")
+@Schema(description = "Information about the authenticated user.")
 public class UserDto {
-    @Schema(description = "User's unique identifier", example = "1")
+    @Schema(description = "The user's unique identifier.", example = "1")
     private Long id;
 
-    @Schema(description = "User's email address", example = "developer@example.com")
+    @Schema(description = "The user's email address associated with their account.", example = "developer@example.com")
     private String email;
 
-    @Schema(description = "Timestamp when the user first signed in")
+    @Schema(description = "The timestamp when the user first signed in.")
     private Instant memberSince;
 
-    @Schema(description = "The prefix of the user's current API key", example = "syn_live_abc")
+    @Schema(description = "The prefix of the user's current API key (e.g., 'syn_live_abc...'). Useful for identification without exposing the full key.", example = "syn_live_abc")
     private String apiKeyPrefix;
 
-    @Schema(description = "Timestamp when the API key was last used")
+    @Schema(description = "The timestamp when the API key was last used.")
     private Instant apiKeyLastUsed;
 }

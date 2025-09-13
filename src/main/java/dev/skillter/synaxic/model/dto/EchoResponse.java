@@ -13,20 +13,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Echo response with request metadata")
+@Schema(description = "Metadata about a request body sent to the /echo endpoint.")
 public class EchoResponse {
 
-    @Schema(description = "Size of the request body in bytes", example = "1024")
+    @Schema(description = "Size of the request body in bytes.", example = "1024")
     private int size;
 
-    @Schema(description = "SHA-256 hash of the request body", example = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+    @Schema(description = "The SHA-256 hash of the request body.", example = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     private String sha256;
 
-    @Schema(description = "Content-Type of the request", example = "application/json")
+    @Schema(description = "The `Content-Type` header of the request.", example = "application/json")
     private String contentType;
 
-    @Schema(description = "Whether the request body was empty", example = "false")
+    @Schema(description = "Indicates whether the request body was empty.", example = "false")
     @JsonProperty("isEmpty")
-    @Builder.Default // ensure builder works with default values if needed
-    private boolean isEmpty = false;
+    private boolean isEmpty;
 }
