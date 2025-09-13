@@ -1,5 +1,6 @@
 package dev.skillter.synaxic.service;
 
+import dev.skillter.synaxic.config.CacheConfig;
 import dev.skillter.synaxic.model.dto.GeneratedApiKey;
 import dev.skillter.synaxic.model.entity.ApiKey;
 import dev.skillter.synaxic.model.entity.User;
@@ -7,6 +8,9 @@ import dev.skillter.synaxic.repository.ApiKeyRepository;
 import dev.skillter.synaxic.util.KeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ public class ApiKeyService {
 
     private final ApiKeyRepository apiKeyRepository;
     private final KeyGenerator keyGenerator;
+    private final CacheManager cacheManager;
 
     @Transactional
     public GeneratedApiKey generateAndSaveKey(User user) {
@@ -34,9 +39,14 @@ public class ApiKeyService {
 
     @Transactional
     public GeneratedApiKey regenerateKeyForUser(User user) {
-        apiKeyRepository.findByUser_Id(user.getId()).ifPresent(apiKeyRepository::delete);
-        log.info("Revoked existing API key for user {}", user.getId());
+        apiKeyRepository.findByUser_Id(user.getId()).ifPresent(this::evictAndRevokeKey);
         return generateAndSaveKey(user);
+    }
+
+    @CacheEvict(value = CacheConfig.CACHE_API_KEY_BY_PREFIX, key = "#oldKey.prefix")
+    public void evictAndRevokeKey(ApiKey oldKey) {
+        log.info("Revoking API key with prefix {} for user {}", oldKey.getPrefix(), oldKey.getUser().getId());
+        apiKeyRepository.delete(oldKey);
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +56,7 @@ public class ApiKeyService {
         }
 
         String prefix = fullKey.substring(0, 12);
-        Optional<ApiKey> apiKeyOpt = apiKeyRepository.findByPrefix(prefix);
+        Optional<ApiKey> apiKeyOpt = findApiKeyByPrefix(prefix);
 
         if (apiKeyOpt.isEmpty()) {
             return Optional.empty();
@@ -61,6 +71,12 @@ public class ApiKeyService {
         }
 
         return Optional.empty();
+    }
+
+    @Cacheable(value = CacheConfig.CACHE_API_KEY_BY_PREFIX, key = "#prefix", unless = "#result.isEmpty()")
+    public Optional<ApiKey> findApiKeyByPrefix(String prefix) {
+        log.debug("DB lookup for API key with prefix: {}", prefix);
+        return apiKeyRepository.findByPrefix(prefix);
     }
 
     @Async

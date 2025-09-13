@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "IP address information")
+@Schema(description = "The client's public IP address information.")
 public class IpResponse {
 
-    @Schema(description = "Client IP address", example = "192.168.1.1")
+    @Schema(description = "The client's public IP address.", example = "203.0.113.195")
     private String ip;
 
-    @Schema(description = "IP version", example = "IPv4", allowableValues = {"IPv4", "IPv6", "unknown"})
+    @Schema(description = "The version of the IP address.", example = "IPv4", allowableValues = {"IPv4", "IPv6", "unknown"})
     private String ipVersion;
 }
