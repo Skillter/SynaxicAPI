@@ -4,15 +4,12 @@ set -e
 
 echo ">>> Starting Synaxic Main VPS Setup..."
 
-# Ensure the script operates from the project root directory
 cd "$(dirname "$0")/.."
 
-# 1. System Update and Dependency Installation
 echo ">>> Updating system packages and installing dependencies..."
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common openssl
 
-# 2. Install Docker and Docker Compose
 if ! command -v docker &> /dev/null
 then
     echo ">>> Installing Docker..."
@@ -36,57 +33,44 @@ else
     echo "[OK] Docker Compose is already installed."
 fi
 
-# 3. Create or Update Environment File (.env) in project root
 echo ">>> Managing credentials in .env file..."
 
-# Create the file from .env.example if it doesn't exist
 if [ ! -f ".env" ]; then
     cp .env.example .env
     echo "[OK] .env file created from .env.example."
 fi
 
-# Safely load variables from .env file
 if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-# Generate passwords ONLY if they are not already set
-if [ -z "$POSTGRES_PASSWORD" ]; then
-    echo ">>> Generating new PostgreSQL password..."
-    POSTGRES_PASSWORD=$(openssl rand -hex 32)
-    sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${POSTGRES_PASSWORD}/" .env
-fi
+generate_password_if_empty() {
+    local var_name="$1"
+    local current_val=$(grep "^${var_name}=" .env | cut -d'=' -f2)
+    if [ -z "$current_val" ]; then
+        echo ">>> Generating new password for ${var_name}..."
+        local new_pass=$(openssl rand -hex 32)
+        sed -i "s/^${var_name}=.*/${var_name}=${new_pass}/" .env
+    fi
+}
 
-if [ -z "$REDIS_PASSWORD" ]; then
-    echo ">>> Generating new Redis password..."
-    REDIS_PASSWORD=$(openssl rand -hex 32)
-    sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=${REDIS_PASSWORD}/" .env
-fi
+generate_password_if_empty "POSTGRES_PASSWORD"
+generate_password_if_empty "REDIS_PASSWORD"
+generate_password_if_empty "GRAFANA_ADMIN_PASSWORD"
 
-if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
-    echo ">>> Generating new Grafana admin password..."
-    GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 32)
-    sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}/" .env
-fi
-
-# Add DOCKER_UID/DOCKER_GID for Docker permissions
 echo ">>> Setting Docker user permissions..."
-# Check if DOCKER_UID/DOCKER_GID are already in the file, if not, add them
 if ! grep -q "DOCKER_UID=" .env; then
-    echo -e "\n# Docker User Permissions\nDOCKER_UID=\nDOCKER_GID=" >> .env
+    echo -e "\nDOCKER_UID=\nDOCKER_GID=" >> .env
 fi
-# Set the current user's UID and GID
 sed -i "s/^DOCKER_UID=.*/DOCKER_UID=$(id -u)/" .env
 sed -i "s/^DOCKER_GID=.*/DOCKER_GID=$(id -g)/" .env
 
 echo "[OK] .env file is configured."
 
-# Re-source the file to ensure generated passwords are in the environment
 if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-# 4. Generate Self-Signed TLS Certificates for Redis
 echo ">>> Generating self-signed TLS certificates for Redis..."
 mkdir -p redis/tls
 if [ -f "redis/tls/redis.key" ] && [ -f "redis/tls/redis.crt" ]; then
@@ -99,23 +83,22 @@ else
     echo "[OK] TLS certificates generated in redis/tls/."
 fi
 
-# Create a Java truststore for the application
 echo ">>> Creating Java truststore for the application..."
-openssl pkcs12 -export -in redis/tls/redis.crt -inkey redis/tls/redis.key \
-    -out redis/tls/truststore.p12 -name redis-cert \
-    -passout pass:changeit
-echo "[OK] Java truststore created at redis/tls/truststore.p12"
+if [ -f "redis/tls/truststore.p12" ]; then
+    echo "[WARN] Java truststore already exists. Skipping creation."
+else
+    openssl pkcs12 -export -in redis/tls/redis.crt -inkey redis/tls/redis.key \
+        -out redis/tls/truststore.p12 -name redis-cert \
+        -passout pass:changeit
+    echo "[OK] Java truststore created at redis/tls/truststore.p12"
+fi
 
-# 5. Create Redis Configuration File
 echo ">>> Creating Redis configuration file (redis/redis.conf)..."
 mkdir -p redis
 cat << EOL | tr -d '\r' > redis/redis.conf
-# General
 bind 0.0.0.0
 protected-mode no
 requirepass ${REDIS_PASSWORD}
-
-# TLS Configuration
 port 0
 tls-port 6380
 tls-cert-file /usr/local/etc/redis/tls/redis.crt
@@ -124,20 +107,19 @@ tls-auth-clients no
 EOL
 echo "[OK] redis.conf created in redis/."
 
-# 6. Final Instructions
 echo ""
 echo "=================================================="
 echo "Main VPS setup is complete!"
 echo "--------------------------------------------------"
 echo "Next Steps:"
-echo "1. IMPORTANT: Copy the following files to your replica VPS before running its setup script:"
-echo "   - The generated '.env' file."
-echo "   - The TLS certificates: 'redis/tls/redis.crt' and 'redis/tls/redis.key'."
+echo "1. (Optional) For GeoIP features, download 'GeoLite2-City.mmdb' from MaxMind"
+echo "   and place it in 'src/main/resources/'."
 echo ""
-echo "2. Your Main VPS Public IP is: $(curl -s ifconfig.me || echo 'Could not determine IP')"
-echo "3. Your passwords are in the .env file."
+echo "2. IMPORTANT: Copy the following files to your replica VPS project directory:"
+echo "   - The entire 'redis/tls' directory."
+echo "   - The updated '.env' file."
 echo ""
-echo "4. You can start the services on this main server by running:"
-echo "   docker-compose -f docker-compose.prod.yml up -d --build"
+echo "3. Your Main VPS Public IP is: $(curl -s ifconfig.me || echo 'Could not determine IP')"
+echo "4. To start services, run: docker-compose -f docker-compose.prod.yml up --build -d"
 echo "=================================================="
-echo "If you are running this for the first time, you may need to run 'newgrp docker' or log out and log back in to use docker without sudo."
+echo "If this is your first time using Docker, run 'newgrp docker' or log out and back in to use docker without sudo."
