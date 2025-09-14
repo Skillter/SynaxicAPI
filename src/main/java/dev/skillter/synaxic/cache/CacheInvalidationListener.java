@@ -1,5 +1,6 @@
 package dev.skillter.synaxic.cache;
 
+import dev.skillter.synaxic.config.CacheConfig;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
