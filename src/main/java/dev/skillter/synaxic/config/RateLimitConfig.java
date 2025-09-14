@@ -6,41 +6,38 @@ import io.github.bucket4j.redis.redisson.Bucket4jRedisson;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.config.SslProvider;
+import org.redisson.config.SslVerificationMode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.Resource;
 
 import java.time.Duration;
 
 @Configuration
 public class RateLimitConfig {
 
-    @Bean
-    @ConditionalOnMissingBean(RedissonClient.class)
-    public RedissonClient redissonClient(
-            @Value("${spring.data.redis.url:#{null}}") String redisUrl,
-            @Value("${spring.data.redis.host:localhost}") String redisHost,
-            @Value("${spring.data.redis.port:6379}") int redisPort,
-            @Value("${spring.data.redis.password:#{null}}") String redisPassword
-    ) {
+    @Bean(destroyMethod = "shutdown")
+    @Profile("prod")
+    public RedissonClient redissonClientProd(
+            @Value("${spring.data.redis.host}") String redisHost,
+            @Value("${spring.data.redis.port}") int redisPort,
+            @Value("${spring.data.redis.password}") String redisPassword,
+            @Value("classpath:truststore.p12") Resource trustStore
+    ) throws Exception {
         Config config = new Config();
-        String redisAddress;
-        if (StringUtils.hasText(redisUrl)) {
-            redisAddress = redisUrl;
-        } else {
-            redisAddress = "redis://" + redisHost + ":" + redisPort;
-        }
+        String redisAddress = "rediss://" + redisHost + ":" + redisPort;
 
-        var serverConfig = config.useSingleServer()
-                .setAddress(redisAddress);
-
-        if (StringUtils.hasText(redisPassword)) {
-            serverConfig.setPassword(redisPassword);
-        }
-
-        serverConfig
+        config.useSingleServer()
+                .setAddress(redisAddress)
+                .setPassword(redisPassword)
+                .setSslProvider(SslProvider.JDK)
+                .setSslTruststore(trustStore.getURL())
+                .setSslTruststorePassword("changeit")
+                .setSslVerificationMode(SslVerificationMode.NONE) // Correct method to disable hostname verification
                 .setConnectionPoolSize(64)
                 .setConnectionMinimumIdleSize(24)
                 .setSubscriptionConnectionPoolSize(50)
@@ -51,11 +48,21 @@ public class RateLimitConfig {
         return Redisson.create(config);
     }
 
+    @Bean(destroyMethod = "shutdown")
+    @Profile("!prod")
+    public RedissonClient redissonClientDev(
+            @Value("${spring.data.redis.host:localhost}") String redisHost,
+            @Value("${spring.data.redis.port:6379}") int redisPort
+    ) {
+        Config config = new Config();
+        String redisAddress = "redis://" + redisHost + ":" + redisPort;
+        config.useSingleServer().setAddress(redisAddress);
+        return Redisson.create(config);
+    }
+
     @Bean
     public ProxyManager<String> proxyManager(RedissonClient redissonClient) {
-        // Cast to Redisson implementation to access getCommandExecutor()
         Redisson redisson = (Redisson) redissonClient;
-
         return Bucket4jRedisson.casBasedBuilder(redisson.getCommandExecutor())
                 .expirationAfterWrite(
                         ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
