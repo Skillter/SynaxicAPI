@@ -22,7 +22,6 @@ JUnit tests
 The project is named Synaxic API.
 rootProject.name = 'synaxic'
   group = 'dev.skillter'
-  version = '0.0.1-SNAPSHOT'
   description = 'Synaxic is a innovative API Hub for developers'
 package to the main application class is dev.skillter.synaxic
 Developing on JDK 21
@@ -30,6 +29,15 @@ Targeting Java 21
 I'm using Intellij IDEA
 Developing on Windows 11, but the server will be hosted on Linux Debian for production.
 We want to use Redisson instead of Lettuce for Redis integration
+
+The traffic of Redis between production servers needs to be encrypted and authenticated.
+The production servers are gonna be hosted on 2 or more VPS servers. The main VPS server will run the shared Redis instance, and one of other VPS servers will run a mirrored replica Redis, just how industry standards are.
+
+
+`application.properties` contains the base configuration shared across all environments, such as port numbers and API documentation settings.
+`application-dev.properties` is used for local development without Docker, configuring an in-memory H2 database for quick startup.
+`application-docker.properties` is for local development against services running in Docker, connecting to PostgreSQL and Redis on `localhost`.
+`application-prod.properties` is for the final production deployment, overriding settings to use environment variables for database and Redis connections within the Docker network.
 
 2. The actual APIs we want to implement, host and serve:
 - "My IP" + lightweight request inspector api, don’t log sensitive data.
