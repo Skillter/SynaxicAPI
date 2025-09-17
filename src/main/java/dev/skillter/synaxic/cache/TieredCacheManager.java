@@ -57,8 +57,7 @@ public class TieredCacheManager implements CacheManager {
     public void evictLocalCache(String cacheName, Object key) {
         Cache cache = cacheMap.get(cacheName);
         if (cache instanceof TieredCache tieredCache) {
-            com.github.benmanes.caffeine.cache.Cache<Object, Object> l1Cache =
-                    (com.github.benmanes.caffeine.cache.Cache<Object, Object>) tieredCache.getNativeCache();
+            com.github.benmanes.caffeine.cache.Cache<Object, Object> l1Cache = tieredCache.getL1Cache();
             if (key == null) {
                 l1Cache.invalidateAll();
             } else {

@@ -73,7 +73,7 @@ public class ApiKeyService {
         return Optional.empty();
     }
 
-    @Cacheable(value = CacheConfig.CACHE_API_KEY_BY_PREFIX, key = "#prefix", unless = "#result.isEmpty()")
+    @Cacheable(value = CacheConfig.CACHE_API_KEY_BY_PREFIX, key = "#prefix", unless = "!#result.isPresent()")
     public Optional<ApiKey> findApiKeyByPrefix(String prefix) {
         log.debug("DB lookup for API key with prefix: {}", prefix);
         return apiKeyRepository.findByPrefix(prefix);
