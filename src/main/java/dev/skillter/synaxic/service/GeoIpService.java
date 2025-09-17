@@ -30,9 +30,9 @@ public class GeoIpService {
     @PostConstruct
     public void init() {
         try {
-            Resource resource = resourceLoader.getResource("classpath:GeoLite2-City.mmdb");
+            Resource resource = resourceLoader.getResource("file:/app/geodb/GeoLite2-City.mmdb");
             if (!resource.exists()) {
-                log.warn("GeoLite2-City.mmdb database not found. Geolocation features will be disabled.");
+                log.warn("GeoLite2-City.mmdb database not found at /app/geodb/GeoLite2-City.mmdb. Geolocation features will be disabled.");
                 return;
             }
             try (InputStream dbStream = resource.getInputStream()) {
@@ -44,7 +44,7 @@ public class GeoIpService {
         }
     }
 
-    @Cacheable(value = CacheConfig.CACHE_GEO_IP, key = "#ipAddress", unless = "#result.isEmpty()")
+    @Cacheable(value = CacheConfig.CACHE_GEO_IP, key = "#ipAddress", unless = "#result == null || !#result.isPresent()")
     public Optional<String> getCountry(String ipAddress) {
         if (databaseReader == null || ipAddress == null) {
             return Optional.empty();

@@ -57,7 +57,11 @@ public class TieredCache extends AbstractValueAdaptingCache {
     @Override
     @NonNull
     public Object getNativeCache() {
-        return this;
+        return l1Cache;
+    }
+
+    public Cache<Object, Object> getL1Cache() {
+        return l1Cache;
     }
 
     @Override
