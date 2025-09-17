@@ -84,3 +84,5 @@ hs_err_pid*
 
 /details.txt
 qodana.yaml
+/redis/tls
+redis/redis.conf
