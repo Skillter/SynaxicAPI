@@ -17,11 +17,11 @@ update_configs_with_main_ip() {
     export $(grep -v '^#' .env | xargs)
 
     # --- Docker Compose ---
-    cat << EOL > docker-compose.replica.yml
+    cat << EOL > docker-compose.app-only.yml
 services:
-  app-replica:
+  app:
     build: {context: ., dockerfile: Dockerfile}
-    container_name: synaxic-app-replica
+    container_name: synaxic-app-node
     ports: ["8080:8080"]
     volumes: ["./redis/tls:/app/redis-tls"]
     environment:
@@ -45,17 +45,10 @@ services:
     ports: ["6379:6379"]
     volumes: ["redis-data-replica:/data", "./redis/redis-replica.conf:/usr/local/etc/redis/redis-replica.conf", "./redis/tls:/usr/local/etc/redis/tls"]
     restart: unless-stopped
-  postgres-replica:
-    image: postgres:16
-    container_name: synaxic-postgres-replica
-    env_file: .env
-    volumes: ["postgres-data-replica:/var/lib/postgresql/data", "./postgres/replica/entrypoint.sh:/docker-entrypoint-initdb.d/init-replica.sh"]
-    restart: unless-stopped
 volumes:
   redis-data-replica:
-  postgres-data-replica:
 EOL
-    echo "[OK] docker-compose.replica.yml updated."
+    echo "[OK] docker-compose.app-only.yml updated."
 
     # --- Redis Replica Config ---
     mkdir -p redis
@@ -72,35 +65,14 @@ tls-auth-clients no
 EOL
     echo "[OK] redis-replica.conf updated."
 
-    # --- PostgreSQL Replica Entrypoint ---
-    mkdir -p postgres/replica
-    cat << EOL > postgres/replica/entrypoint.sh
-#!/bin/bash
-set -e
-if [ -n "\$(ls -A /var/lib/postgresql/data)" ]; then
-    echo "PostgreSQL data directory already exists, skipping replica setup."
-    exec postgres
-fi
-echo "Initializing as a replica..."
-PGPASSWORD="\${POSTGRES_PASSWORD}" pg_basebackup -h ${main_ip} -p 5432 -U replicator -D /var/lib/postgresql/data -Fp -Xs -R
-{
-    echo "hot_standby = on"
-    echo "primary_conninfo = 'host=${main_ip} port=5432 user=replicator password=\${POSTGRES_PASSWORD} sslmode=prefer'"
-    echo "promote_trigger_file = '/tmp/promote_now'"
-} >> /var/lib/postgresql/data/postgresql.conf
-exec postgres
-EOL
-    chmod +x postgres/replica/entrypoint.sh
-    echo "[OK] PostgreSQL replica entrypoint updated."
-
     # --- Set Correct Permissions ---
     echo ">>> Setting ownership for config directories..."
-    sudo chown -R $(id -u):$(id -g) redis postgres
+    sudo chown -R $(id -u):$(id -g) redis
     echo "[OK] Permissions set."
 
     echo ""
     echo "Configuration updated to point to Main VPS at $main_ip."
-    echo "Restart your services to apply the changes: docker-compose -f docker-compose.replica.yml up -d --force-recreate"
+    echo "Restart your services to apply the changes: docker-compose -f docker-compose.app-only.yml up -d --force-recreate"
 }
 
 # --- Main Script Logic ---
@@ -114,9 +86,9 @@ if [[ "$1" == "--set-main-ip" ]]; then
     exit 0
 fi
 
-if [ ! -f "docker-compose.replica.yml" ]; then
-    echo ">>> Running initial setup for Replica VPS..."
-    sudo apt-get update && sudo apt-get install -y curl postgresql-client
+if [ ! -f "docker-compose.app-only.yml" ]; then
+    echo ">>> Running initial setup for App-Only VPS..."
+    sudo apt-get update && sudo apt-get install -y curl
     if ! command -v docker &> /dev/null; then echo "Installing Docker..."; curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null; sudo apt-get update; sudo apt-get install -y docker-ce docker-ce-cli containerd.io; sudo usermod -aG docker $USER; fi
     if ! command -v docker-compose &> /dev/null; then echo "Installing Docker Compose..."; sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose; sudo chmod +x /usr/local/bin/docker-compose; fi
 
@@ -134,7 +106,7 @@ if [ ! -f "docker-compose.replica.yml" ]; then
         echo "$main_ip" > "$MAIN_IP_FILE"
     fi
     update_configs_with_main_ip "$main_ip"
-    echo "Initial setup complete. To start services, run: docker-compose -f docker-compose.replica.yml up --build -d"
+    echo "Initial setup complete. To start services, run: docker-compose -f docker-compose.app-only.yml up --build -d"
 else
     echo "Existing installation found. To change the Main VPS IP, run:"
     echo "$0 --set-main-ip <new_ip_address>"
