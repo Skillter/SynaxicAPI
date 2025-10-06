@@ -31,7 +31,7 @@ Developing on Windows 11, but the server will be hosted on Linux Debian for prod
 We want to use Redisson instead of Lettuce for Redis integration
 
 The traffic of Redis between production servers needs to be encrypted and authenticated.
-The production servers are gonna be hosted on 2 or more VPS servers. The main VPS server will run the shared Redis instance, and one of other VPS servers will run a mirrored replica Redis, just how industry standards are.
+The production servers are gonna be hosted on 2 or more VPS servers. The main VPS server will run the shared Redis instance and the shared PostgreSQL. One of other VPS servers will run a mirrored replica Redis and mirrored replica PostgreSQL, just how industry standards are.
 
 
 `application.properties` contains the base configuration shared across all environments, such as port numbers and API documentation settings.
