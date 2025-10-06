@@ -1,19 +1,30 @@
 package dev.skillter.synaxic.controller.v1;
 
+import dev.skillter.synaxic.config.TestSecurityConfig;
 import dev.skillter.synaxic.model.dto.EchoResponse;
 import dev.skillter.synaxic.model.dto.IpResponse;
 import dev.skillter.synaxic.model.dto.WhoAmIResponse;
+import dev.skillter.synaxic.service.ApiKeyService;
+import dev.skillter.synaxic.service.GeoIpService;
 import dev.skillter.synaxic.service.IpInspectorService;
+import dev.skillter.synaxic.service.MetricsService;
+import dev.skillter.synaxic.service.RateLimitService;
+import dev.skillter.synaxic.service.UserService;
+import dev.skillter.synaxic.util.IpExtractor;
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.spring.starter.RedissonAutoConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,21 +37,41 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(controllers = IpController.class,
+        excludeAutoConfiguration = {
+                DataSourceAutoConfiguration.class,
+                DataSourceTransactionManagerAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                FlywayAutoConfiguration.class,
+                RedissonAutoConfiguration.class,
+                SessionAutoConfiguration.class
+        })
+@Import(TestSecurityConfig.class)
 class IpControllerTest {
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Mock
+    @MockBean
     private IpInspectorService ipInspectorService;
 
-    @InjectMocks
-    private IpController ipController;
+    @MockBean
+    private ApiKeyService apiKeyService;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(ipController).build();
-    }
+    @MockBean
+    private RateLimitService rateLimitService;
+
+    @MockBean
+    private UserService userService;
+
+    @MockBean
+    private IpExtractor ipExtractor;
+
+    @MockBean
+    private GeoIpService geoIpService;
+
+    @MockBean
+    private MetricsService metricsService;
 
     @Test
     void getIp_ShouldReturnIpAddress() throws Exception {
@@ -107,7 +138,7 @@ class IpControllerTest {
                 .sha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
                 .isEmpty(true)
                 .build();
-        when(ipInspectorService.processEcho(null, null)).thenReturn(response);
+        when(ipInspectorService.processEcho(any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/v1/echo"))
                 .andExpect(status().isOk())

@@ -1,14 +1,13 @@
 package dev.skillter.synaxic.service;
 
+import dev.skillter.synaxic.BaseIntegrationTest;
 import dev.skillter.synaxic.model.dto.EmailValidationResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.nio.charset.StandardCharsets;
 
@@ -16,16 +15,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class EmailValidationServiceTest {
+class EmailValidationServiceTest extends BaseIntegrationTest {
 
-    @Mock
+    @MockitoBean
     private DnsService dnsService;
 
-    @Mock
+    @MockitoBean
     private ResourceLoader resourceLoader;
 
-    @InjectMocks
+    @Autowired
     private EmailValidationService emailValidationService;
 
     @BeforeEach
