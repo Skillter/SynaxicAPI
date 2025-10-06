@@ -31,7 +31,6 @@ public class RateLimitConfig {
             @Value("${spring.data.redis.password}") String redisPassword,
             @Value("${synaxic.redis.read-mode:MASTER}") String readMode,
             @Value("${spring.data.redis.slave-hosts:}") String[] slaveHosts,
-            // Corrected Path: Point to the file inside the mounted volume
             @Value("file:/app/redis-tls/truststore.p12") Resource trustStore
     ) throws Exception {
         Config config = new Config();
@@ -43,7 +42,7 @@ public class RateLimitConfig {
                 .setSslProvider(SslProvider.JDK)
                 .setSslTruststore(trustStore.getURL())
                 .setSslTruststorePassword("changeit")
-                .setSslVerificationMode(SslVerificationMode.NONE)
+                .setSslVerificationMode(SslVerificationMode.FULL)
                 .setMasterConnectionPoolSize(64)
                 .setSlaveConnectionPoolSize(64)
                 .setMasterConnectionMinimumIdleSize(24)
