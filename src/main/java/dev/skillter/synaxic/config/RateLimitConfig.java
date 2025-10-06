@@ -42,7 +42,7 @@ public class RateLimitConfig {
                 .setSslProvider(SslProvider.JDK)
                 .setSslTruststore(trustStore.getURL())
                 .setSslTruststorePassword("changeit")
-                .setSslVerificationMode(SslVerificationMode.FULL)
+                .setSslVerificationMode(SslVerificationMode.STRICT)
                 .setMasterConnectionPoolSize(64)
                 .setSlaveConnectionPoolSize(64)
                 .setMasterConnectionMinimumIdleSize(24)
