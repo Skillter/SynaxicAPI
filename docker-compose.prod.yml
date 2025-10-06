@@ -27,7 +27,6 @@ services:
       - SPRING_DATA_REDIS_MASTER_HOST=redis
       - SPRING_DATA_REDIS_PORT=6380
       - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}
-      - SPRING_DATA_REDIS_SSL_ENABLED=true
       - SYNAXIC_REDIS_READ_MODE=MASTER
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
