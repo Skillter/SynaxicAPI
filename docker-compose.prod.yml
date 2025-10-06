@@ -1,9 +1,11 @@
+name: synaxic
+
 services:
-  app:
+  app-main:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: synaxic-app
+    container_name: synaxic-app-main
     depends_on:
       redis:
         condition: service_healthy
@@ -11,6 +13,10 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+    # THIS VOLUME MOUNT IS CRITICAL AND WAS MISSING.
+    # It makes the host's ./redis/tls directory available inside the container.
+    volumes:
+      - ./redis/tls:/app/redis-tls
     env_file:
       - .env
     environment:
@@ -18,10 +24,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_MASTER_HOST=redis
       - SPRING_DATA_REDIS_PORT=6380
       - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}
       - SPRING_DATA_REDIS_SSL_ENABLED=true
+      - SYNAXIC_REDIS_READ_MODE=MASTER
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -36,6 +43,9 @@ services:
       - .env
     volumes:
       - postgres-data-prod:/var/lib/postgresql/data
+      - ./postgres/master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf
     ports:
       - "5432:5432"
     healthcheck:
@@ -54,8 +64,7 @@ services:
       - "6380:6380"
     volumes:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-      - ./redis/tls/redis.crt:/usr/local/etc/redis/tls/redis.crt
-      - ./redis/tls/redis.key:/usr/local/etc/redis/tls/redis.key
+      - ./redis/tls:/usr/local/etc/redis/tls
       - redis-data-prod:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "-p", "6380", "--tls", "--cacert", "/usr/local/etc/redis/tls/redis.crt", "ping"]
@@ -64,6 +73,36 @@ services:
       retries: 5
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: synaxic-prometheus
+    user: "65534:65534" # Run as non-root user 'nobody'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: synaxic-grafana
+    user: "472:472" # Run as non-root user 'grafana'
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./prometheus/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+
 volumes:
   postgres-data-prod:
   redis-data-prod:
+  prometheus-data:
+  grafana-data:
