@@ -17,4 +17,3 @@ CREATE TABLE api_key (
 
 CREATE INDEX idx_api_key_prefix ON api_key(prefix);
 CREATE INDEX idx_user_google_sub ON api_user(google_sub);
-CREATE UNIQUE INDEX idx_api_key_user_id ON api_key(user_id);
