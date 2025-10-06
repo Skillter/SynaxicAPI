@@ -1,11 +1,9 @@
 package dev.skillter.synaxic.util;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.aspectj.weaver.ast.Test;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.meta.When;
 import java.util.Arrays;
 import java.util.List;
 
