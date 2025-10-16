@@ -97,6 +97,12 @@ for file in "${FILES_TO_PRESERVE[@]}"; do
     fi
 done
 
+# Fix TLS file permissions for Docker containers
+if [ -f "redis/tls/redis.crt" ]; then
+    chmod 644 redis/tls/redis.crt redis/tls/redis.key redis/tls/truststore.p12 2>/dev/null || true
+    echo "  ✓ Fixed TLS permissions"
+fi
+
 # Clean up backup
 rm -rf "$BACKUP_DIR"
 

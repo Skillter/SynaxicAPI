@@ -181,6 +181,10 @@ initial_install() {
         echo "[OK] Java truststore created."
     else echo "[WARN] Java truststore already exists."; fi
 
+    # Make TLS files readable by Docker containers (world-readable)
+    chmod 644 redis/tls/redis.crt redis/tls/redis.key redis/tls/truststore.p12
+    echo "[OK] TLS file permissions set."
+
     echo ">>> Creating base Redis & PostgreSQL configuration files..."
 
     # Clean up incorrectly created directories
