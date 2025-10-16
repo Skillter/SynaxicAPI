@@ -6,6 +6,8 @@ import dev.skillter.synaxic.config.WebConfig;
 import dev.skillter.synaxic.model.dto.EchoResponse;
 import dev.skillter.synaxic.model.dto.IpResponse;
 import dev.skillter.synaxic.model.dto.WhoAmIResponse;
+import dev.skillter.synaxic.repository.ApiKeyRepository;
+import dev.skillter.synaxic.repository.UserRepository;
 import dev.skillter.synaxic.service.ApiKeyService;
 import dev.skillter.synaxic.service.GeoIpService;
 import dev.skillter.synaxic.service.IpInspectorService;
@@ -19,11 +21,7 @@ import org.redisson.spring.starter.RedissonAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -48,14 +46,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {WebConfig.class, SecurityConfig.class})
         },
         excludeAutoConfiguration = {
-                DataSourceAutoConfiguration.class,
-                DataSourceTransactionManagerAutoConfiguration.class,
-                HibernateJpaAutoConfiguration.class,
-                JpaRepositoriesAutoConfiguration.class,
                 FlywayAutoConfiguration.class,
                 RedissonAutoConfiguration.class,
                 SessionAutoConfiguration.class,
-                CacheAutoConfiguration.class
+                CacheAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration.class
         })
 @Import(TestSecurityConfig.class)
 class IpControllerTest {
@@ -83,6 +86,12 @@ class IpControllerTest {
 
     @MockBean
     private MetricsService metricsService;
+
+    @MockBean
+    private UserRepository userRepository;
+
+    @MockBean
+    private ApiKeyRepository apiKeyRepository;
 
     @Test
     void getIp_ShouldReturnIpAddress() throws Exception {
