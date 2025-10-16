@@ -158,10 +158,19 @@ initial_install() {
     echo ">>> Generating self-signed TLS certificates for Redis..."
     mkdir -p redis/tls
     if [ ! -f "redis/tls/redis.key" ]; then
-        local main_vps_ip_for_cert=$(curl -s ifconfig.me || echo 'localhost')
+        # Try multiple services to get public IP, fallback to hostname or localhost
+        local main_vps_ip_for_cert=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null || \
+                                      curl -s --max-time 5 https://icanhazip.com 2>/dev/null || \
+                                      hostname -I | awk '{print $1}' 2>/dev/null || \
+                                      echo 'localhost')
+        # Validate that we got a valid IP or hostname (not HTML)
+        if [[ "$main_vps_ip_for_cert" =~ \<.*\> ]]; then
+            echo "[WARN] Failed to detect public IP, using 'redis-server' as CN"
+            main_vps_ip_for_cert="redis-server"
+        fi
         openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout redis/tls/redis.key -out redis/tls/redis.crt -subj "/C=US/ST=CA/L=SF/O=Synaxic/CN=${main_vps_ip_for_cert}"
         chmod 640 redis/tls/redis.key
-        echo "[OK] TLS certificates generated."
+        echo "[OK] TLS certificates generated for CN=${main_vps_ip_for_cert}."
     else echo "[WARN] Redis TLS certificates already exist."; fi
 
     if [ ! -f "redis/tls/truststore.p12" ]; then
