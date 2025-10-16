@@ -163,18 +163,42 @@ initial_install() {
     echo ">>> Generating self-signed TLS certificates for Redis..."
     mkdir -p redis/tls
     if [ ! -f "redis/tls/redis.key" ]; then
-        # Try multiple services to get public IP, fallback to hostname or localhost
-        local main_vps_ip_for_cert=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null || \
-                                      curl -s --max-time 5 https://icanhazip.com 2>/dev/null || \
-                                      hostname -I | awk '{print $1}' 2>/dev/null || \
-                                      echo 'localhost')
-        # Validate that we got a valid IP or hostname (not HTML)
-        if [[ "$main_vps_ip_for_cert" =~ \<.*\> ]]; then
-            echo "[WARN] Failed to detect public IP, using 'redis-server' as CN"
-            main_vps_ip_for_cert="redis-server"
+        # Use redis as CN (Docker service name) + SAN for IP
+        local main_vps_ip=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null || \
+                            curl -s --max-time 5 https://icanhazip.com 2>/dev/null || \
+                            hostname -I | awk '{print $1}' 2>/dev/null || \
+                            echo '127.0.0.1')
+        # Validate IP
+        if [[ "$main_vps_ip" =~ \<.*\> ]]; then
+            main_vps_ip="127.0.0.1"
         fi
-        openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout redis/tls/redis.key -out redis/tls/redis.crt -subj "/C=US/ST=CA/L=SF/O=Synaxic/CN=${main_vps_ip_for_cert}"
-        echo "[OK] TLS certificates generated for CN=${main_vps_ip_for_cert}."
+
+        # Create cert with CN=redis and SAN for both redis and IP
+        cat > redis/tls/openssl.cnf << EOF
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = US
+ST = CA
+L = SF
+O = Synaxic
+CN = redis
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = redis
+DNS.2 = localhost
+IP.1 = ${main_vps_ip}
+IP.2 = 127.0.0.1
+EOF
+        openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout redis/tls/redis.key -out redis/tls/redis.crt -config redis/tls/openssl.cnf -extensions v3_req
+        rm redis/tls/openssl.cnf
+        echo "[OK] TLS certificates generated for CN=redis with SAN."
     else echo "[WARN] Redis TLS certificates already exist."; fi
 
     if [ ! -f "redis/tls/truststore.p12" ]; then
