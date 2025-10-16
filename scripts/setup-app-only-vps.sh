@@ -17,7 +17,7 @@ update_configs_with_main_ip() {
     export $(grep -v '^#' .env | xargs)
 
     # --- Docker Compose ---
-    [ -d "docker-compose.app-only.yml" ] && rm -rf "docker-compose.app-only.yml"
+    [ -d "docker-compose.app-only.yml" ] && sudo rm -rf "docker-compose.app-only.yml"
     cat << EOL > docker-compose.app-only.yml
 services:
   app:
@@ -53,7 +53,7 @@ EOL
 
     # --- Redis Replica Config ---
     mkdir -p redis
-    [ -d "redis/redis-replica.conf" ] && rm -rf "redis/redis-replica.conf"
+    [ -d "redis/redis-replica.conf" ] && sudo rm -rf "redis/redis-replica.conf"
     cat << EOL > redis/redis-replica.conf
 port 6379
 replicaof ${main_ip} 6380
