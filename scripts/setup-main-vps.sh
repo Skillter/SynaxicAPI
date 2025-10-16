@@ -227,8 +227,10 @@ tls-port 6380
 tls-cert-file /usr/local/etc/redis/tls/redis.crt
 tls-key-file /usr/local/etc/redis/tls/redis.key
 tls-auth-clients no
-# Set the working directory for data persistence
 dir /data
+# Disable disk persistence to avoid permission issues
+save ""
+stop-writes-on-bgsave-error no
 EOL
     cat << EOL > postgres/master/postgresql.conf
 listen_addresses = '*'
