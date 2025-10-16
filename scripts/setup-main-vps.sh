@@ -22,6 +22,7 @@ update_configs() {
 
     # --- Nginx Config ---
     mkdir -p nginx
+    [ -d "nginx/nginx.conf" ] && rm -rf "nginx/nginx.conf"
     cat << EOL > nginx/nginx.conf
 user www-data;
 worker_processes auto;
@@ -59,6 +60,7 @@ EOL
     # We will assume that for replicas, we need to scrape their public IPs.
     local targets_string="'app-main:8080'"
     for ip in "${ips[@]}"; do targets_string+=", '$ip:8080'"; done
+    [ -d "prometheus.prod.yml" ] && rm -rf "prometheus.prod.yml"
     cat << EOL > prometheus.prod.yml
 global:
   scrape_interval: 15s
@@ -73,6 +75,7 @@ EOL
 
     # --- PostgreSQL HBA Config ---
     mkdir -p postgres/master
+    [ -d "postgres/master/pg_hba.conf" ] && rm -rf "postgres/master/pg_hba.conf"
     cat << EOL > postgres/master/pg_hba.conf
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 # Allow all connections from the local docker network
@@ -180,6 +183,12 @@ initial_install() {
 
     echo ">>> Creating base Redis & PostgreSQL configuration files..."
     mkdir -p redis; mkdir -p postgres/master
+
+    # Remove any incorrectly created directories that should be files
+    [ -d "redis/redis.conf" ] && rm -rf "redis/redis.conf"
+    [ -d "postgres/master/postgresql.conf" ] && rm -rf "postgres/master/postgresql.conf"
+    [ -d "postgres/master/pg_hba.conf" ] && rm -rf "postgres/master/pg_hba.conf"
+
     export $(grep -v '^#' .env | xargs)
     cat << EOL > redis/redis.conf
 bind 0.0.0.0

@@ -17,6 +17,7 @@ update_configs_with_main_ip() {
     export $(grep -v '^#' .env | xargs)
 
     # --- Docker Compose ---
+    [ -d "docker-compose.replica.yml" ] && rm -rf "docker-compose.replica.yml"
     cat << EOL > docker-compose.replica.yml
 services:
   app-replica:
@@ -59,6 +60,7 @@ EOL
 
     # --- Redis Replica Config ---
     mkdir -p redis
+    [ -d "redis/redis-replica.conf" ] && rm -rf "redis/redis-replica.conf"
     cat << EOL > redis/redis-replica.conf
 port 6379
 replicaof ${main_ip} 6380
@@ -74,6 +76,7 @@ EOL
 
     # --- PostgreSQL Replica Entrypoint ---
     mkdir -p postgres/replica
+    [ -d "postgres/replica/entrypoint.sh" ] && rm -rf "postgres/replica/entrypoint.sh"
     cat << EOL > postgres/replica/entrypoint.sh
 #!/bin/bash
 set -e
