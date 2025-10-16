@@ -1,6 +1,8 @@
 package dev.skillter.synaxic.controller.v1;
 
+import dev.skillter.synaxic.config.SecurityConfig;
 import dev.skillter.synaxic.config.TestSecurityConfig;
+import dev.skillter.synaxic.config.WebConfig;
 import dev.skillter.synaxic.model.dto.EchoResponse;
 import dev.skillter.synaxic.model.dto.IpResponse;
 import dev.skillter.synaxic.model.dto.WhoAmIResponse;
@@ -15,13 +17,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.redisson.spring.starter.RedissonAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,13 +44,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = IpController.class,
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {WebConfig.class, SecurityConfig.class})
+        },
         excludeAutoConfiguration = {
                 DataSourceAutoConfiguration.class,
                 DataSourceTransactionManagerAutoConfiguration.class,
                 HibernateJpaAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
                 FlywayAutoConfiguration.class,
                 RedissonAutoConfiguration.class,
-                SessionAutoConfiguration.class
+                SessionAutoConfiguration.class,
+                CacheAutoConfiguration.class
         })
 @Import(TestSecurityConfig.class)
 class IpControllerTest {
