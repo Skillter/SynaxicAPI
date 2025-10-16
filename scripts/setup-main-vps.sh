@@ -78,8 +78,9 @@ EOL
     [ -d "postgres/master/pg_hba.conf" ] && sudo rm -rf "postgres/master/pg_hba.conf"
     cat << EOL > postgres/master/pg_hba.conf
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
-# Allow all connections from the local docker network
+# Allow all connections from Docker networks
 host    all             all             172.16.0.0/12           scram-sha-256
+host    all             all             192.168.0.0/16          scram-sha-256
 local   all             all                                     trust
 host    all             all             127.0.0.1/32            scram-sha-256
 host    all             all             ::1/128                 scram-sha-256
