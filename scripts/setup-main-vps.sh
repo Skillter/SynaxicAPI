@@ -182,13 +182,12 @@ initial_install() {
     else echo "[WARN] Java truststore already exists."; fi
 
     echo ">>> Creating base Redis & PostgreSQL configuration files..."
-    mkdir -p redis; mkdir -p postgres/master
 
-    # Remove any incorrectly created directories that should be files
+    # Clean up incorrectly created directories
     [ -d "redis/redis.conf" ] && sudo rm -rf "redis/redis.conf"
-    [ -d "postgres/master/postgresql.conf" ] && sudo rm -rf "postgres/master/postgresql.conf"
-    [ -d "postgres/master/pg_hba.conf" ] && sudo rm -rf "postgres/master/pg_hba.conf"
+    [ -d "postgres/master" ] && sudo rm -rf "postgres/master"
 
+    mkdir -p redis postgres/master
     export $(grep -v '^#' .env | xargs)
     cat << EOL > redis/redis.conf
 bind 0.0.0.0
