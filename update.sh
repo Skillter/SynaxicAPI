@@ -39,11 +39,66 @@ echo "Fixing repository permissions..."
 sudo chown -R $(whoami):$(whoami) "$SCRIPT_DIR/.git" 2>/dev/null || true
 sudo chmod -R u+w "$SCRIPT_DIR/.git" 2>/dev/null || true
 
+# === BACKUP GENERATED CONFIG FILES ===
+echo "Backing up generated configuration files..."
+BACKUP_DIR=$(mktemp -d)
+FILES_TO_PRESERVE=(
+    ".env"
+    "nginx/replica_ips.txt"
+    "nginx/nginx.conf"
+    "prometheus.prod.yml"
+    "prometheus-prod.yml"
+    "postgres/master/pg_hba.conf"
+    "postgres/master/postgresql.conf"
+    "redis/redis.conf"
+    "redis/tls/redis.key"
+    "redis/tls/redis.crt"
+    "redis/tls/truststore.p12"
+    "docker-compose.replica.yml"
+    "docker-compose.app-only.yml"
+    "config/main_vps_ip.txt"
+)
+
+for file in "${FILES_TO_PRESERVE[@]}"; do
+    if [ -f "$file" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$file")"
+        cp -p "$file" "$BACKUP_DIR/$file"
+        echo "  ✓ Backed up: $file"
+    fi
+done
+
 # Force pull latest changes
 echo "Fetching latest changes..."
 git fetch "$GIT_AUTH_URL"
 git reset --hard FETCH_HEAD
 git clean -fd
+
+# === RESTORE BACKED UP FILES ===
+echo "Restoring configuration files..."
+for file in "${FILES_TO_PRESERVE[@]}"; do
+    if [ -f "$BACKUP_DIR/$file" ]; then
+        mkdir -p "$(dirname "$file")"
+        cp -p "$BACKUP_DIR/$file" "$file"
+        echo "  ✓ Restored: $file"
+    fi
+done
+
+# Clean up backup
+rm -rf "$BACKUP_DIR"
+
+# === REGENERATE CONFIG FILES IF NEEDED ===
+echo "Checking configuration files..."
+if [ -f "nginx/replica_ips.txt" ] && [ ! -f "prometheus.prod.yml" ]; then
+    echo ">>> Detected missing config files. Regenerating..."
+    if [ -f "scripts/setup-main-vps.sh" ]; then
+        # Source the setup script to use its update_configs function
+        source scripts/setup-main-vps.sh
+        update_configs
+        echo "[OK] Configuration files regenerated."
+    else
+        echo "[WARN] setup-main-vps.sh not found. You may need to run it manually."
+    fi
+fi
 
 # Make all files executable
 sudo chmod -R +x "$SCRIPT_DIR"
