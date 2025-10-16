@@ -84,7 +84,8 @@ for file in "${FILES_TO_PRESERVE[@]}"; do
     fi
 done
 
-git clean -fd
+# Use sudo for git clean to handle root-owned files
+sudo git clean -fd 2>/dev/null || git clean -fd
 
 # === RESTORE BACKED UP FILES ===
 echo "Restoring configuration files..."
