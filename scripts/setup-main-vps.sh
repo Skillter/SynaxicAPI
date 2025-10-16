@@ -101,7 +101,7 @@ initial_install() {
 
     echo ">>> Updating system packages and installing dependencies..."
     sudo apt-get update
-    sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common openssl nginx
+    sudo apt-get install -y apt-transport-https ca-certificates curl openssl nginx
 
     if ! command -v docker &> /dev/null; then
         echo ">>> Installing Docker..."
