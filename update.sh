@@ -62,8 +62,11 @@ FILES_TO_PRESERVE=(
 for file in "${FILES_TO_PRESERVE[@]}"; do
     if [ -f "$file" ]; then
         mkdir -p "$BACKUP_DIR/$(dirname "$file")"
-        cp -p "$file" "$BACKUP_DIR/$file"
+        sudo cp -p "$file" "$BACKUP_DIR/$file" 2>/dev/null || cp -p "$file" "$BACKUP_DIR/$file"
         echo "  ✓ Backed up: $file"
+    elif [ -d "$file" ]; then
+        # Handle cases where a file path is actually a directory (incorrect state)
+        echo "  ⚠ Skipped (is a directory): $file"
     fi
 done
 
@@ -71,6 +74,16 @@ done
 echo "Fetching latest changes..."
 git fetch "$GIT_AUTH_URL"
 git reset --hard FETCH_HEAD
+
+# Clean up any incorrectly created directories before git clean
+echo "Cleaning up incorrect directory structures..."
+for file in "${FILES_TO_PRESERVE[@]}"; do
+    if [ -d "$file" ] && [ ! -L "$file" ]; then
+        echo "  Removing incorrect directory: $file"
+        sudo rm -rf "$file" 2>/dev/null || true
+    fi
+done
+
 git clean -fd
 
 # === RESTORE BACKED UP FILES ===
