@@ -90,6 +90,8 @@ EOL
     # --- Set Correct Permissions ---
     echo ">>> Setting ownership for config directories..."
     sudo chown -R $(id -u):$(id -g) nginx redis postgres
+    # Make TLS files readable by Docker containers
+    chmod 644 redis/tls/redis.crt redis/tls/redis.key redis/tls/truststore.p12 2>/dev/null || true
     echo "[OK] Permissions set."
 
     echo ""
@@ -172,7 +174,6 @@ initial_install() {
             main_vps_ip_for_cert="redis-server"
         fi
         openssl req -x509 -nodes -newkey rsa:2048 -days 365 -keyout redis/tls/redis.key -out redis/tls/redis.crt -subj "/C=US/ST=CA/L=SF/O=Synaxic/CN=${main_vps_ip_for_cert}"
-        chmod 640 redis/tls/redis.key
         echo "[OK] TLS certificates generated for CN=${main_vps_ip_for_cert}."
     else echo "[WARN] Redis TLS certificates already exist."; fi
 
@@ -181,7 +182,7 @@ initial_install() {
         echo "[OK] Java truststore created."
     else echo "[WARN] Java truststore already exists."; fi
 
-    # Make TLS files readable by Docker containers (world-readable)
+    # Make TLS files readable by Docker containers
     chmod 644 redis/tls/redis.crt redis/tls/redis.key redis/tls/truststore.p12
     echo "[OK] TLS file permissions set."
 
