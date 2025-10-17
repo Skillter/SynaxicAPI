@@ -233,24 +233,138 @@ dir /data
 save ""
 stop-writes-on-bgsave-error no
 EOL
-    cat << EOL > postgres/master/postgresql.conf
+    # Use the comprehensive PostgreSQL master config if it doesn't exist
+    if [ ! -f "postgres/master/postgresql.conf" ] || [ ! -s "postgres/master/postgresql.conf" ]; then
+        cat << EOL > postgres/master/postgresql.conf
+# PostgreSQL Master Configuration for Streaming Replication
+
+# Connection Settings
 listen_addresses = '*'
 max_connections = 100
-shared_buffers = 128MB
-dynamic_shared_memory_type = posix
+
+# Write Ahead Log (WAL) Settings
 wal_level = replica
-max_wal_senders = 10
+max_wal_senders = 3
+max_replication_slots = 3
 wal_keep_size = 256MB
+
+# Archiving (optional but recommended)
+archive_mode = on
+archive_command = 'test ! -f /var/lib/postgresql/data/archive/%f && cp %p /var/lib/postgresql/data/archive/%f'
+
+# Hot Standby (allows read queries on replica)
 hot_standby = on
+
+# Logging
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
+log_line_prefix = '%m [%p] %u@%d '
+log_timezone = 'UTC'
+
+# Performance
+shared_buffers = 256MB
+effective_cache_size = 1GB
+maintenance_work_mem = 64MB
+checkpoint_completion_target = 0.9
+wal_buffers = 16MB
+default_statistics_target = 100
+random_page_cost = 1.1
+effective_io_concurrency = 200
+work_mem = 4MB
+min_wal_size = 1GB
+max_wal_size = 4GB
 EOL
+    fi
     echo "[OK] Base config files created."
 
     echo "=================================================="
     echo "Main VPS initial setup is complete!"
     echo "--------------------------------------------------"
     echo "You can now start your services with: docker-compose -f docker-compose.prod.yml up --build -d"
+    echo ""
+    echo "IMPORTANT: After starting services, run the following to set up replication:"
+    echo "  ./scripts/setup-master.sh"
+    echo ""
     echo "Use this script with --add-replica, --remove-replica, or --update to manage your cluster."
     echo "=================================================="
+}
+
+setup_replication_user() {
+    echo "======================================"
+    echo "Setting up PostgreSQL Replication User"
+    echo "======================================"
+
+    # Check if containers are running
+    if ! docker ps | grep -q synaxic-postgres-prod; then
+        echo "[ERROR] PostgreSQL container is not running. Start services first:"
+        echo "  docker-compose -f docker-compose.prod.yml up -d"
+        exit 1
+    fi
+
+    # Source .env file
+    if [ -f ".env" ]; then
+        export $(grep -v '^#' .env | xargs)
+    fi
+
+    REPLICATOR_USER="${POSTGRES_REPLICATOR_USER:-replicator}"
+    REPLICATOR_PASSWORD="${POSTGRES_REPLICATOR_PASSWORD}"
+    POSTGRES_USER="${POSTGRES_USER:-synaxic}"
+    POSTGRES_DB="${POSTGRES_DB:-synaxic}"
+
+    # Generate replicator password if not exists
+    if [ -z "$REPLICATOR_PASSWORD" ]; then
+        echo ">>> Generating replication user password..."
+        REPLICATOR_PASSWORD=$(openssl rand -base64 24)
+        if ! grep -q "POSTGRES_REPLICATOR_PASSWORD=" .env; then
+            echo "POSTGRES_REPLICATOR_PASSWORD=${REPLICATOR_PASSWORD}" >> .env
+        else
+            sed -i "s|^POSTGRES_REPLICATOR_PASSWORD=.*|POSTGRES_REPLICATOR_PASSWORD=${REPLICATOR_PASSWORD}|" .env
+        fi
+        echo "[OK] Replication password generated and saved to .env"
+    fi
+
+    if [ -z "$REPLICATOR_USER" ] || ! grep -q "POSTGRES_REPLICATOR_USER=" .env; then
+        echo "POSTGRES_REPLICATOR_USER=replicator" >> .env
+        REPLICATOR_USER="replicator"
+    fi
+
+    echo "Creating replication user '$REPLICATOR_USER'..."
+
+    # Create replication user (idempotent)
+    docker exec synaxic-postgres-prod psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<-EOSQL 2>&1 | grep -v "already exists" || true
+        -- Create replication user if not exists
+        DO \$\$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$REPLICATOR_USER') THEN
+                CREATE ROLE $REPLICATOR_USER WITH REPLICATION LOGIN PASSWORD '$REPLICATOR_PASSWORD';
+                RAISE NOTICE 'Replication user created';
+            ELSE
+                -- Update password if user exists
+                ALTER ROLE $REPLICATOR_USER WITH PASSWORD '$REPLICATOR_PASSWORD';
+                RAISE NOTICE 'Replication user already exists, password updated';
+            END IF;
+        END
+        \$\$;
+
+        -- Grant necessary permissions
+        GRANT CONNECT ON DATABASE $POSTGRES_DB TO $REPLICATOR_USER;
+EOSQL
+
+    echo ""
+    echo "======================================"
+    echo "Replication user setup complete!"
+    echo "======================================"
+    echo "Replication user: $REPLICATOR_USER"
+    echo "Password saved in .env file"
+    echo ""
+    echo "Next steps:"
+    echo "1. Ensure firewall allows connections from replica VPS on port 5432"
+    echo "2. Copy .env and redis/tls/ to replica VPS"
+    echo "3. Run setup-replica-vps.sh on the replica VPS"
 }
 
 interactive_update() {
@@ -315,6 +429,9 @@ case "$1" in
         initial_install
         update_configs
         ;;
+    --setup-replication)
+        setup_replication_user
+        ;;
     --add-replica)
         if [ -z "$2" ]; then echo "Usage: $0 --add-replica <ip_address>"; exit 1; fi
         mkdir -p "$(dirname "$REPLICA_IP_FILE")"
@@ -346,7 +463,14 @@ case "$1" in
             update_configs
         else
             echo "Existing installation found. Use --install to force re-installation."
-            echo "Usage: $0 [--install|--add-replica <ip>|--remove-replica <ip>|--update]"
+            echo "Usage: $0 [--install|--setup-replication|--add-replica <ip>|--remove-replica <ip>|--update]"
+            echo ""
+            echo "Options:"
+            echo "  --install              Run initial installation"
+            echo "  --setup-replication    Configure PostgreSQL replication user (run after starting services)"
+            echo "  --add-replica <ip>     Add a replica server IP to the cluster"
+            echo "  --remove-replica <ip>  Remove a replica server IP from the cluster"
+            echo "  --update               Interactive replica management"
         fi
         ;;
 esac
