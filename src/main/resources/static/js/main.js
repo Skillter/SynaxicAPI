@@ -1,0 +1,559 @@
+// API Configuration
+const API_BASE_URL = window.location.origin;
+
+// Cookie Consent Management (GDPR Compliant)
+const CookieConsent = {
+    STORAGE_KEY: 'synaxic_cookie_consent',
+
+    init() {
+        const consent = this.getConsent();
+        if (!consent) {
+            this.showBanner();
+        } else {
+            this.applyConsent(consent);
+        }
+
+        // Event listeners
+        document.getElementById('cookie-accept-all').addEventListener('click', () => this.acceptAll());
+        document.getElementById('cookie-essential').addEventListener('click', () => this.acceptEssential());
+        document.getElementById('cookie-decline').addEventListener('click', () => this.declineAll());
+    },
+
+    showBanner() {
+        const banner = document.getElementById('cookie-consent');
+        banner.classList.remove('hidden');
+    },
+
+    hideBanner() {
+        const banner = document.getElementById('cookie-consent');
+        banner.classList.add('hidden');
+    },
+
+    getConsent() {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
+    },
+
+    saveConsent(consent) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(consent));
+    },
+
+    acceptAll() {
+        const consent = { essential: true, analytics: true, timestamp: Date.now() };
+        this.saveConsent(consent);
+        this.applyConsent(consent);
+        this.hideBanner();
+    },
+
+    acceptEssential() {
+        const consent = { essential: true, analytics: false, timestamp: Date.now() };
+        this.saveConsent(consent);
+        this.applyConsent(consent);
+        this.hideBanner();
+    },
+
+    declineAll() {
+        const consent = { essential: false, analytics: false, timestamp: Date.now() };
+        this.saveConsent(consent);
+        this.applyConsent(consent);
+        this.hideBanner();
+    },
+
+    applyConsent(consent) {
+        // Essential cookies are always enabled for session management
+        // Analytics can be conditionally enabled based on consent
+        if (consent.analytics) {
+            console.log('Analytics cookies enabled');
+            // Initialize analytics here if needed
+        }
+    }
+};
+
+// Mobile Menu Toggle
+const MobileMenu = {
+    init() {
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menuBtn.contains(e.target) && !navLinks.contains(e.target)) {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Close menu when clicking on a link
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+    }
+};
+
+// Stats Fetching
+const Stats = {
+    currentStats: { totalRequests: 0, totalUsers: 0 },
+
+    async init() {
+        await this.fetchStats();
+        // Refresh stats every 5 seconds for live updates
+        setInterval(() => this.fetchStats(), 5000);
+    },
+
+    async fetchStats() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/stats`);
+            if (response.ok) {
+                const data = await response.json();
+                this.updateDisplay(data);
+            } else {
+                this.showPlaceholder();
+            }
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+            this.showPlaceholder();
+        }
+    },
+
+    updateDisplay(data) {
+        const requestsEl = document.getElementById('total-requests');
+        const usersEl = document.getElementById('total-users');
+
+        // Update requests with animation
+        if (data.totalRequests !== this.currentStats.totalRequests) {
+            this.animateNumberChange(requestsEl, this.currentStats.totalRequests, data.totalRequests);
+        } else if (requestsEl.textContent === 'Loading...') {
+            // Initial load - set the value even if it's the same as current
+            requestsEl.textContent = this.formatNumber(data.totalRequests);
+        }
+        this.currentStats.totalRequests = data.totalRequests;
+
+        // Update users with animation
+        if (data.totalUsers !== this.currentStats.totalUsers) {
+            this.animateNumberChange(usersEl, this.currentStats.totalUsers, data.totalUsers);
+        } else if (usersEl.textContent === 'Loading...') {
+            // Initial load - set the value even if it's the same as current
+            usersEl.textContent = this.formatNumber(data.totalUsers);
+        }
+        this.currentStats.totalUsers = data.totalUsers;
+    },
+
+    animateNumberChange(element, oldValue, newValue) {
+        const newText = this.formatNumber(newValue);
+        const direction = newValue > oldValue ? 'up' : 'down';
+
+        // Add animation class
+        element.classList.add(`number-animate-${direction}`);
+
+        // Update text immediately
+        element.textContent = newText;
+
+        // Remove animation class after animation completes to reset for next animation
+        setTimeout(() => {
+            element.classList.remove(`number-animate-${direction}`);
+        }, 600); // Match CSS animation duration
+    },
+
+    showPlaceholder() {
+        const requestsEl = document.getElementById('total-requests');
+        const usersEl = document.getElementById('total-users');
+
+        requestsEl.textContent = '---';
+        usersEl.textContent = '---';
+    },
+
+    formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
+};
+
+// OAuth Login
+const Auth = {
+    init() {
+        const loginBtn = document.getElementById('login-btn');
+        loginBtn.addEventListener('click', () => this.login());
+    },
+
+    login() {
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
+    }
+};
+
+// API Demo Playground
+const APIDemo = {
+    currentEndpoint: 'ip',
+    currentLang: 'curl',
+
+    init() {
+        const endpointSelect = document.getElementById('api-endpoint');
+        const executeBtn = document.getElementById('demo-execute');
+        const copyBtn = document.getElementById('copy-code');
+
+        endpointSelect.addEventListener('change', (e) => {
+            this.currentEndpoint = e.target.value;
+            this.renderInputs();
+            this.updateCodeExample();
+        });
+
+        executeBtn.addEventListener('click', () => this.executeRequest());
+
+        copyBtn.addEventListener('click', () => this.copyCode());
+
+        // Code language tabs
+        document.querySelectorAll('.code-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentLang = e.target.dataset.lang;
+                this.updateCodeExample();
+            });
+        });
+
+        // Initialize with default endpoint
+        this.renderInputs();
+        this.updateCodeExample();
+    },
+
+    renderInputs() {
+        const container = document.getElementById('demo-inputs');
+        const configs = {
+            ip: [],
+            whoami: [],
+            email: [
+                { name: 'email', label: 'Email Address', type: 'text', placeholder: 'user@example.com', required: true }
+            ],
+            unit: [
+                { name: 'from', label: 'From Unit', type: 'select', options: ['mi', 'km', 'ft', 'm', 'yd', 'in', 'cm'], required: true },
+                { name: 'to', label: 'To Unit', type: 'select', options: ['km', 'mi', 'm', 'ft', 'cm', 'in', 'yd'], required: true },
+                { name: 'value', label: 'Value', type: 'number', placeholder: '100', required: true }
+            ],
+            byte: [
+                { name: 'from', label: 'From Unit', type: 'select', options: ['B', 'KB', 'MB', 'GB', 'TB', 'KiB', 'MiB', 'GiB', 'TiB'], required: true },
+                { name: 'to', label: 'To Unit', type: 'select', options: ['KB', 'MB', 'GB', 'TB', 'B', 'KiB', 'MiB', 'GiB', 'TiB'], required: true },
+                { name: 'value', label: 'Value', type: 'number', placeholder: '1024', required: true }
+            ],
+            color: [
+                { name: 'from', label: 'From Format', type: 'select', options: ['hex', 'rgb', 'hsl'], required: true },
+                { name: 'to', label: 'To Format', type: 'select', options: ['rgb', 'hsl', 'hex'], required: true },
+                { name: 'value', label: 'Color Value', type: 'text', placeholder: '#ffcc00 or rgb(255,204,0)', required: true }
+            ],
+            contrast: [
+                { name: 'fg', label: 'Foreground Color (HEX)', type: 'text', placeholder: '#000000', required: true },
+                { name: 'bg', label: 'Background Color (HEX)', type: 'text', placeholder: '#ffffff', required: true }
+            ]
+        };
+
+        const inputs = configs[this.currentEndpoint] || [];
+
+        if (inputs.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No parameters required for this endpoint.</p>';
+            return;
+        }
+
+        container.innerHTML = inputs.map(input => {
+            if (input.type === 'select') {
+                return `
+                    <div class="input-group">
+                        <label for="input-${input.name}">${input.label}${input.required ? ' *' : ''}</label>
+                        <select id="input-${input.name}" ${input.required ? 'required' : ''}>
+                            ${input.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="input-group">
+                        <label for="input-${input.name}">${input.label}${input.required ? ' *' : ''}</label>
+                        <input
+                            type="${input.type}"
+                            id="input-${input.name}"
+                            placeholder="${input.placeholder || ''}"
+                            ${input.required ? 'required' : ''}
+                        >
+                    </div>
+                `;
+            }
+        }).join('');
+    },
+
+    getInputValues() {
+        const inputs = document.querySelectorAll('#demo-inputs input, #demo-inputs select');
+        const values = {};
+        inputs.forEach(input => {
+            const name = input.id.replace('input-', '');
+            values[name] = input.value;
+        });
+        return values;
+    },
+
+    buildURL() {
+        const endpoints = {
+            ip: '/v1/ip',
+            whoami: '/v1/whoami',
+            email: '/v1/email/validate',
+            unit: '/v1/convert/units',
+            byte: '/v1/convert/bytes',
+            color: '/v1/color/convert',
+            contrast: '/v1/color/contrast'
+        };
+
+        const base = endpoints[this.currentEndpoint];
+        const params = this.getInputValues();
+
+        if (Object.keys(params).length === 0) {
+            return `${API_BASE_URL}${base}`;
+        }
+
+        const query = new URLSearchParams(params).toString();
+        return `${API_BASE_URL}${base}?${query}`;
+    },
+
+    async executeRequest() {
+        const outputEl = document.getElementById('demo-output');
+        const statusEl = document.getElementById('response-status');
+        const timeEl = document.getElementById('response-time');
+
+        outputEl.textContent = 'Loading...';
+        statusEl.textContent = '';
+        timeEl.textContent = '';
+
+        const startTime = performance.now();
+
+        try {
+            const url = this.buildURL();
+            const response = await fetch(url);
+            const endTime = performance.now();
+            const duration = Math.round(endTime - startTime);
+
+            const data = await response.json();
+
+            outputEl.textContent = JSON.stringify(data, null, 2);
+
+            statusEl.textContent = `${response.status} ${response.statusText}`;
+            statusEl.className = `response-status ${response.ok ? 'success' : 'error'}`;
+
+            timeEl.textContent = `${duration}ms`;
+        } catch (error) {
+            const endTime = performance.now();
+            const duration = Math.round(endTime - startTime);
+
+            outputEl.textContent = `Error: ${error.message}`;
+            statusEl.textContent = 'Error';
+            statusEl.className = 'response-status error';
+            timeEl.textContent = `${duration}ms`;
+        }
+    },
+
+    updateCodeExample() {
+        const codeEl = document.getElementById('code-example');
+        const url = this.buildURL();
+
+        const examples = {
+            curl: `curl -X GET "${url}" \\
+  -H "Accept: application/json"`,
+
+            javascript: `fetch('${url}', {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json'
+  }
+})
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch(error => console.error('Error:', error));`,
+
+            java: `import java.net.http.*;
+import java.net.URI;
+
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("${url}"))
+    .header("Accept", "application/json")
+    .GET()
+    .build();
+
+HttpResponse<String> response = client.send(
+    request,
+    HttpResponse.BodyHandlers.ofString()
+);
+
+System.out.println(response.body());`
+        };
+
+        codeEl.textContent = examples[this.currentLang] || examples.curl;
+    },
+
+    copyCode() {
+        const codeEl = document.getElementById('code-example');
+        const text = codeEl.textContent;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copy-code');
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    }
+};
+
+// Smooth Scroll for Navigation Links
+const SmoothScroll = {
+    init() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    const offset = 80; // Navbar height
+                    const targetPosition = target.offsetTop - offset;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    }
+};
+
+// Navbar Scroll Effect
+const Navbar = {
+    init() {
+        const navbar = document.querySelector('.navbar');
+        if (!navbar) return;
+
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll <= 0) {
+                navbar.style.boxShadow = 'none';
+            } else {
+                navbar.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.3)';
+            }
+
+            lastScroll = currentScroll;
+        });
+    }
+};
+
+// Scroll Progress Indicator
+const ScrollProgress = {
+    init() {
+        // Create progress bar
+        const progressBar = document.createElement('div');
+        progressBar.className = 'scroll-progress';
+        document.body.appendChild(progressBar);
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+            progressBar.style.width = scrollPercent + '%';
+        });
+    }
+};
+
+// Parallax Effect
+const Parallax = {
+    init() {
+        const elements = document.querySelectorAll('.hero-background');
+
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            elements.forEach(el => {
+                const speed = 0.5;
+                el.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+    }
+};
+
+// Number Counter Animation
+const CounterAnimation = {
+    animateValue(element, start, end, duration) {
+        const range = end - start;
+        const increment = end > start ? 1 : -1;
+        const stepTime = Math.abs(Math.floor(duration / range));
+        let current = start;
+
+        const timer = setInterval(() => {
+            current += increment;
+            if (element.textContent) {
+                element.textContent = this.formatNumber(current);
+            }
+            if (current === end) {
+                clearInterval(timer);
+            }
+        }, stepTime);
+    },
+
+    formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
+};
+
+// Intersection Observer for Animation on Scroll
+const AnimateOnScroll = {
+    init() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+
+                    // Remove inline styles after animation completes to allow CSS hover effects
+                    setTimeout(() => {
+                        entry.target.style.opacity = '';
+                        entry.target.style.transform = '';
+                        entry.target.style.transition = '';
+                    }, 600); // Match animation duration
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .stack-card, .contact-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    }
+};
+
+// Initialize Everything
+document.addEventListener('DOMContentLoaded', () => {
+    CookieConsent.init();
+    MobileMenu.init();
+    Stats.init();
+    Auth.init();
+    APIDemo.init();
+    SmoothScroll.init();
+    Navbar.init();
+    AnimateOnScroll.init();
+    ScrollProgress.init();
+    Parallax.init();
+});

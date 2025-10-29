@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Analytics Dashboard - Synaxic API - Real-time performance metrics">
+    <title>Analytics - Synaxic API</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Synaxic API</span>
+            </a>
+            <div class="nav-links">
+                <a href="/#features">Features</a>
+                <a href="/#demo">Demo</a>
+                <a href="/swagger-ui.html" target="_blank">API Docs</a>
+                <a href="/">Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" style="min-height: 35vh; padding-top: 120px; padding-bottom: 40px;">
+        <div class="hero-background"></div>
+        <div class="container hero-content">
+            <h1 class="hero-title" style="font-size: clamp(32px, 5vw, 56px);">
+                <span class="gradient-text">Analytics Dashboard</span>
+            </h1>
+            <p class="hero-subtitle" style="max-width: 600px;">
+                Real-time performance metrics and usage statistics.
+            </p>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section style="padding: 60px 0 80px; background: var(--bg-secondary);">
+        <div class="container">
+
+            <!-- Stats Grid -->
+            <div class="analytics-stats-grid">
+                <div class="analytics-stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-value" id="total-requests-stat">Loading...</div>
+                    </div>
+                </div>
+                <div class="analytics-stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Registered Users</div>
+                        <div class="stat-value" id="total-users-stat">Loading...</div>
+                    </div>
+                </div>
+                <div class="analytics-stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Avg Response Time</div>
+                        <div class="stat-value" id="avg-response-time">Loading...</div>
+                    </div>
+                </div>
+                <div class="analytics-stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="success-rate">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Required Notice -->
+            <div id="login-required" class="login-notice" style="display: none;">
+                <div class="notice-icon">🔐</div>
+                <h3>Authentication Required</h3>
+                <p>Advanced analytics require API key authentication. Sign in with Google to access detailed metrics.</p>
+                <button class="btn btn-primary btn-large" onclick="window.location.href='/oauth2/authorization/google'">
+                    Sign In with Google
+                </button>
+            </div>
+
+            <!-- Detailed Analytics (requires auth) -->
+            <div id="detailed-analytics" style="display: none;">
+
+                <!-- System Health -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">💚</span>
+                        System Health
+                    </h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="card-label">Uptime</div>
+                            <div class="card-value" id="uptime">0d 0h 0m</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Memory Usage</div>
+                            <div class="card-value" id="memory-usage">N/A</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Cache Hit Rate</div>
+                            <div class="card-value" id="cache-hit-rate">N/A</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Latency Stats -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">⏱️</span>
+                        Response Time Percentiles
+                    </h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="card-label">P50 (Median)</div>
+                            <div class="card-value" id="latency-p50">N/A</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">P95</div>
+                            <div class="card-value" id="latency-p95">N/A</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">P99</div>
+                            <div class="card-value" id="latency-p99">N/A</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Breakdown -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">📈</span>
+                        Requests by Endpoint
+                    </h2>
+                    <div id="endpoint-breakdown" class="breakdown-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Error Breakdown -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">⚠️</span>
+                        Error Distribution
+                    </h2>
+                    <div id="error-breakdown" class="breakdown-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Top API Keys -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">🔑</span>
+                        Top API Keys
+                    </h2>
+                    <div id="apikey-breakdown" class="breakdown-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Top Countries -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">🌍</span>
+                        Top Countries
+                    </h2>
+                    <div id="country-breakdown" class="breakdown-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Synaxic API</span>
+                    <p>Enterprise-grade developer utilities</p>
+                </div>
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Skillter. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .analytics-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .analytics-stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: var(--transition);
+            animation: slideIn 0.5s ease-out backwards;
+        }
+
+        .analytics-stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .analytics-stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .analytics-stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .analytics-stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .analytics-stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.3);
+        }
+
+        .stat-icon {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-notice {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+            border-radius: var(--border-radius);
+            padding: 48px;
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out 0.5s both;
+        }
+
+        .notice-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .login-notice h3 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .login-notice p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 24px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .analytics-section {
+            margin-bottom: 48px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .section-heading {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .heading-icon {
+            font-size: 32px;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .analytics-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            transition: var(--transition);
+        }
+
+        .analytics-card:hover {
+            border-color: var(--primary);
+            transform: scale(1.03);
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-light);
+        }
+
+        .breakdown-list {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 24px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .breakdown-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .breakdown-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .breakdown-bar-fill {
+            height: 100%;
+            background: var(--gradient-1);
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+
+    <script>
+        // Fetch public stats
+        async function fetchPublicStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                document.getElementById('total-requests-stat').textContent = data.totalRequests.toLocaleString();
+                document.getElementById('total-users-stat').textContent = data.totalUsers.toLocaleString();
+            } catch (error) {
+                console.error('Error fetching public stats:', error);
+                document.getElementById('total-requests-stat').textContent = 'N/A';
+                document.getElementById('total-users-stat').textContent = 'N/A';
+            }
+        }
+
+        // Fetch detailed analytics (requires auth)
+        async function fetchDetailedAnalytics() {
+            try {
+                const response = await fetch('/v1/admin/stats', {
+                    credentials: 'include'
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    // Not authenticated
+                    document.getElementById('login-required').style.display = 'block';
+                    document.getElementById('avg-response-time').textContent = 'N/A';
+                    document.getElementById('success-rate').textContent = 'N/A';
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Show detailed analytics
+                document.getElementById('detailed-analytics').style.display = 'block';
+
+                // Update top stats
+                const avgLatency = data.latency?.p50_ms || 0;
+                document.getElementById('avg-response-time').textContent = avgLatency.toFixed(0) + ' ms';
+
+                const totalErrors = (data.requests?.clientErrorCount || 0) + (data.requests?.serverErrorCount || 0);
+                const successRate = data.requests?.total > 0
+                    ? (((data.requests.total - totalErrors) / data.requests.total) * 100).toFixed(1)
+                    : '100.0';
+                document.getElementById('success-rate').textContent = successRate + '%';
+
+                // System health
+                document.getElementById('uptime').textContent = data.uptime || 'N/A';
+                document.getElementById('memory-usage').textContent = 'N/A';
+                document.getElementById('cache-hit-rate').textContent = 'N/A';
+
+                // Latency stats
+                document.getElementById('latency-p50').textContent = data.latency?.p50_ms
+                    ? `${data.latency.p50_ms.toFixed(0)} ms`
+                    : 'N/A';
+                document.getElementById('latency-p95').textContent = data.latency?.p95_ms
+                    ? `${data.latency.p95_ms.toFixed(0)} ms`
+                    : 'N/A';
+                document.getElementById('latency-p99').textContent = data.latency?.p99_ms
+                    ? `${data.latency.p99_ms.toFixed(0)} ms`
+                    : 'N/A';
+
+                // Endpoint breakdown
+                if (data.breakdowns?.topEndpoints) {
+                    renderBreakdown('endpoint-breakdown', data.breakdowns.topEndpoints);
+                } else {
+                    document.getElementById('endpoint-breakdown').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No endpoint data yet</p>';
+                }
+
+                // Error breakdown - show client and server errors
+                const errorBreakdown = [];
+                if (data.requests?.clientErrorCount > 0) {
+                    errorBreakdown.push({ item: '4xx Client Errors', count: data.requests.clientErrorCount });
+                }
+                if (data.requests?.serverErrorCount > 0) {
+                    errorBreakdown.push({ item: '5xx Server Errors', count: data.requests.serverErrorCount });
+                }
+                if (errorBreakdown.length > 0) {
+                    renderBreakdown('error-breakdown', errorBreakdown);
+                } else {
+                    document.getElementById('error-breakdown').innerHTML = '<p style="color: var(--success); text-align: center; padding: 20px;">✅ No errors detected</p>';
+                }
+
+                // API Key breakdown
+                if (data.breakdowns?.topApiKeys && data.breakdowns.topApiKeys.length > 0) {
+                    renderBreakdown('apikey-breakdown', data.breakdowns.topApiKeys);
+                } else {
+                    document.getElementById('apikey-breakdown').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No API key usage data yet</p>';
+                }
+
+                // Country breakdown
+                if (data.breakdowns?.topCountries && data.breakdowns.topCountries.length > 0) {
+                    renderBreakdown('country-breakdown', data.breakdowns.topCountries);
+                } else {
+                    document.getElementById('country-breakdown').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No geographic data available</p>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching detailed analytics:', error);
+                document.getElementById('login-required').style.display = 'block';
+                document.getElementById('avg-response-time').textContent = 'N/A';
+                document.getElementById('success-rate').textContent = 'N/A';
+            }
+        }
+
+        function renderBreakdown(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No data available</p>';
+                return;
+            }
+
+            const maxCount = Math.max(...data.map(item => item.count));
+
+            container.innerHTML = data.map(item => `
+                <div class="breakdown-item">
+                    <div style="flex: 1;">
+                        <div class="breakdown-label">${item.item}</div>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-bar-fill" style="width: ${(item.count / maxCount * 100).toFixed(1)}%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-value">${item.count.toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchPublicStats();
+            fetchDetailedAnalytics();
+
+            // Refresh every 30 seconds
+            setInterval(fetchPublicStats, 30000);
+            setInterval(fetchDetailedAnalytics, 30000);
+        });
+    </script>
+</body>
+</html>

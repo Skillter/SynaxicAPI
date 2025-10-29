@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fair Use Policy - Synaxic API - Guidelines for responsible API usage">
+    <title>Fair Use Policy - Synaxic API</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Synaxic API</span>
+            </a>
+            <div class="nav-links">
+                <a href="/#features">Features</a>
+                <a href="/#demo">Demo</a>
+                <a href="/swagger-ui.html" target="_blank">API Docs</a>
+                <a href="/">Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" style="min-height: 40vh; padding-top: 120px; padding-bottom: 60px;">
+        <div class="hero-background"></div>
+        <div class="container hero-content">
+            <h1 class="hero-title" style="font-size: clamp(32px, 5vw, 56px);">
+                <span class="gradient-text">Fair Use Policy</span>
+            </h1>
+            <p class="hero-subtitle" style="max-width: 600px;">
+                Guidelines for responsible and sustainable API usage.
+            </p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 16px;">
+                Last updated: October 29, 2025
+            </p>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section style="padding: 80px 0; background: var(--bg-secondary);">
+        <div class="container">
+            <div class="legal-content" style="max-width: 900px; margin: 0 auto;">
+
+                <div class="legal-section">
+                    <h2>1. Purpose of This Policy</h2>
+                    <p>Synaxic API is designed to serve a diverse community of developers. To ensure reliable service for everyone, we enforce fair use guidelines that prevent abuse while allowing legitimate, high-volume applications.</p>
+                    <p>This policy supplements our <a href="/terms-of-service" style="color: var(--primary-light);">Terms of Service</a> and defines what constitutes acceptable usage.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>2. Rate Limits</h2>
+                    <p>We enforce the following rate limits to maintain service quality:</p>
+                    <div class="rate-limit-table">
+                        <div class="rate-limit-row">
+                            <div class="rate-limit-tier">
+                                <div class="tier-icon">🌐</div>
+                                <h3>Anonymous Users</h3>
+                                <div class="tier-limit">1,000 req/hour</div>
+                                <p>No authentication required</p>
+                            </div>
+                        </div>
+                        <div class="rate-limit-row">
+                            <div class="rate-limit-tier">
+                                <div class="tier-icon">🔑</div>
+                                <h3>API Key Users</h3>
+                                <div class="tier-limit">10,000 req/hour</div>
+                                <p>Requires free account registration</p>
+                            </div>
+                        </div>
+                        <div class="rate-limit-row">
+                            <div class="rate-limit-tier">
+                                <div class="tier-icon">⚡</div>
+                                <h3>Static Resources</h3>
+                                <div class="tier-limit">50,000 req/hour</div>
+                                <p>HTML, CSS, JS, images (DDoS protection)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Note:</strong> Rate limits are enforced per IP address (anonymous) or per user (API key). Limits reset every hour.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>3. What is Considered Fair Use?</h2>
+                    <p><strong>✅ Acceptable Use Cases:</strong></p>
+                    <ul>
+                        <li>Integrating our APIs into web or mobile applications</li>
+                        <li>Running automated tests or CI/CD pipelines</li>
+                        <li>Building internal tools for your organization</li>
+                        <li>Educational projects and research</li>
+                        <li>Caching results to reduce API calls</li>
+                        <li>Implementing exponential backoff on rate limit errors</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section">
+                    <h2>4. What is Considered Abuse?</h2>
+                    <p><strong>❌ Prohibited Activities:</strong></p>
+                    <ul>
+                        <li><strong>Circumventing Rate Limits:</strong> Using proxies, VPNs, or rotating IPs to evade restrictions</li>
+                        <li><strong>Excessive Bursts:</strong> Sending thousands of requests in seconds (even if under hourly limit)</li>
+                        <li><strong>Denial of Service:</strong> Intentionally overloading our infrastructure</li>
+                        <li><strong>Scraping & Harvesting:</strong> Bulk downloading data beyond API-provided endpoints</li>
+                        <li><strong>API Reselling:</strong> Redistributing API access to third parties without permission</li>
+                        <li><strong>Malicious Payloads:</strong> Sending SQL injection, XSS, or other attack vectors</li>
+                        <li><strong>Ignoring 429 Errors:</strong> Continuing to send requests after hitting rate limits</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section">
+                    <h2>5. Best Practices</h2>
+                    <p>Follow these guidelines to ensure smooth API integration:</p>
+                    <ul>
+                        <li><strong>Implement Caching:</strong> Store results locally to minimize redundant API calls</li>
+                        <li><strong>Use Exponential Backoff:</strong> When you receive a 429 error, wait before retrying (start with 1s, then 2s, 4s, etc.)</li>
+                        <li><strong>Monitor Rate Limit Headers:</strong> Check <code>X-RateLimit-Remaining</code> to track your quota</li>
+                        <li><strong>Batch Requests:</strong> Consolidate multiple operations when possible</li>
+                        <li><strong>Use API Keys:</strong> Get 10x higher limits by signing up for a free account</li>
+                        <li><strong>Report Bugs:</strong> If you encounter issues, contact us instead of retrying aggressively</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section">
+                    <h2>6. Consequences of Abuse</h2>
+                    <p>Violations of this policy may result in:</p>
+                    <ul>
+                        <li><strong>Temporary Rate Limit Reduction:</strong> Your quota may be lowered for 24-72 hours</li>
+                        <li><strong>IP or API Key Suspension:</strong> Access blocked for repeated violations</li>
+                        <li><strong>Permanent Account Termination:</strong> In cases of severe or malicious abuse</li>
+                        <li><strong>Legal Action:</strong> For attacks causing infrastructure damage or data breaches</li>
+                    </ul>
+                    <p>We will attempt to contact you before permanent action, but reserve the right to act immediately if necessary.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>7. Enterprise & Custom Plans</h2>
+                    <p>If your application requires higher rate limits or dedicated resources, we offer custom plans for:</p>
+                    <ul>
+                        <li>Startups with high-growth applications</li>
+                        <li>Enterprises requiring SLA guarantees</li>
+                        <li>Research institutions with large-scale projects</li>
+                    </ul>
+                    <p>Contact us at <a href="mailto:enterprise@skillter.dev" style="color: var(--primary-light);">enterprise@skillter.dev</a> to discuss custom pricing and infrastructure.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>8. Monitoring & Enforcement</h2>
+                    <p>We use automated systems to detect abuse patterns, including:</p>
+                    <ul>
+                        <li>Request rate anomalies (sudden spikes or sustained bursts)</li>
+                        <li>Suspicious IP behavior (proxy/VPN rotation)</li>
+                        <li>Malformed or malicious payloads</li>
+                        <li>Patterns consistent with scraping or DDoS attacks</li>
+                    </ul>
+                    <p>Alerts are reviewed by our team, and false positives can be appealed.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>9. Appeals Process</h2>
+                    <p>If you believe your account was suspended in error:</p>
+                    <ol style="margin-left: 24px; line-height: 1.8;">
+                        <li>Email <a href="mailto:appeals@skillter.dev" style="color: var(--primary-light);">appeals@skillter.dev</a> with your account details</li>
+                        <li>Provide context about your usage patterns and application</li>
+                        <li>Our team will review within 48 hours and respond with a decision</li>
+                    </ol>
+                    <p>We aim to be fair and transparent in all enforcement decisions.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>10. Changes to This Policy</h2>
+                    <p>We may update this Fair Use Policy to reflect infrastructure changes or new abuse patterns. Changes will be posted on this page with an updated date.</p>
+                    <p>Material changes will be communicated to registered users via email.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>11. Contact Us</h2>
+                    <p>Questions about fair use? Contact us at:</p>
+                    <ul style="list-style: none; padding-left: 0;">
+                        <li><strong>General Inquiries:</strong> <a href="mailto:contact@skillter.dev" style="color: var(--primary-light);">contact@skillter.dev</a></li>
+                        <li><strong>Abuse Reports:</strong> <a href="mailto:abuse@skillter.dev" style="color: var(--primary-light);">abuse@skillter.dev</a></li>
+                        <li><strong>Enterprise Plans:</strong> <a href="mailto:enterprise@skillter.dev" style="color: var(--primary-light);">enterprise@skillter.dev</a></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Synaxic API</span>
+                    <p>Enterprise-grade developer utilities</p>
+                </div>
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Skillter. All rights reserved.</p>
+                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 14px;">
+                        <a href="/privacy-policy" style="color: var(--primary-light);">Privacy Policy</a>
+                        <a href="/terms-of-service" style="color: var(--primary-light);">Terms of Service</a>
+                        <a href="/fair-use-policy" style="color: var(--primary-light);">Fair Use</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .legal-content {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .legal-section {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: var(--transition);
+        }
+
+        .legal-section:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .legal-section h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .legal-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .legal-section ul, .legal-section ol {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-left: 24px;
+            margin-top: 12px;
+        }
+
+        .legal-section li {
+            margin-bottom: 12px;
+        }
+
+        .legal-section strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .legal-section code {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Rate Limit Table */
+        .rate-limit-table {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .rate-limit-tier {
+            background: rgba(99, 102, 241, 0.05);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .rate-limit-tier:hover {
+            border-color: var(--primary);
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+        }
+
+        .tier-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .rate-limit-tier h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .tier-limit {
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .rate-limit-tier p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</body>
+</html>
