@@ -32,6 +32,7 @@ public class WebConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
+                "http://localhost:8080",
                 "https://docs.skillter.dev",
                 "https://synaxic.skillter.dev",
                 "https://api.synaxic.skillter.dev"
