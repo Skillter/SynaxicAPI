@@ -3,7 +3,6 @@ package dev.skillter.synaxic.config;
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
 import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
 import dev.skillter.synaxic.security.RateLimitFilter;
-import dev.skillter.synaxic.util.RequestLoggingInterceptor;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -47,11 +46,5 @@ public class TestSecurityConfig {
     @Primary
     public CorsConfigurationSource corsConfigurationSource() {
         return mock(CorsConfigurationSource.class);
-    }
-
-    @Bean
-    @Primary
-    public RequestLoggingInterceptor requestLoggingInterceptor() {
-        return mock(RequestLoggingInterceptor.class);
     }
 }
