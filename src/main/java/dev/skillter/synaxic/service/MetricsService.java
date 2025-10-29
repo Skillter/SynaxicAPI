@@ -1,11 +1,11 @@
 package dev.skillter.synaxic.service;
 
+import dev.skillter.synaxic.model.entity.ApiStats;
+import dev.skillter.synaxic.repository.ApiStatsRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RAtomicLong;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -15,16 +15,15 @@ import java.time.Duration;
 public class MetricsService {
 
     private final MeterRegistry meterRegistry;
-    private final RedissonClient redissonClient;
-    private static final String REDIS_API_REQUESTS_KEY = "metrics:api:requests:total";
+    private final ApiStatsRepository apiStatsRepository;
 
     private static final String METRIC_API_REQUESTS_TOTAL = "synaxic.api.requests.total";
     private static final String METRIC_API_RESPONSE_TIME = "synaxic.api.response.time.seconds";
     private static final String METRIC_API_ERRORS_TOTAL = "synaxic.api.errors.total";
 
-    public MetricsService(MeterRegistry meterRegistry, RedissonClient redissonClient) {
+    public MetricsService(MeterRegistry meterRegistry, ApiStatsRepository apiStatsRepository) {
         this.meterRegistry = meterRegistry;
-        this.redissonClient = redissonClient;
+        this.apiStatsRepository = apiStatsRepository;
     }
 
     public void incrementApiRequest(String endpoint, String method, int statusCode, String apiKeyPrefix, String geoCountry) {
@@ -40,67 +39,30 @@ public class MetricsService {
                 .register(meterRegistry)
                 .increment();
 
-        // Also increment persistent Redis counter
+        // Also increment persistent database counter
         try {
-            RAtomicLong redisCounter = redissonClient.getAtomicLong(REDIS_API_REQUESTS_KEY);
-            redisCounter.incrementAndGet();
+            var stats = apiStatsRepository.findByCounterName("total_api_requests")
+                    .orElseGet(() -> ApiStats.builder()
+                            .counterName("total_api_requests")
+                            .counterValue(0L)
+                            .build());
+            stats.setCounterValue(stats.getCounterValue() + 1);
+            apiStatsRepository.save(stats);
         } catch (Exception e) {
-            log.warn("Failed to increment Redis metrics counter", e);
+            log.warn("Failed to increment database metrics counter", e);
         }
     }
 
     /**
-     * Returns the total API request count from Redis (persistent across restarts).
+     * Returns the total API request count from database (persistent across all restarts).
      */
     public long getTotalApiRequests() {
         try {
-            RAtomicLong redisCounter = redissonClient.getAtomicLong(REDIS_API_REQUESTS_KEY);
-            return redisCounter.get();
+            return apiStatsRepository.findByCounterName("total_api_requests")
+                    .map(ApiStats::getCounterValue)
+                    .orElse(0L);
         } catch (Exception e) {
-            log.warn("Failed to get Redis metrics counter", e);
-            return 0;
-        }
-    }
-
-    /**
-     * Initializes the in-memory counter from Redis on startup.
-     */
-    public void restoreCounterFromRedis() {
-        try {
-            long redisCount = getTotalApiRequests();
-            if (redisCount > 0) {
-                // Initialize the in-memory counter to match Redis value
-                // This is a workaround since Micrometer counters can't be set directly
-                // We'll increment the counter to match Redis value
-                long currentCount = getCurrentInMemoryCount();
-                long difference = redisCount - currentCount;
-                if (difference > 0) {
-                    for (long i = 0; i < difference; i++) {
-                        Counter.builder(METRIC_API_REQUESTS_TOTAL)
-                                .description("Total number of API requests processed")
-                                .tags("source", "redis-restore")
-                                .register(meterRegistry)
-                                .increment();
-                    }
-                    log.info("Restored metrics from Redis: {} total API requests", redisCount);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to restore metrics from Redis", e);
-        }
-    }
-
-    /**
-     * Gets the current in-memory counter value from Micrometer.
-     */
-    private long getCurrentInMemoryCount() {
-        try {
-            return meterRegistry.find(METRIC_API_REQUESTS_TOTAL)
-                    .counters()
-                    .stream()
-                    .mapToLong(c -> (long) c.count())
-                    .sum();
-        } catch (Exception e) {
+            log.warn("Failed to get database metrics counter", e);
             return 0;
         }
     }

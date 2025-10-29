@@ -25,18 +25,22 @@ public class OpenApiConfig {
                         .title("Synaxic API")
                         .version("v1.0")
                         .description("""
-                                Welcome to the Synaxic API, an innovative hub of developer utilities.
-                                This documentation provides everything you need to integrate our services, from IP inspection and email validation to unit conversions.
+                                Welcome to the Synaxic API.
+                                This documentation provides all the available endpoints for you to use.
                                                                 
-                                **To get started, sign in with your Google account on our website to generate a free API key.**
+                                **To get started, sign in with your Google account on our home page to generate a free API key.**
                                 """)
-                        .contact(new Contact()
-                                .name("Skillter Dev")
-                                .email("api@skillter.dev")
-                                .url("https://synaxic.skillter.dev"))
-                        .license(new License()
-                                .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
+                                .contact(new Contact()
+                                        .name("Go back to the home page")
+                                        .url("https://synaxic.skillter.dev"))
+//                        .contact(new Contact()
+//                                .name("Skillter Dev")
+//                                .email("api@skillter.dev")
+//                                .url("https://skillter.dev"))
+//                        .license(new License()
+//                                .name("MIT License")
+//                                .url("https://opensource.org/licenses/MIT"))
+                                )
                 .servers(List.of(
                         new Server().url("https://api.synaxic.skillter.dev").description("Production Server"),
                         new Server().url("http://localhost:8080").description("Local Development Server")

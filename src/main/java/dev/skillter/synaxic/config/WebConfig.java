@@ -11,6 +11,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
@@ -25,6 +26,14 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(requestLoggingInterceptor);
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/analytics").setViewName("forward:/analytics.html");
+        registry.addViewController("/privacy-policy").setViewName("forward:/privacy-policy.html");
+        registry.addViewController("/terms-of-service").setViewName("forward:/terms-of-service.html");
+        registry.addViewController("/fair-use-policy").setViewName("forward:/fair-use-policy.html");
     }
 
     @Bean

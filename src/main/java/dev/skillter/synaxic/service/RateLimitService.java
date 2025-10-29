@@ -1,5 +1,6 @@
 package dev.skillter.synaxic.service;
 
+import dev.skillter.synaxic.model.dto.RateLimitStatus;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
@@ -50,11 +51,24 @@ public class RateLimitService {
         };
     }
 
+    public RateLimitStatus getStatus(String key, RateLimitTier tier) {
+        Bucket bucket = resolveBucket(key, tier);
+        io.github.bucket4j.ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(0);
+
+        return RateLimitStatus.builder()
+                .key(key)
+                .tier(tier)
+                .limit(getLimit(tier))
+                .remainingTokens(probe.getRemainingTokens())
+                .isConsumed(probe.isConsumed())
+                .build();
+    }
+
     private Bandwidth getBandwidthForTier(RateLimitTier tier) {
         return switch (tier) {
-            case API_KEY -> Bandwidth.classic(apiKeyCapacity, Refill.intervally(apiKeyCapacity, Duration.ofMinutes(apiKeyRefillMinutes)));
-            case STATIC -> Bandwidth.classic(staticCapacity, Refill.intervally(staticCapacity, Duration.ofMinutes(staticRefillMinutes)));
-            case ANONYMOUS -> Bandwidth.classic(anonymousCapacity, Refill.intervally(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes)));
+            case API_KEY -> Bandwidth.simple(apiKeyCapacity, Duration.ofMinutes(apiKeyRefillMinutes));
+            case STATIC -> Bandwidth.simple(staticCapacity, Duration.ofMinutes(staticRefillMinutes));
+            case ANONYMOUS -> Bandwidth.simple(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes));
         };
     }
 

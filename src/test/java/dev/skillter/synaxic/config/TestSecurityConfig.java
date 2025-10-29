@@ -1,8 +1,11 @@
 package dev.skillter.synaxic.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
 import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
 import dev.skillter.synaxic.security.RateLimitFilter;
+import dev.skillter.synaxic.util.RequestLoggingInterceptor;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -13,6 +16,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import static org.mockito.Mockito.mock;
 
 @TestConfiguration
+@SuppressWarnings("unchecked")
 public class TestSecurityConfig {
 
     @Bean
@@ -44,7 +48,25 @@ public class TestSecurityConfig {
 
     @Bean
     @Primary
+    public ProxyManager<String> proxyManager() {
+        return mock(ProxyManager.class);
+    }
+
+    @Bean
+    @Primary
+    public RequestLoggingInterceptor requestLoggingInterceptor() {
+        return mock(RequestLoggingInterceptor.class);
+    }
+
+    @Bean
+    @Primary
     public CorsConfigurationSource corsConfigurationSource() {
         return mock(CorsConfigurationSource.class);
+    }
+
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        return mock(ObjectMapper.class);
     }
 }

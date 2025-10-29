@@ -15,7 +15,8 @@ public class HttpSessionConfig {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SYNAXIC_SESSION");
         serializer.setCookiePath("/");
-        serializer.setDomainNamePattern("^.+?\\.(\\w+\\.[a-z]+)$");
+        // Allow localhost and subdomains: localhost, *.example.com, etc.
+        serializer.setDomainNamePattern("^.+?(localhost|\\w+\\.[a-z]+)$");
         return serializer;
     }
 }

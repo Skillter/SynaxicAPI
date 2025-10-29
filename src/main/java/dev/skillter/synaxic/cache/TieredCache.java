@@ -65,6 +65,7 @@ public class TieredCache extends AbstractValueAdaptingCache {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(@NonNull Object key, @NonNull Callable<T> valueLoader) {
         return (T) fromStoreValue(l1Cache.get(key, k -> {
             ValueWrapper l2Value = l2Cache.get(k);
