@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health - Synaxic API</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 16px;
+        }
+
+        .status-badge.up {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.down {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.up {
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.down {
+            background: var(--error);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .component-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        }
+
+        .component-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .component-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .component-status {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .component-status.up {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .component-status.down {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .component-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .detail-value.bytes {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            color: var(--error);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 32px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        .timestamp {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Synaxic API</span>
+            </a>
+            <div class="nav-links">
+                <a href="/#features">Features</a>
+                <a href="/#demo">Demo</a>
+                <a href="/#stack">Tech Stack</a>
+                <a href="/#contact">Contact</a>
+                <a href="/analytics">Analytics & Health</a>
+                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
+                <button id="login-btn" class="btn btn-primary">
+                    <span>Login with Google</span>
+                </button>
+            </div>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <div class="header">
+            <h1>System Health</h1>
+            <p>Real-time status of all system components</p>
+            <div id="overall-status" class="status-badge loading">
+                <span class="status-indicator"></span>
+                <span>Loading...</span>
+            </div>
+        </div>
+
+        <div id="content"></div>
+
+        <!-- Additional Stats Section -->
+        <div style="margin-top: 48px;">
+            <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 24px;">Performance & Usage</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                <div class="component-card">
+                    <div class="component-header">
+                        <span class="component-name">Requests</span>
+                    </div>
+                    <div class="component-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Total Requests</span>
+                            <span class="detail-value" id="total-requests-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Avg Response Time</span>
+                            <span class="detail-value" id="avg-response-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Success Rate</span>
+                            <span class="detail-value" id="success-rate-metric">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-header">
+                        <span class="component-name">System Info</span>
+                    </div>
+                    <div class="component-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Uptime</span>
+                            <span class="detail-value" id="uptime-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Registered Users</span>
+                            <span class="detail-value" id="users-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Active Sessions</span>
+                            <span class="detail-value" id="sessions-metric">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-card">
+                    <div class="component-header">
+                        <span class="component-name">Latency (ms)</span>
+                    </div>
+                    <div class="component-details">
+                        <div class="detail-item">
+                            <span class="detail-label">P50 (Median)</span>
+                            <span class="detail-value" id="latency-p50-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">P95</span>
+                            <span class="detail-value" id="latency-p95-metric">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">P99</span>
+                            <span class="detail-value" id="latency-p99-metric">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp">
+            Last updated: <span id="last-updated">--:--:--</span>
+        </div>
+    </div>
+
+    <script>
+        async function loadHealth() {
+            try {
+                const response = await fetch('/actuator/health');
+                const data = await response.json();
+
+                const overallStatus = document.getElementById('overall-status');
+                const contentDiv = document.getElementById('content');
+
+                // Update overall status
+                const isUp = data.status === 'UP';
+                overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
+                overallStatus.innerHTML = `
+                    <span class="status-indicator ${isUp ? 'up' : 'down'}"></span>
+                    <span>System Status: ${data.status}</span>
+                `;
+
+                // Build components grid
+                if (data.components) {
+                    const componentsHtml = Object.entries(data.components)
+                        .map(([name, component]) => renderComponent(name, component))
+                        .join('');
+                    contentDiv.innerHTML = `<div class="components">${componentsHtml}</div>`;
+                } else {
+                    contentDiv.innerHTML = '<div class="components"></div>';
+                }
+
+                updateTimestamp();
+                // Refresh every 30 seconds
+                setTimeout(loadHealth, 30000);
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <strong>Failed to load health status</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderComponent(name, component) {
+            const isUp = component.status === 'UP';
+            const displayName = formatComponentName(name);
+
+            let detailsHtml = '';
+            if (component.details) {
+                detailsHtml = Object.entries(component.details)
+                    .filter(([key]) => key !== 'path') // Skip path
+                    .map(([key, value]) => {
+                        const displayValue = formatValue(value);
+                        return `
+                            <div class="detail-item">
+                                <span class="detail-label">${formatKey(key)}</span>
+                                <span class="detail-value ${isBytes(key) ? 'bytes' : ''}">${displayValue}</span>
+                            </div>
+                        `;
+                    })
+                    .join('');
+            }
+
+            return `
+                <div class="component-card">
+                    <div class="component-header">
+                        <span class="component-name">${displayName}</span>
+                        <span class="component-status ${isUp ? 'up' : 'down'}">${component.status}</span>
+                    </div>
+                    ${detailsHtml ? `<div class="component-details">${detailsHtml}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function formatComponentName(name) {
+            const names = {
+                'db': 'Database',
+                'diskSpace': 'Disk Space',
+                'ping': 'Ping',
+                'redis': 'Redis Cache',
+                'ssl': 'SSL Certificates'
+            };
+            return names[name] || name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        function formatKey(key) {
+            return key.replace(/([A-Z])/g, ' $1').trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function formatValue(value) {
+            if (typeof value === 'number') {
+                if (value > 1000000000) {
+                    return `${(value / 1000000000).toFixed(2)} GB`;
+                } else if (value > 1000000) {
+                    return `${(value / 1000000).toFixed(2)} MB`;
+                } else if (value > 1000) {
+                    return `${(value / 1000).toFixed(2)} KB`;
+                }
+                return value.toString();
+            }
+            if (Array.isArray(value)) {
+                return value.length === 0 ? 'None' : value.join(', ');
+            }
+            return value.toString();
+        }
+
+        function isBytes(key) {
+            return key.includes('total') || key.includes('free') || key.includes('threshold');
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('last-updated').textContent = now.toLocaleTimeString();
+        }
+
+        async function loadMetrics() {
+            try {
+                // Load public stats
+                const statsResponse = await fetch('/api/stats');
+                const statsData = await statsResponse.json();
+                document.getElementById('total-requests-metric').textContent = statsData.totalRequests.toLocaleString();
+                document.getElementById('users-metric').textContent = statsData.totalUsers.toLocaleString();
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+
+            try {
+                // Load detailed admin stats
+                const adminResponse = await fetch('/v1/admin/stats');
+                if (!adminResponse.ok) return;
+
+                const adminData = await adminResponse.json();
+
+                // Update request metrics
+                if (adminData.latency?.p50_ms) {
+                    document.getElementById('avg-response-metric').textContent = adminData.latency.p50_ms.toFixed(0) + ' ms';
+                }
+
+                if (adminData.requests?.total > 0) {
+                    const totalErrors = (adminData.requests?.clientErrorCount || 0) + (adminData.requests?.serverErrorCount || 0);
+                    const successRate = (((adminData.requests.total - totalErrors) / adminData.requests.total) * 100).toFixed(1);
+                    document.getElementById('success-rate-metric').textContent = successRate + '%';
+                }
+
+                // Update uptime
+                if (adminData.uptime) {
+                    document.getElementById('uptime-metric').textContent = adminData.uptime;
+                }
+
+                // Update latency percentiles
+                if (adminData.latency?.p50_ms) {
+                    document.getElementById('latency-p50-metric').textContent = adminData.latency.p50_ms.toFixed(0);
+                }
+                if (adminData.latency?.p95_ms) {
+                    document.getElementById('latency-p95-metric').textContent = adminData.latency.p95_ms.toFixed(0);
+                }
+                if (adminData.latency?.p99_ms) {
+                    document.getElementById('latency-p99-metric').textContent = adminData.latency.p99_ms.toFixed(0);
+                }
+
+                // Active sessions placeholder (would need backend support)
+                document.getElementById('sessions-metric').textContent = 'N/A';
+            } catch (error) {
+                console.error('Error fetching admin stats:', error);
+            }
+
+            // Load memory usage from actuator/metrics
+            try {
+                const metricsResponse = await fetch('/actuator/metrics/jvm.memory.used');
+                if (metricsResponse.ok) {
+                    const metricsData = await metricsResponse.json();
+                    const memoryUsed = metricsData.measurements?.[0]?.value || 0;
+                    document.getElementById('memory-usage').textContent = formatBytes(memoryUsed);
+                } else {
+                    document.getElementById('memory-usage').textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Error fetching memory metrics:', error);
+                document.getElementById('memory-usage').textContent = 'N/A';
+            }
+
+            // Load cache metrics if available
+            try {
+                const cacheResponse = await fetch('/actuator/metrics/cache.gets');
+                if (cacheResponse.ok) {
+                    const cacheData = await cacheResponse.json();
+                    const hits = cacheData.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
+                    document.getElementById('cache-hit-rate').textContent = hits > 0 ? hits.toFixed(0) + ' hits' : 'No data';
+                } else {
+                    document.getElementById('cache-hit-rate').textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Error fetching cache metrics:', error);
+                document.getElementById('cache-hit-rate').textContent = 'N/A';
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHealth();
+            loadMetrics();
+            // Refresh both every 30 seconds
+            setInterval(loadHealth, 30000);
+            setInterval(loadMetrics, 30000);
+        });
+    </script>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

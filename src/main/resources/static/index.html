@@ -77,17 +77,17 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container nav-container">
-            <div class="logo">
+            <a href="/" class="logo">
                 <span class="logo-icon">⚡</span>
                 <span class="logo-text">Synaxic API</span>
-            </div>
+            </a>
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#demo">Demo</a>
                 <a href="#stack">Tech Stack</a>
-                <a href="/swagger-ui.html" target="_blank">API Docs</a>
-                <a href="/analytics" target="_blank">Analytics</a>
                 <a href="#contact">Contact</a>
+                <a href="/analytics">Analytics & Health</a>
+                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
                 <button id="login-btn" class="btn btn-primary">
                     <span>Login with Google</span>
                 </button>
@@ -354,7 +354,7 @@
                 <div class="contact-card">
                     <div class="contact-icon">📧</div>
                     <h3>Email</h3>
-                    <a href="mailto:contact@skillter.dev">contact@skillter.dev</a>
+                    <a href="mailto:support@skillter.dev">support@skillter.dev</a>
                 </div>
 
                 <div class="contact-card">
@@ -366,13 +366,13 @@
                 <div class="contact-card">
                     <div class="contact-icon">📚</div>
                     <h3>Documentation</h3>
-                    <a href="/swagger-ui.html" target="_blank">Interactive API Docs</a>
+                    <a href="/swagger-ui.html">Interactive API Docs</a>
                 </div>
 
                 <div class="contact-card">
                     <div class="contact-icon">📊</div>
-                    <h3>Status</h3>
-                    <a href="/actuator/health" target="_blank">System Health</a>
+                    <h3>Analytics</h3>
+                    <a href="/analytics">Analytics & Health</a>
                 </div>
             </div>
 
@@ -389,13 +389,14 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <span class="logo-icon">⚡</span>
-                    <span class="logo-text">Synaxic API</span>
+                    <a href="/" class="logo">
+                        <span class="logo-icon">⚡</span>
+                        <span class="logo-text">Synaxic API</span>
+                    </a>
                     <p>Enterprise-grade developer utilities</p>
                 </div>
                 <div class="footer-copyright">
                     <p>&copy; 2025 Skillter. All rights reserved.</p>
-                    <p>Built with Spring Boot, PostgreSQL, and Redis</p>
                 </div>
             </div>
         </div>

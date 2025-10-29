@@ -18,9 +18,19 @@
             <div class="nav-links">
                 <a href="/#features">Features</a>
                 <a href="/#demo">Demo</a>
-                <a href="/swagger-ui.html" target="_blank">API Docs</a>
-                <a href="/">Home</a>
+                <a href="/#stack">Tech Stack</a>
+                <a href="/#contact">Contact</a>
+                <a href="/analytics">Analytics & Health</a>
+                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
+                <button id="login-btn" class="btn btn-primary">
+                    <span>Login with Google</span>
+                </button>
             </div>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
 
@@ -53,19 +63,13 @@
 
                 <div class="legal-section">
                     <h2>2. Description of Service</h2>
-                    <p>Synaxic API provides developer utilities including:</p>
-                    <ul>
-                        <li>IP address inspection and geolocation</li>
-                        <li>Email validation and verification</li>
-                        <li>Unit, byte, and color conversion tools</li>
-                        <li>Request metadata and echo services</li>
-                    </ul>
+                    <p>Synaxic API provides utilities and API endpoints for developer</p>
                     <p>We reserve the right to modify, suspend, or discontinue any feature at any time without prior notice.</p>
                 </div>
 
                 <div class="legal-section">
                     <h2>3. User Accounts & API Keys</h2>
-                    <p><strong>Account Registration:</strong> To access certain features, you must create an account using Google OAuth2. You are responsible for maintaining the confidentiality of your credentials.</p>
+                    <p><strong>Account Registration:</strong> To access certain features, you must create an account using Google OAuth2. You are responsible for maintaining the confidentiality of your account credentials.</p>
                     <p><strong>API Keys:</strong> API keys are personal and must not be shared. You are responsible for all activity under your API key. If compromised, revoke it immediately via the admin dashboard.</p>
                     <p><strong>Account Termination:</strong> We reserve the right to suspend or terminate accounts that violate these terms or engage in abusive behavior.</p>
                 </div>
@@ -99,13 +103,13 @@
 
                 <div class="legal-section">
                     <h2>6. Service Availability & SLA</h2>
-                    <p>While we strive for high availability, the Service is provided "as is" without guarantees of uptime. We do not provide a formal SLA for free-tier users.</p>
-                    <p>We may perform maintenance, updates, or emergency fixes at any time. Scheduled maintenance will be announced in advance when possible.</p>
+                    <p>While we strive for high availability, the Service is provided "as is" without guarantees of uptime. We do not provide a formal SLA.</p>
+                    <p>We may perform maintenance, updates, or emergency fixes at any time.</p>
                 </div>
 
                 <div class="legal-section">
                     <h2>7. Intellectual Property</h2>
-                    <p><strong>Our Content:</strong> All code, documentation, logos, and design elements are the property of Skillter and protected by copyright laws.</p>
+                    <p><strong>Our Content:</strong> All code, documentation, and design elements are the property of Skillter and protected by copyright laws.</p>
                     <p><strong>Your Content:</strong> You retain ownership of data submitted to our APIs. By using the Service, you grant us a license to process, store, and transmit your data solely for service delivery.</p>
                     <p><strong>Open Source:</strong> Portions of our code may be released under open-source licenses. See our GitHub repository for details.</p>
                 </div>
@@ -123,7 +127,7 @@
                         <li>Warranties of merchantability or fitness for a particular purpose</li>
                         <li>Accuracy, reliability, or completeness of API responses</li>
                         <li>Uninterrupted or error-free operation</li>
-                        <li>Security or freedom from malware</li>
+                        <li>Security or any kind of potential damage</li>
                     </ul>
                     <p>You use the Service at your own risk.</p>
                 </div>
@@ -137,12 +141,11 @@
                         <li>Service interruptions or data breaches</li>
                         <li>Errors in API responses or calculations</li>
                     </ul>
-                    <p>Our total liability shall not exceed $100 USD or the amount you paid us in the past 12 months, whichever is greater.</p>
                 </div>
 
                 <div class="legal-section">
                     <h2>11. Indemnification</h2>
-                    <p>You agree to indemnify and hold harmless Skillter, its officers, and employees from any claims, damages, or expenses arising from:</p>
+                    <p>You agree to indemnify and hold harmless Skillter and our staff from any claims, damages, or expenses arising from:</p>
                     <ul>
                         <li>Your violation of these Terms</li>
                         <li>Your use of the Service</li>
@@ -153,23 +156,14 @@
                 <div class="legal-section">
                     <h2>12. Changes to Terms</h2>
                     <p>We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting. Continued use of the Service after changes constitutes acceptance.</p>
-                    <p>Material changes will be communicated via email to registered users.</p>
                 </div>
 
                 <div class="legal-section">
                     <h2>13. Governing Law</h2>
-                    <p>These Terms are governed by the laws of the jurisdiction where Skillter is registered, without regard to conflict of law principles.</p>
-                    <p>Disputes will be resolved through binding arbitration in accordance with local arbitration rules.</p>
+                    <p>These Terms are governed by the laws of Poland, without regard to conflict of law principles.</p>
+                    <p>Any disputes arising from or relating to these Terms or the Service shall be subject to the exclusive jurisdiction of the courts in Poland.</p>
                 </div>
 
-                <div class="legal-section">
-                    <h2>14. Contact Information</h2>
-                    <p>For questions about these Terms, contact us at:</p>
-                    <ul style="list-style: none; padding-left: 0;">
-                        <li><strong>Email:</strong> <a href="mailto:legal@skillter.dev" style="color: var(--primary-light);">legal@skillter.dev</a></li>
-                        <li><strong>Support:</strong> <a href="mailto:contact@skillter.dev" style="color: var(--primary-light);">contact@skillter.dev</a></li>
-                    </ul>
-                </div>
 
             </div>
         </div>
@@ -180,8 +174,10 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <span class="logo-icon">⚡</span>
-                    <span class="logo-text">Synaxic API</span>
+                    <a href="/" class="logo">
+                        <span class="logo-icon">⚡</span>
+                        <span class="logo-text">Synaxic API</span>
+                    </a>
                     <p>Enterprise-grade developer utilities</p>
                 </div>
                 <div class="footer-copyright">
@@ -260,5 +256,7 @@
             }
         }
     </style>
+
+    <script src="/js/main.js"></script>
 </body>
 </html>

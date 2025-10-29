@@ -18,9 +18,19 @@
             <div class="nav-links">
                 <a href="/#features">Features</a>
                 <a href="/#demo">Demo</a>
-                <a href="/swagger-ui.html" target="_blank">API Docs</a>
-                <a href="/">Home</a>
+                <a href="/#stack">Tech Stack</a>
+                <a href="/#contact">Contact</a>
+                <a href="/analytics">Analytics & Health</a>
+                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
+                <button id="login-btn" class="btn btn-primary">
+                    <span>Login with Google</span>
+                </button>
             </div>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
 
@@ -72,18 +82,18 @@
                     <h2>3. Data Storage & Security</h2>
                     <p>We implement industry-standard security measures:</p>
                     <ul>
-                        <li><strong>Encryption:</strong> All data in transit uses TLS 1.3. Passwords are hashed using SHA-256.</li>
+                        <li><strong>Encryption:</strong> All data in transit uses TLS 1.3.</li>
+                        <li><strong>OAuth Authentication:</strong> We use Google OAuth 2.0 for secure authentication. We do not store or manage passwords.</li>
                         <li><strong>Access Controls:</strong> Strict role-based access to production systems and databases.</li>
                         <li><strong>Data Minimization:</strong> We only collect and retain data necessary for service operation.</li>
-                        <li><strong>Geographic Storage:</strong> Data is stored on secure servers in EU/US data centers.</li>
+                        <li><strong>Geographic Storage:</strong> Data is stored on secure servers in geographically distributed data centers.</li>
                     </ul>
                 </div>
 
                 <div class="legal-section">
                     <h2>4. Data Retention</h2>
                     <ul>
-                        <li><strong>Account Data:</strong> Retained while your account is active. Deleted within 30 days of account closure.</li>
-                        <li><strong>API Logs:</strong> Request logs are retained for 90 days for debugging and analytics.</li>
+                        <li><strong>Account Data:</strong> Retained while your account is active.</li>
                         <li><strong>Cached Data:</strong> Temporary cache entries expire automatically (10 minutes to 24 hours based on data type).</li>
                     </ul>
                 </div>
@@ -98,7 +108,7 @@
                         <li><strong>Portability:</strong> Export your data in a machine-readable format.</li>
                         <li><strong>Opt-Out:</strong> Decline analytics cookies (essential cookies are required for service operation).</li>
                     </ul>
-                    <p>To exercise your rights, email us at <a href="mailto:privacy@skillter.dev" style="color: var(--primary-light);">privacy@skillter.dev</a></p>
+                    <p>To exercise your rights, email us at <a href="mailto:support@skillter.dev" style="color: var(--primary-light);">support@skillter.dev</a></p>
                 </div>
 
                 <div class="legal-section">
@@ -107,7 +117,7 @@
                     <ul>
                         <li><strong>Google OAuth2:</strong> For user authentication (see <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style="color: var(--primary-light);">Google Privacy Policy</a>)</li>
                         <li><strong>MaxMind GeoIP2:</strong> For IP geolocation (no data sharing, local database)</li>
-                        <li><strong>Cloud Hosting Providers:</strong> Our infrastructure is hosted on secure VPS providers compliant with SOC 2 and ISO 27001</li>
+                        <li><strong>Cloud Hosting Providers:</strong> Our infrastructure is hosted on secure VPS providers</li>
                     </ul>
                 </div>
 
@@ -128,17 +138,9 @@
 
                 <div class="legal-section">
                     <h2>9. Changes to This Policy</h2>
-                    <p>We may update this Privacy Policy periodically. Changes will be posted on this page with an updated "Last updated" date. Material changes will be communicated via email to registered users.</p>
+                    <p>We may update this Privacy Policy periodically. Changes will be posted on this page with an updated "Last updated" date.</p>
                 </div>
 
-                <div class="legal-section">
-                    <h2>10. Contact Us</h2>
-                    <p>For privacy-related inquiries, contact us at:</p>
-                    <ul style="list-style: none; padding-left: 0;">
-                        <li><strong>Email:</strong> <a href="mailto:privacy@skillter.dev" style="color: var(--primary-light);">privacy@skillter.dev</a></li>
-                        <li><strong>Data Protection Officer:</strong> <a href="mailto:dpo@skillter.dev" style="color: var(--primary-light);">dpo@skillter.dev</a></li>
-                    </ul>
-                </div>
 
             </div>
         </div>
@@ -149,8 +151,10 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <span class="logo-icon">⚡</span>
-                    <span class="logo-text">Synaxic API</span>
+                    <a href="/" class="logo">
+                        <span class="logo-icon">⚡</span>
+                        <span class="logo-text">Synaxic API</span>
+                    </a>
                     <p>Enterprise-grade developer utilities</p>
                 </div>
                 <div class="footer-copyright">
@@ -229,5 +233,7 @@
             }
         }
     </style>
+
+    <script src="/js/main.js"></script>
 </body>
 </html>
