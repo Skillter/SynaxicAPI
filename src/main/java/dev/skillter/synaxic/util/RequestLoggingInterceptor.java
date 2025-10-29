@@ -63,17 +63,34 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
         Object bestMatchPattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         String endpoint = bestMatchPattern != null ? bestMatchPattern.toString() : path;
 
-        metricsService.recordResponseTime(endpoint, method, duration);
-        metricsService.incrementApiRequest(
-                endpoint,
-                method,
-                status,
-                apiKeyPrefix != null ? apiKeyPrefix : ANONYMOUS,
-                geoCountry != null ? geoCountry : UNKNOWN
-        );
+        // Only record metrics for API endpoints (/v1/*), exclude static resources
+        if (isApiEndpoint(endpoint, path)) {
+            metricsService.recordResponseTime(endpoint, method, duration);
+            metricsService.incrementApiRequest(
+                    endpoint,
+                    method,
+                    status,
+                    apiKeyPrefix != null ? apiKeyPrefix : ANONYMOUS,
+                    geoCountry != null ? geoCountry : UNKNOWN
+            );
+        }
 
         log.info("Request completed: {} {} - Status: {} - Duration: {}ms", method, path, status, durationMillis);
 
         MDC.clear();
+    }
+
+    /**
+     * Determines if a request is an API endpoint that should be tracked.
+     * Only counts /v1/* endpoints, excludes static resources.
+     */
+    private boolean isApiEndpoint(String endpoint, String path) {
+        // Include /v1/* API endpoints
+        if (endpoint.startsWith("/v1/") || path.startsWith("/v1/")) {
+            return true;
+        }
+
+        // Exclude static resources and non-API endpoints
+        return false;
     }
 }

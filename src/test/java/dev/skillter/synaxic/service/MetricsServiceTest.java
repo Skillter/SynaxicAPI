@@ -6,6 +6,9 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 
@@ -14,12 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MetricsServiceTest {
 
     private MeterRegistry meterRegistry;
+    @Mock
+    private RedissonClient redissonClient;
     private MetricsService metricsService;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         meterRegistry = new SimpleMeterRegistry();
-        metricsService = new MetricsService(meterRegistry);
+        metricsService = new MetricsService(meterRegistry, redissonClient);
     }
 
     @Test

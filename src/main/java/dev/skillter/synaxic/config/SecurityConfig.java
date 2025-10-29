@@ -10,7 +10,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -46,7 +45,15 @@ public class SecurityConfig {
             "/js/**",
             "/assets/**",
             "/favicon.ico",
-            "/index.html"
+            "/index.html",
+            "/analytics.html",
+            "/analytics",
+            "/privacy-policy.html",
+            "/privacy-policy",
+            "/terms-of-service.html",
+            "/terms-of-service",
+            "/fair-use-policy.html",
+            "/fair-use-policy"
     };
 
     @Bean
@@ -54,7 +61,6 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
