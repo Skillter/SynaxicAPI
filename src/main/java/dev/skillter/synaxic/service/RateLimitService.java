@@ -29,22 +29,36 @@ public class RateLimitService {
     @Value("${synaxic.rate-limit.api-key.refill-minutes:60}")
     private long apiKeyRefillMinutes;
 
-    public Bucket resolveBucket(String key, boolean isApiKey) {
+    @Value("${synaxic.rate-limit.static.capacity:50000}")
+    private long staticCapacity;
+
+    @Value("${synaxic.rate-limit.static.refill-minutes:60}")
+    private long staticRefillMinutes;
+
+    public Bucket resolveBucket(String key, RateLimitTier tier) {
         BucketConfiguration configuration = BucketConfiguration.builder()
-                .addLimit(isApiKey ? getApiKeyPlan() : getAnonymousPlan())
+                .addLimit(getBandwidthForTier(tier))
                 .build();
         return proxyManager.builder().build(key, () -> configuration);
     }
 
-    public long getLimit(boolean isApiKey) {
-        return isApiKey ? apiKeyCapacity : anonymousCapacity;
+    public long getLimit(RateLimitTier tier) {
+        return switch (tier) {
+            case API_KEY -> apiKeyCapacity;
+            case STATIC -> staticCapacity;
+            case ANONYMOUS -> anonymousCapacity;
+        };
     }
 
-    private Bandwidth getAnonymousPlan() {
-        return Bandwidth.classic(anonymousCapacity, Refill.intervally(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes)));
+    private Bandwidth getBandwidthForTier(RateLimitTier tier) {
+        return switch (tier) {
+            case API_KEY -> Bandwidth.classic(apiKeyCapacity, Refill.intervally(apiKeyCapacity, Duration.ofMinutes(apiKeyRefillMinutes)));
+            case STATIC -> Bandwidth.classic(staticCapacity, Refill.intervally(staticCapacity, Duration.ofMinutes(staticRefillMinutes)));
+            case ANONYMOUS -> Bandwidth.classic(anonymousCapacity, Refill.intervally(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes)));
+        };
     }
 
-    private Bandwidth getApiKeyPlan() {
-        return Bandwidth.classic(apiKeyCapacity, Refill.intervally(apiKeyCapacity, Duration.ofMinutes(apiKeyRefillMinutes)));
+    public enum RateLimitTier {
+        ANONYMOUS, API_KEY, STATIC
     }
 }

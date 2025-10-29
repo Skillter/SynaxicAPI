@@ -40,21 +40,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String key;
-        boolean isApiKeyUser = false;
+        RateLimitService.RateLimitTier tier;
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
-            key = user.getId().toString();
-            isApiKeyUser = true;
-        } else {
+        // Determine rate limit tier
+        String path = request.getRequestURI();
+        if (isStaticResource(path)) {
+            tier = RateLimitService.RateLimitTier.STATIC;
             key = ipExtractor.extractClientIp(request);
+        } else {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
+                key = user.getId().toString();
+                tier = RateLimitService.RateLimitTier.API_KEY;
+            } else {
+                key = ipExtractor.extractClientIp(request);
+                tier = RateLimitService.RateLimitTier.ANONYMOUS;
+            }
         }
 
-        Bucket bucket = rateLimitService.resolveBucket(key, isApiKeyUser);
+        Bucket bucket = rateLimitService.resolveBucket(key, tier);
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
-        long limit = rateLimitService.getLimit(isApiKeyUser);
+        long limit = rateLimitService.getLimit(tier);
         response.addHeader("X-RateLimit-Limit", String.valueOf(limit));
 
         if (probe.isConsumed()) {
@@ -63,6 +70,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else {
             handleRateLimitExceeded(request, response, probe);
         }
+    }
+
+    private boolean isStaticResource(String path) {
+        return path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js") ||
+               path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".jpeg") ||
+               path.endsWith(".gif") || path.endsWith(".svg") || path.endsWith(".ico") ||
+               path.endsWith(".woff") || path.endsWith(".woff2") || path.endsWith(".ttf") ||
+               path.endsWith(".eot") || path.startsWith("/css/") || path.startsWith("/js/") ||
+               path.startsWith("/images/") || path.startsWith("/assets/") || path.startsWith("/static/") ||
+               path.equals("/") || path.equals("/index.html");
     }
 
     private void handleRateLimitExceeded(HttpServletRequest request, HttpServletResponse response, ConsumptionProbe probe) throws IOException {
@@ -91,6 +108,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/error");
+        return path.startsWith("/swagger-ui") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/actuator") ||
+               path.startsWith("/error");
     }
 }
