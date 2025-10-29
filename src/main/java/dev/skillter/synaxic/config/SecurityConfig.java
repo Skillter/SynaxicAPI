@@ -41,6 +41,7 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/actuator/**",
             "/api/stats",
+            "/api/debug/**",
             "/css/**",
             "/js/**",
             "/assets/**",
@@ -48,6 +49,9 @@ public class SecurityConfig {
             "/index.html",
             "/analytics.html",
             "/analytics",
+            "/health.html",
+            "/health",
+            "/login-success.html",
             "/privacy-policy.html",
             "/privacy-policy",
             "/terms-of-service.html",
@@ -65,9 +69,8 @@ public class SecurityConfig {
                 .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/auth/me").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/v1/auth/api-key").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/v1/admin/stats").authenticated()
+                        .requestMatchers("/dashboard", "/dashboard.html").authenticated()
+                        .requestMatchers("/v1/auth/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

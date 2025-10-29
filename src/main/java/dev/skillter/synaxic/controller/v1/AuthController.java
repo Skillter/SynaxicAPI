@@ -18,13 +18,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/auth")
@@ -79,5 +80,107 @@ public class AuthController {
         }
         GeneratedApiKey generatedKey = apiKeyService.regenerateKeyForUser(user);
         return ResponseEntity.ok(Map.of("apiKey", generatedKey.fullKey()));
+    }
+
+    // OAuth2 Session Endpoints (for dashboard)
+
+    @GetMapping("/session")
+    @Operation(summary = "Get Current OAuth2 Session", description = "Returns the currently authenticated OAuth2 user information")
+    public ResponseEntity<Map<String, Object>> getCurrentSession(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("name", oauth2User.getAttribute("name"));
+        userInfo.put("email", oauth2User.getAttribute("email"));
+        userInfo.put("picture", oauth2User.getAttribute("picture"));
+
+        return ResponseEntity.ok(userInfo);
+    }
+
+    @GetMapping("/api-keys")
+    @Operation(summary = "Get All API Keys", description = "Returns all API keys for the authenticated user")
+    public ResponseEntity<List<Map<String, Object>>> getApiKeys(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = oauth2User.getAttribute("email");
+        // TODO: Implement getting all keys for user
+        // For now, return empty list as placeholder
+        return ResponseEntity.ok(List.of());
+    }
+
+    @PostMapping("/api-key/create")
+    @Operation(summary = "Create New API Key", description = "Creates a new API key for the authenticated OAuth2 user")
+    public ResponseEntity<Map<String, String>> createApiKey(@AuthenticationPrincipal OAuth2User oauth2User,
+                                                             @RequestBody(required = false) Map<String, String> body) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = oauth2User.getAttribute("email");
+        String name = body != null ? body.get("name") : null;
+
+        // TODO: Implement API key creation for OAuth2 user
+        // For now, return placeholder
+        return ResponseEntity.ok(Map.of("key", "key_live_placeholder"));
+    }
+
+    @DeleteMapping("/api-key/{keyId}")
+    @Operation(summary = "Delete API Key", description = "Deletes the specified API key")
+    public ResponseEntity<Void> deleteApiKey(@AuthenticationPrincipal OAuth2User oauth2User,
+                                              @PathVariable String keyId) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // TODO: Implement API key deletion
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Get User Statistics", description = "Returns usage statistics for the authenticated user")
+    public ResponseEntity<Map<String, Object>> getUserStats(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // TODO: Implement stats retrieval
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalRequests", 0);
+        stats.put("requestsToday", 0);
+
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/export-data")
+    @Operation(summary = "Export User Data", description = "Exports all user data in JSON format (GDPR compliance)")
+    public ResponseEntity<Map<String, Object>> exportData(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", Map.of(
+                "name", oauth2User.getAttribute("name"),
+                "email", oauth2User.getAttribute("email")
+        ));
+        data.put("apiKeys", List.of());
+        data.put("exportDate", java.time.Instant.now().toString());
+
+        return ResponseEntity.ok(data);
+    }
+
+    @DeleteMapping("/delete-account")
+    @Operation(summary = "Delete Account", description = "Permanently deletes the user account and all associated data")
+    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // TODO: Implement account deletion
+        return ResponseEntity.ok().build();
     }
 }

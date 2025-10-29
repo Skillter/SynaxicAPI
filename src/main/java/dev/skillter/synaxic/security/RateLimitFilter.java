@@ -39,15 +39,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // Skip rate limiting for pages and documentation
+        // Only rate limit actual API endpoints
+        if (shouldSkipRateLimit(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String key;
         RateLimitService.RateLimitTier tier;
 
-        // Determine rate limit tier
-        String path = request.getRequestURI();
+        // Determine rate limit tier for API endpoints
         if (isStaticResource(path)) {
             tier = RateLimitService.RateLimitTier.STATIC;
             key = ipExtractor.extractClientIp(request);
         } else {
+            // Only API endpoints reach here (/v1/*, /api/*)
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
                 key = user.getId().toString();
@@ -72,14 +81,44 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    private boolean shouldSkipRateLimit(String path) {
+        // Skip rate limiting for pages, documentation, and non-API endpoints
+        return path.equals("/") ||
+               path.equals("/index.html") ||
+               path.equals("/analytics") ||
+               path.equals("/analytics.html") ||
+               path.equals("/dashboard") ||
+               path.equals("/dashboard.html") ||
+               path.equals("/health") ||
+               path.equals("/health.html") ||
+               path.equals("/login-success.html") ||
+               path.equals("/login-success") ||
+               path.equals("/privacy-policy") ||
+               path.equals("/privacy-policy.html") ||
+               path.equals("/terms-of-service") ||
+               path.equals("/terms-of-service.html") ||
+               path.equals("/fair-use-policy") ||
+               path.equals("/fair-use-policy.html") ||
+               path.startsWith("/swagger-ui") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/actuator") ||
+               path.startsWith("/oauth2") ||
+               path.startsWith("/api/debug") ||
+               path.equals("/login") ||
+               path.equals("/error");
+    }
+
     private boolean isStaticResource(String path) {
-        return path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js") ||
+        // Only truly static files: actual asset files with extensions
+        // Do NOT include dynamic pages like /, /dashboard, /health, /swagger-ui, /actuator, /v3/api-docs
+        // Those should use ANONYMOUS or API_KEY tiers instead
+        return path.startsWith("/css/") || path.startsWith("/js/") ||
+               path.startsWith("/images/") || path.startsWith("/assets/") ||
+               path.endsWith(".css") || path.endsWith(".js") ||
                path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                path.endsWith(".gif") || path.endsWith(".svg") || path.endsWith(".ico") ||
                path.endsWith(".woff") || path.endsWith(".woff2") || path.endsWith(".ttf") ||
-               path.endsWith(".eot") || path.startsWith("/css/") || path.startsWith("/js/") ||
-               path.startsWith("/images/") || path.startsWith("/assets/") || path.startsWith("/static/") ||
-               path.equals("/") || path.equals("/index.html");
+               path.endsWith(".eot");
     }
 
     private void handleRateLimitExceeded(HttpServletRequest request, HttpServletResponse response, ConsumptionProbe probe) throws IOException {
@@ -108,9 +147,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/swagger-ui") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/actuator") ||
-               path.startsWith("/error");
+        return path.startsWith("/error");
     }
 }

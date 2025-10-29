@@ -1,5 +1,6 @@
 package dev.skillter.synaxic.service;
 
+import dev.skillter.synaxic.repository.ApiStatsRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
 
@@ -18,14 +18,14 @@ class MetricsServiceTest {
 
     private MeterRegistry meterRegistry;
     @Mock
-    private RedissonClient redissonClient;
+    private ApiStatsRepository apiStatsRepository;
     private MetricsService metricsService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         meterRegistry = new SimpleMeterRegistry();
-        metricsService = new MetricsService(meterRegistry, redissonClient);
+        metricsService = new MetricsService(meterRegistry, apiStatsRepository);
     }
 
     @Test

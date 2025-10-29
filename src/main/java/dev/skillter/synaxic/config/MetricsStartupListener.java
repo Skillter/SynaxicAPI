@@ -8,8 +8,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Listener that restores API request metrics from Redis on application startup.
- * Ensures that the metric counter persists across app restarts.
+ * Listener that initializes API request metrics from database on application startup.
+ * The metric counter is now persisted in PostgreSQL.
  */
 @Component
 @Slf4j
@@ -20,11 +20,11 @@ public class MetricsStartupListener {
 
     /**
      * Called after the application is fully started.
-     * Restores the in-memory metrics counter from Redis.
+     * Initializes metrics from the database.
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        log.info("Restoring API metrics from Redis...");
-        metricsService.restoreCounterFromRedis();
+        long totalRequests = metricsService.getTotalApiRequests();
+        log.info("API metrics initialized - Total requests: {}", totalRequests);
     }
 }
