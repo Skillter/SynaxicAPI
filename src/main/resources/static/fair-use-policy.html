@@ -18,9 +18,19 @@
             <div class="nav-links">
                 <a href="/#features">Features</a>
                 <a href="/#demo">Demo</a>
-                <a href="/swagger-ui.html" target="_blank">API Docs</a>
-                <a href="/">Home</a>
+                <a href="/#stack">Tech Stack</a>
+                <a href="/#contact">Contact</a>
+                <a href="/analytics">Analytics & Health</a>
+                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
+                <button id="login-btn" class="btn btn-primary">
+                    <span>Login with Google</span>
+                </button>
             </div>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
 
@@ -136,14 +146,8 @@
                 </div>
 
                 <div class="legal-section">
-                    <h2>7. Enterprise & Custom Plans</h2>
-                    <p>If your application requires higher rate limits or dedicated resources, we offer custom plans for:</p>
-                    <ul>
-                        <li>Startups with high-growth applications</li>
-                        <li>Enterprises requiring SLA guarantees</li>
-                        <li>Research institutions with large-scale projects</li>
-                    </ul>
-                    <p>Contact us at <a href="mailto:enterprise@skillter.dev" style="color: var(--primary-light);">enterprise@skillter.dev</a> to discuss custom pricing and infrastructure.</p>
+                    <h2>7. Higher Rate Limits</h2>
+                    <p>If you need higher rate limits for a reasonable case, contact us at <a href="mailto:support@skillter.dev" style="color: var(--primary-light);">support@skillter.dev</a></p>
                 </div>
 
                 <div class="legal-section">
@@ -162,7 +166,7 @@
                     <h2>9. Appeals Process</h2>
                     <p>If you believe your account was suspended in error:</p>
                     <ol style="margin-left: 24px; line-height: 1.8;">
-                        <li>Email <a href="mailto:appeals@skillter.dev" style="color: var(--primary-light);">appeals@skillter.dev</a> with your account details</li>
+                        <li>Email <a href="mailto:support@skillter.dev" style="color: var(--primary-light);">support@skillter.dev</a> with your account details</li>
                         <li>Provide context about your usage patterns and application</li>
                         <li>Our team will review within 48 hours and respond with a decision</li>
                     </ol>
@@ -177,12 +181,7 @@
 
                 <div class="legal-section">
                     <h2>11. Contact Us</h2>
-                    <p>Questions about fair use? Contact us at:</p>
-                    <ul style="list-style: none; padding-left: 0;">
-                        <li><strong>General Inquiries:</strong> <a href="mailto:contact@skillter.dev" style="color: var(--primary-light);">contact@skillter.dev</a></li>
-                        <li><strong>Abuse Reports:</strong> <a href="mailto:abuse@skillter.dev" style="color: var(--primary-light);">abuse@skillter.dev</a></li>
-                        <li><strong>Enterprise Plans:</strong> <a href="mailto:enterprise@skillter.dev" style="color: var(--primary-light);">enterprise@skillter.dev</a></li>
-                    </ul>
+                    <p>Questions about fair use? Contact us at <a href="mailto:support@skillter.dev" style="color: var(--primary-light);">support@skillter.dev</a></p>
                 </div>
 
             </div>
@@ -194,8 +193,10 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
-                    <span class="logo-icon">⚡</span>
-                    <span class="logo-text">Synaxic API</span>
+                    <a href="/" class="logo">
+                        <span class="logo-icon">⚡</span>
+                        <span class="logo-text">Synaxic API</span>
+                    </a>
                     <p>Enterprise-grade developer utilities</p>
                 </div>
                 <div class="footer-copyright">
@@ -334,5 +335,7 @@
             }
         }
     </style>
+
+    <script src="/js/main.js"></script>
 </body>
 </html>

@@ -125,38 +125,132 @@ const Stats = {
         const usersEl = document.getElementById('total-users');
 
         // Update requests with animation
-        if (data.totalRequests !== this.currentStats.totalRequests) {
+        const oldRequestsText = this.formatNumber(this.currentStats.totalRequests);
+        const newRequestsText = this.formatNumber(data.totalRequests);
+        if (newRequestsText !== oldRequestsText && oldRequestsText !== '0') {
             this.animateNumberChange(requestsEl, this.currentStats.totalRequests, data.totalRequests);
-        } else if (requestsEl.textContent === 'Loading...') {
-            // Initial load - set the value even if it's the same as current
-            requestsEl.textContent = this.formatNumber(data.totalRequests);
+        } else {
+            requestsEl.textContent = newRequestsText;
         }
         this.currentStats.totalRequests = data.totalRequests;
 
         // Update users with animation
-        if (data.totalUsers !== this.currentStats.totalUsers) {
+        const oldUsersText = this.formatNumber(this.currentStats.totalUsers);
+        const newUsersText = this.formatNumber(data.totalUsers);
+        if (newUsersText !== oldUsersText && oldUsersText !== '0') {
             this.animateNumberChange(usersEl, this.currentStats.totalUsers, data.totalUsers);
-        } else if (usersEl.textContent === 'Loading...') {
-            // Initial load - set the value even if it's the same as current
-            usersEl.textContent = this.formatNumber(data.totalUsers);
+        } else {
+            usersEl.textContent = newUsersText;
         }
         this.currentStats.totalUsers = data.totalUsers;
     },
 
     animateNumberChange(element, oldValue, newValue) {
+        const oldText = this.formatNumber(oldValue);
         const newText = this.formatNumber(newValue);
         const direction = newValue > oldValue ? 'up' : 'down';
 
-        // Add animation class
-        element.classList.add(`number-animate-${direction}`);
+        // Pad shorter string with spaces to align digits
+        const maxLen = Math.max(oldText.length, newText.length);
+        const oldPadded = oldText.padStart(maxLen, ' ');
+        const newPadded = newText.padStart(maxLen, ' ');
 
-        // Update text immediately
-        element.textContent = newText;
+        // Create container for all digits
+        const container = document.createElement('span');
+        container.className = 'odometer-container';
+        container.style.display = 'inline-flex';
+        container.style.alignItems = 'center';
 
-        // Remove animation class after animation completes to reset for next animation
+        // Process each character position
+        for (let i = 0; i < maxLen; i++) {
+            const oldChar = oldPadded[i];
+            const newChar = newPadded[i];
+
+            const digitWrapper = document.createElement('span');
+            digitWrapper.className = 'odometer-digit-wrapper';
+            digitWrapper.style.display = 'inline-block';
+            digitWrapper.style.position = 'relative';
+            digitWrapper.style.overflow = 'hidden';
+            digitWrapper.style.height = '1.2em';
+            digitWrapper.style.lineHeight = '1.2em';
+            digitWrapper.style.verticalAlign = 'baseline';
+
+            if (oldChar === ' ' && newChar === ' ') {
+                digitWrapper.style.minWidth = '0';
+            } else if (oldChar === ' ' || newChar === ' ') {
+                digitWrapper.style.minWidth = '0.3em';
+            } else {
+                digitWrapper.style.minWidth = '0.6em';
+            }
+
+            if (oldChar === newChar) {
+                // No change - display static character
+                const staticChar = document.createElement('span');
+                staticChar.textContent = oldChar;
+                staticChar.style.display = 'inline-block';
+                staticChar.style.height = '100%';
+                staticChar.style.lineHeight = '1.2em';
+                digitWrapper.appendChild(staticChar);
+            } else {
+                // Character changed - animate it
+                const roller = document.createElement('span');
+                roller.className = 'odometer-roller';
+                roller.style.display = 'block';
+                roller.style.position = 'relative';
+                roller.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+                // Old character
+                const oldCharSpan = document.createElement('span');
+                oldCharSpan.textContent = oldChar;
+                oldCharSpan.style.display = 'block';
+                oldCharSpan.style.height = '1.2em';
+                oldCharSpan.style.lineHeight = '1.2em';
+                oldCharSpan.style.textAlign = 'center';
+
+                // New character
+                const newCharSpan = document.createElement('span');
+                newCharSpan.textContent = newChar;
+                newCharSpan.style.display = 'block';
+                newCharSpan.style.height = '1.2em';
+                newCharSpan.style.lineHeight = '1.2em';
+                newCharSpan.style.textAlign = 'center';
+
+                // Append in correct order based on direction
+                if (direction === 'up') {
+                    roller.appendChild(oldCharSpan);
+                    roller.appendChild(newCharSpan);
+                } else {
+                    roller.appendChild(newCharSpan);
+                    roller.appendChild(oldCharSpan);
+                }
+
+                digitWrapper.appendChild(roller);
+
+                // Set initial transform before animation
+                roller.style.transform = direction === 'up'
+                    ? 'translateY(0)'
+                    : 'translateY(-1.2em)';
+
+                // Trigger animation on next frame
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        roller.style.transform = direction === 'up'
+                            ? 'translateY(-1.2em)'
+                            : 'translateY(0)';
+                    });
+                });
+            }
+
+            container.appendChild(digitWrapper);
+        }
+
+        element.textContent = '';
+        element.appendChild(container);
+
+        // Clean up after animation
         setTimeout(() => {
-            element.classList.remove(`number-animate-${direction}`);
-        }, 600); // Match CSS animation duration
+            element.textContent = newText;
+        }, 550);
     },
 
     showPlaceholder() {
@@ -179,9 +273,52 @@ const Stats = {
 
 // OAuth Login
 const Auth = {
-    init() {
+    async init() {
+        await this.checkAuthStatus();
         const loginBtn = document.getElementById('login-btn');
-        loginBtn.addEventListener('click', () => this.login());
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => this.handleClick());
+        }
+    },
+
+    async checkAuthStatus() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/v1/auth/session`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const user = await response.json();
+                this.updateButtonForLoggedIn(user);
+            } else {
+                this.updateButtonForLoggedOut();
+            }
+        } catch (error) {
+            this.updateButtonForLoggedOut();
+        }
+    },
+
+    updateButtonForLoggedIn(user) {
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.innerHTML = '<span>Dashboard</span>';
+            loginBtn.onclick = () => {
+                window.location.href = '/dashboard';
+            };
+        }
+    },
+
+    updateButtonForLoggedOut() {
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.innerHTML = '<span>Login with Google</span>';
+            loginBtn.onclick = () => this.login();
+        }
+    },
+
+    handleClick() {
+        // This will be overridden by updateButtonForLoggedIn/LoggedOut
+        this.login();
     },
 
     login() {
