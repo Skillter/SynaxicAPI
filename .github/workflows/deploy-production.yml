@@ -18,19 +18,42 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+
+          # Write SSH key (preserve formatting)
+          cat > ~/.ssh/id_rsa << 'SSHKEY'
+          ${{ secrets.VPS_SSH_KEY }}
+          SSHKEY
           chmod 600 ~/.ssh/id_rsa
+
+          # Add host key
           ssh-keyscan -H ${{ secrets.MAIN_VPS_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
           # Configure SSH
-          cat >> ~/.ssh/config <<EOF
+          cat > ~/.ssh/config <<EOF
           Host main-vps
             HostName ${{ secrets.MAIN_VPS_IP }}
             User main
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking accept-new
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
           EOF
           chmod 600 ~/.ssh/config
+
+          # Test SSH connection
+          echo "Testing SSH connection..."
+          if ssh -o ConnectTimeout=10 main-vps "echo 'test'" > /dev/null 2>&1; then
+            echo "✓ SSH connection established"
+          else
+            echo "✗ SSH connection failed"
+            echo ""
+            echo "Please verify:"
+            echo "  1. VPS_SSH_KEY secret contains valid private key (including header/footer)"
+            echo "  2. MAIN_VPS_IP is correct and accessible"
+            echo "  3. SSH key is authorized on the VPS"
+            echo "  4. 'main' user exists on the VPS"
+            exit 1
+          fi
 
       - name: Mask sensitive data
         run: |
@@ -89,42 +112,50 @@ jobs:
 
           if [ -z "$REPLICA_IPS" ]; then
             echo "No replica nodes to deploy"
+            echo "success_count=0" >> $GITHUB_OUTPUT
+            echo "fail_count=0" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           echo "Deploying to replica nodes..."
 
-          SUCCESS_COUNT=0
-          FAIL_COUNT=0
-          NODE_NUM=1
+          # Clean up any old status files
+          rm -f /tmp/deploy-node-*.status 2>/dev/null || true
 
-          # Deploy to each replica in parallel
-          echo "$REPLICA_IPS" | while IFS= read -r REPLICA_IP; do
+          # Convert IPs to array and deploy in parallel
+          NODE_NUM=0
+          while IFS= read -r REPLICA_IP; do
             if [ -z "$REPLICA_IP" ]; then
               continue
             fi
 
+            NODE_NUM=$((NODE_NUM + 1))
+
             (
+              # Capture node number in subshell
+              MY_NODE_NUM=$NODE_NUM
+
               # Add replica to known hosts
               ssh-keyscan -H "$REPLICA_IP" >> ~/.ssh/known_hosts 2>/dev/null || true
 
               # Deploy to replica
-              if ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
+              if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
                   "echo '${{ secrets.VPS_SUDO_PASSWORD }}' | ~/SynaxicAPI/scripts/deploy-node.sh 2>&1" | grep -q "SUCCESS"; then
-                echo "success" > "/tmp/node-${NODE_NUM}.status"
+                echo "success" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
               else
-                echo "failed" > "/tmp/node-${NODE_NUM}.status"
+                echo "failed" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
               fi
             ) &
 
-            NODE_NUM=$((NODE_NUM + 1))
-          done
+          done <<< "$REPLICA_IPS"
 
           # Wait for all parallel deployments to complete
           wait
 
           # Count successes and failures
-          for status_file in /tmp/node-*.status; do
+          SUCCESS_COUNT=0
+          FAIL_COUNT=0
+          for status_file in /tmp/deploy-node-*.status; do
             if [ -f "$status_file" ]; then
               if grep -q "success" "$status_file"; then
                 SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
@@ -151,6 +182,7 @@ jobs:
           echo "Verifying deployment health..."
 
           TOTAL_NODES="${{ steps.get-nodes.outputs.total_nodes }}"
+          TOTAL_NODES="${TOTAL_NODES:-1}"
           HEALTHY_COUNT=0
 
           # Check main node health
@@ -161,14 +193,14 @@ jobs:
           # Check replica nodes health
           REPLICA_IPS="${{ steps.get-nodes.outputs.replica_ips }}"
           if [ -n "$REPLICA_IPS" ]; then
-            echo "$REPLICA_IPS" | while IFS= read -r REPLICA_IP; do
+            while IFS= read -r REPLICA_IP; do
               if [ -n "$REPLICA_IP" ]; then
                 if ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
-                    "curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1"; then
+                    "curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1" 2>/dev/null; then
                   HEALTHY_COUNT=$((HEALTHY_COUNT + 1))
                 fi
               fi
-            done
+            done <<< "$REPLICA_IPS"
           fi
 
           echo "Health checks passed: ${HEALTHY_COUNT}/${TOTAL_NODES} nodes"
@@ -195,9 +227,13 @@ jobs:
           fi
 
           TOTAL_NODES="${{ steps.get-nodes.outputs.total_nodes }}"
+          TOTAL_NODES="${TOTAL_NODES:-1}"
+
           if [ "$TOTAL_NODES" -gt 1 ]; then
             SUCCESS="${{ steps.deploy-replicas.outputs.success_count }}"
             FAIL="${{ steps.deploy-replicas.outputs.fail_count }}"
+            SUCCESS="${SUCCESS:-0}"
+            FAIL="${FAIL:-0}"
             echo "✓ Replica nodes: ${SUCCESS} deployed"
             if [ "$FAIL" -gt 0 ]; then
               echo "✗ Replica nodes: ${FAIL} failed"
@@ -208,8 +244,11 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
           # Fail workflow if any deployment failed
-          if [ "${{ steps.deploy-main.outputs.success }}" != "true" ] || \
-             [ "${{ steps.deploy-replicas.outputs.fail_count }}" != "0" ]; then
+          MAIN_SUCCESS="${{ steps.deploy-main.outputs.success }}"
+          REPLICA_FAILS="${{ steps.deploy-replicas.outputs.fail_count }}"
+          REPLICA_FAILS="${REPLICA_FAILS:-0}"
+
+          if [ "$MAIN_SUCCESS" != "true" ] || [ "$REPLICA_FAILS" != "0" ]; then
             echo "⚠️ Deployment completed with failures"
             echo "Check logs on affected nodes for details"
             exit 1
