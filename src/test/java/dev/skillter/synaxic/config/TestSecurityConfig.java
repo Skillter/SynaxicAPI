@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
 import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
 import dev.skillter.synaxic.security.RateLimitFilter;
+import dev.skillter.synaxic.service.UserService;
 import dev.skillter.synaxic.util.RequestLoggingInterceptor;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -68,5 +69,11 @@ public class TestSecurityConfig {
     @Primary
     public ObjectMapper objectMapper() {
         return mock(ObjectMapper.class);
+    }
+
+    @Bean
+    @Primary
+    public UserService userService() {
+        return mock(UserService.class);
     }
 }

@@ -273,12 +273,17 @@ const Stats = {
 
 // OAuth Login
 const Auth = {
+    isLoggedIn: false,
+
     async init() {
-        await this.checkAuthStatus();
         const loginBtn = document.getElementById('login-btn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => this.handleClick());
-        }
+        if (!loginBtn) return; // Exit if button doesn't exist on this page
+
+        // Check auth status first (async)
+        await this.checkAuthStatus();
+
+        // Add event listener after auth check
+        loginBtn.addEventListener('click', (e) => this.handleClick(e));
     },
 
     async checkAuthStatus() {
@@ -289,11 +294,14 @@ const Auth = {
 
             if (response.ok) {
                 const user = await response.json();
+                this.isLoggedIn = true;
                 this.updateButtonForLoggedIn(user);
             } else {
+                this.isLoggedIn = false;
                 this.updateButtonForLoggedOut();
             }
         } catch (error) {
+            this.isLoggedIn = false;
             this.updateButtonForLoggedOut();
         }
     },
@@ -301,24 +309,32 @@ const Auth = {
     updateButtonForLoggedIn(user) {
         const loginBtn = document.getElementById('login-btn');
         if (loginBtn) {
-            loginBtn.innerHTML = '<span>Dashboard</span>';
-            loginBtn.onclick = () => {
-                window.location.href = '/dashboard';
-            };
+            // Only update if it doesn't already say "Dashboard"
+            if (!loginBtn.textContent.includes('Dashboard')) {
+                loginBtn.innerHTML = '<span>Dashboard</span>';
+            }
+            loginBtn.classList.add('logged-in');
         }
     },
 
     updateButtonForLoggedOut() {
         const loginBtn = document.getElementById('login-btn');
         if (loginBtn) {
-            loginBtn.innerHTML = '<span>Login with Google</span>';
-            loginBtn.onclick = () => this.login();
+            // Only update if it doesn't already say "Login with Google"
+            if (!loginBtn.textContent.includes('Login')) {
+                loginBtn.innerHTML = '<span>Login with Google</span>';
+            }
+            loginBtn.classList.remove('logged-in');
         }
     },
 
-    handleClick() {
-        // This will be overridden by updateButtonForLoggedIn/LoggedOut
-        this.login();
+    handleClick(e) {
+        e.preventDefault();
+        if (this.isLoggedIn) {
+            window.location.href = '/dashboard';
+        } else {
+            this.login();
+        }
     },
 
     login() {

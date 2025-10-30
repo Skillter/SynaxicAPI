@@ -99,6 +99,10 @@ dependencies {
 //    implementation 'org.redisson:redisson:3.51.0' // redundant but harmless as long as the version matches
 }
 
+tasks.named('bootJar') {
+	mainClass = 'dev.skillter.synaxic.SynaxicApplication'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
     inputs.files(configurations.agent)
