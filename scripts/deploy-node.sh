@@ -51,7 +51,7 @@ if ! docker-compose -f "$COMPOSE_FILE" up -d --force-recreate > /dev/null 2>&1; 
 fi
 
 # Wait for services to stabilize
-sleep 20
+sleep 10
 
 # Verify containers are running
 RUNNING=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c synaxic- || echo "0")
@@ -60,20 +60,19 @@ if [ "$RUNNING" -eq 0 ]; then
     exit 4
 fi
 
-# Wait a bit more for health endpoint to be ready
-sleep 5
-
 # Health check on localhost (with retries)
-MAX_RETRIES=3
+# Spring Boot can take 60-90 seconds to start
+MAX_RETRIES=18
 RETRY_COUNT=0
+echo "Waiting for application to start..."
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     if curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
         echo "SUCCESS"
         exit 0
     fi
     RETRY_COUNT=$((RETRY_COUNT + 1))
-    sleep 5
+    sleep 10
 done
 
-echo "ERROR: Health check failed after $MAX_RETRIES attempts"
+echo "ERROR: Health check failed after $((MAX_RETRIES * 10)) seconds"
 exit 5
