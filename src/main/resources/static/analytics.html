@@ -370,7 +370,7 @@
 
             <!-- Analytics Tab -->
             <div id="analytics" class="dashboard-content active">
-                <!-- Stats Grid -->
+                <!-- Key Metrics Grid -->
                 <div class="analytics-stats-grid">
                     <div class="analytics-stat-card">
                         <div class="stat-icon">📊</div>
@@ -380,10 +380,10 @@
                         </div>
                     </div>
                     <div class="analytics-stat-card">
-                        <div class="stat-icon">👥</div>
+                        <div class="stat-icon">🚀</div>
                         <div class="stat-content">
-                            <div class="stat-label">Registered Users</div>
-                            <div class="stat-value" id="total-users-stat">Loading...</div>
+                            <div class="stat-label">Requests/Min</div>
+                            <div class="stat-value" id="requests-per-min">Loading...</div>
                         </div>
                     </div>
                     <div class="analytics-stat-card">
@@ -400,37 +400,81 @@
                             <div class="stat-value" id="success-rate">Loading...</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- System Health in Analytics -->
-                <div class="analytics-section">
-                    <h2 class="section-heading">
-                        <span class="heading-icon">💚</span>
-                        System Health
-                    </h2>
-                    <div class="analytics-grid">
-                        <div class="analytics-card">
-                            <div class="card-label">Uptime</div>
-                            <div class="card-value" id="uptime">0d 0h 0m</div>
+                    <div class="analytics-stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Registered Users</div>
+                            <div class="stat-value" id="total-users-stat">Loading...</div>
                         </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Memory Usage</div>
-                            <div class="card-value" id="memory-usage">Loading...</div>
+                    </div>
+                    <div class="analytics-stat-card">
+                        <div class="stat-icon">🔑</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Active API Keys</div>
+                            <div class="stat-value" id="active-api-keys">Loading...</div>
                         </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Cache Hits</div>
-                            <div class="card-value" id="cache-hit-rate">Loading...</div>
+                    </div>
+                    <div class="analytics-stat-card">
+                        <div class="stat-icon">💾</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Cache Hit Rate</div>
+                            <div class="stat-value" id="cache-hit-rate">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="analytics-stat-card">
+                        <div class="stat-icon">⚠️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Error Rate</div>
+                            <div class="stat-value" id="error-rate">Loading...</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Latency Stats -->
+                <!-- Service Breakdown -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">🎯</span>
+                        Service Usage Breakdown
+                    </h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="card-label">IP Inspector API</div>
+                            <div class="card-value" id="ip-service-requests">Loading...</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Email Validator API</div>
+                            <div class="card-value" id="email-service-requests">Loading...</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Unit Converter API</div>
+                            <div class="card-value" id="converter-service-requests">Loading...</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Other Services</div>
+                            <div class="card-value" id="other-service-requests">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Time Statistics -->
                 <div class="analytics-section">
                     <h2 class="section-heading">
                         <span class="heading-icon">⏱️</span>
-                        Response Time Percentiles
+                        Response Time Analysis
                     </h2>
                     <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="card-label">Minimum</div>
+                            <div class="card-value" id="response-min">N/A</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Average</div>
+                            <div class="card-value" id="response-avg">N/A</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Maximum</div>
+                            <div class="card-value" id="response-max">N/A</div>
+                        </div>
                         <div class="analytics-card">
                             <div class="card-label">P50 (Median)</div>
                             <div class="card-value" id="latency-p50">N/A</div>
@@ -446,18 +490,40 @@
                     </div>
                 </div>
 
-                <!-- Request Breakdown -->
+                <!-- System Health -->
+                <div class="analytics-section">
+                    <h2 class="section-heading">
+                        <span class="heading-icon">💚</span>
+                        System Health
+                    </h2>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="card-label">Uptime</div>
+                            <div class="card-value" id="uptime">0d 0h 0m</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Memory Usage</div>
+                            <div class="card-value" id="memory-usage">Loading...</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="card-label">Total API Keys</div>
+                            <div class="card-value" id="total-api-keys">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Endpoints -->
                 <div class="analytics-section">
                     <h2 class="section-heading">
                         <span class="heading-icon">📈</span>
-                        Requests by Endpoint
+                        Most Popular Endpoints
                     </h2>
                     <div id="endpoint-breakdown" class="breakdown-list">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
-                <!-- Error Breakdown -->
+                <!-- Error Distribution -->
                 <div class="analytics-section">
                     <h2 class="section-heading">
                         <span class="heading-icon">⚠️</span>
@@ -472,55 +538,21 @@
                 <div class="analytics-section">
                     <h2 class="section-heading">
                         <span class="heading-icon">🔑</span>
-                        Top API Keys by Usage
+                        Most Active API Keys
                     </h2>
                     <div id="top-api-keys" class="breakdown-list">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
-                <!-- Top Countries -->
+                <!-- Geographic Distribution -->
                 <div class="analytics-section">
                     <h2 class="section-heading">
                         <span class="heading-icon">🌍</span>
-                        Top Countries by Requests
+                        Geographic Distribution
                     </h2>
                     <div id="top-countries" class="breakdown-list">
                         <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <!-- System Resources -->
-                <div class="analytics-section">
-                    <h2 class="section-heading">
-                        <span class="heading-icon">🖥️</span>
-                        System Resources
-                    </h2>
-                    <div class="analytics-grid">
-                        <div class="analytics-card">
-                            <div class="card-label">Disk Free</div>
-                            <div class="card-value" id="disk-free">N/A</div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Disk Total</div>
-                            <div class="card-value" id="disk-total">N/A</div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Disk Usage</div>
-                            <div class="card-value" id="disk-usage">N/A</div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Redis Version</div>
-                            <div class="card-value" id="redis-version">N/A</div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-label">Database Type</div>
-                            <div class="card-value" id="db-type">N/A</div>
-                        </div>
-                        <div class="analytics-card">
-                            <div class="card-label">HTTP Status</div>
-                            <div class="card-value" id="http-status">N/A</div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -660,42 +692,99 @@
 
                 const data = await response.json();
 
-                // Update top stats
-                const avgLatency = data.latency?.p50_ms || 0;
-                document.getElementById('avg-response-time').textContent = avgLatency.toFixed(0) + ' ms';
-                document.getElementById('avg-response-metric').textContent = avgLatency.toFixed(0) + ' ms';
+                // Update key metrics (top cards)
+                if (data.responseTime) {
+                    document.getElementById('avg-response-time').textContent =
+                        data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+                }
 
-                const totalErrors = (data.requests?.clientErrorCount || 0) + (data.requests?.serverErrorCount || 0);
-                const successRate = data.requests?.total > 0
-                    ? (((data.requests.total - totalErrors) / data.requests.total) * 100).toFixed(1)
-                    : '100.0';
-                document.getElementById('success-rate').textContent = successRate + '%';
-                document.getElementById('success-rate-metric').textContent = successRate + '%';
+                if (data.rates) {
+                    document.getElementById('success-rate').textContent =
+                        data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A';
+                    document.getElementById('requests-per-min').textContent =
+                        data.rates.requestsPerMinute ? data.rates.requestsPerMinute.toFixed(1) : 'N/A';
+                    document.getElementById('error-rate').textContent =
+                        data.rates.errorRatePercent ? `${data.rates.errorRatePercent.toFixed(2)}%` : '0%';
+                }
+
+                // API Key stats
+                if (data.apiKeys) {
+                    document.getElementById('active-api-keys').textContent = data.apiKeys.activeKeysLast24h || '0';
+                    document.getElementById('total-api-keys').textContent = data.apiKeys.totalKeys || '0';
+                }
+
+                // Cache stats
+                if (data.cache) {
+                    document.getElementById('cache-hit-rate').textContent =
+                        data.cache.hitRatePercent ? `${data.cache.hitRatePercent.toFixed(1)}%` : 'N/A';
+                }
+
+                // Service breakdown
+                if (data.serviceBreakdown) {
+                    document.getElementById('ip-service-requests').textContent =
+                        data.serviceBreakdown.ipInspectorRequests?.toLocaleString() || '0';
+                    document.getElementById('email-service-requests').textContent =
+                        data.serviceBreakdown.emailValidatorRequests?.toLocaleString() || '0';
+                    document.getElementById('converter-service-requests').textContent =
+                        data.serviceBreakdown.unitConverterRequests?.toLocaleString() || '0';
+                    document.getElementById('other-service-requests').textContent =
+                        data.serviceBreakdown.otherRequests?.toLocaleString() || '0';
+                }
+
+                // Response time statistics
+                if (data.responseTime) {
+                    document.getElementById('response-min').textContent =
+                        data.responseTime.minMs ? `${data.responseTime.minMs.toFixed(1)} ms` : 'N/A';
+                    document.getElementById('response-avg').textContent =
+                        data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+                    document.getElementById('response-max').textContent =
+                        data.responseTime.maxMs ? `${data.responseTime.maxMs.toFixed(1)} ms` : 'N/A';
+                }
+
+                // Latency percentiles
+                if (data.latency) {
+                    document.getElementById('latency-p50').textContent =
+                        data.latency.p50_ms ? `${data.latency.p50_ms.toFixed(0)} ms` : 'N/A';
+                    document.getElementById('latency-p95').textContent =
+                        data.latency.p95_ms ? `${data.latency.p95_ms.toFixed(0)} ms` : 'N/A';
+                    document.getElementById('latency-p99').textContent =
+                        data.latency.p99_ms ? `${data.latency.p99_ms.toFixed(0)} ms` : 'N/A';
+
+                    // For health tab
+                    if (document.getElementById('latency-p50-metric')) {
+                        document.getElementById('latency-p50-metric').textContent =
+                            data.latency.p50_ms ? data.latency.p50_ms.toFixed(0) : '--';
+                    }
+                    if (document.getElementById('latency-p95-metric')) {
+                        document.getElementById('latency-p95-metric').textContent =
+                            data.latency.p95_ms ? data.latency.p95_ms.toFixed(0) : '--';
+                    }
+                    if (document.getElementById('latency-p99-metric')) {
+                        document.getElementById('latency-p99-metric').textContent =
+                            data.latency.p99_ms ? data.latency.p99_ms.toFixed(0) : '--';
+                    }
+                }
 
                 // System health
                 document.getElementById('uptime').textContent = data.uptime || 'N/A';
-                document.getElementById('uptime-metric').textContent = data.uptime || 'N/A';
+                if (document.getElementById('uptime-metric')) {
+                    document.getElementById('uptime-metric').textContent = data.uptime || 'N/A';
+                }
 
-                // Latency stats
-                document.getElementById('latency-p50').textContent = data.latency?.p50_ms
-                    ? `${data.latency.p50_ms.toFixed(0)} ms`
-                    : 'N/A';
-                document.getElementById('latency-p95').textContent = data.latency?.p95_ms
-                    ? `${data.latency.p95_ms.toFixed(0)} ms`
-                    : 'N/A';
-                document.getElementById('latency-p99').textContent = data.latency?.p99_ms
-                    ? `${data.latency.p99_ms.toFixed(0)} ms`
-                    : 'N/A';
-
-                document.getElementById('latency-p50-metric').textContent = data.latency?.p50_ms ? data.latency.p50_ms.toFixed(0) : '--';
-                document.getElementById('latency-p95-metric').textContent = data.latency?.p95_ms ? data.latency.p95_ms.toFixed(0) : '--';
-                document.getElementById('latency-p99-metric').textContent = data.latency?.p99_ms ? data.latency.p99_ms.toFixed(0) : '--';
+                // For health tab metrics
+                if (data.rates && document.getElementById('avg-response-metric')) {
+                    document.getElementById('avg-response-metric').textContent =
+                        data.responseTime?.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+                    document.getElementById('success-rate-metric').textContent =
+                        data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A';
+                }
 
                 // Endpoint breakdown
                 if (data.breakdowns?.topEndpoints) {
                     renderBreakdown('endpoint-breakdown', data.breakdowns.topEndpoints);
                 } else {
-                    document.getElementById('endpoint-breakdown').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No endpoint data yet</p>';
+                    document.getElementById('endpoint-breakdown').innerHTML =
+                        '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No endpoint data yet</p>';
                 }
 
                 // Error breakdown
@@ -709,7 +798,8 @@
                 if (errorBreakdown.length > 0) {
                     renderBreakdown('error-breakdown', errorBreakdown);
                 } else {
-                    document.getElementById('error-breakdown').innerHTML = '<p style="color: var(--success); text-align: center; padding: 20px;">✅ No errors detected</p>';
+                    document.getElementById('error-breakdown').innerHTML =
+                        '<p style="color: var(--success); text-align: center; padding: 20px;">✅ No errors detected</p>';
                 }
 
                 // Top API Keys
@@ -720,14 +810,16 @@
                     }));
                     renderBreakdown('top-api-keys', keysData);
                 } else {
-                    document.getElementById('top-api-keys').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No API key data yet</p>';
+                    document.getElementById('top-api-keys').innerHTML =
+                        '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No API key data yet</p>';
                 }
 
                 // Top Countries
                 if (data.breakdowns?.topCountries) {
                     renderBreakdown('top-countries', data.breakdowns.topCountries);
                 } else {
-                    document.getElementById('top-countries').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No country data yet</p>';
+                    document.getElementById('top-countries').innerHTML =
+                        '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No country data yet</p>';
                 }
 
             } catch (error) {
@@ -757,28 +849,7 @@
                     document.getElementById('health-components').innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 48px;">${componentsHtml}</div>`;
                 }
 
-                if (data.components) {
-                    // Disk Space
-                    const diskSpace = data.components.diskSpace?.details;
-                    if (diskSpace) {
-                        document.getElementById('disk-free').textContent = formatBytes(diskSpace.free);
-                        document.getElementById('disk-total').textContent = formatBytes(diskSpace.total);
-                        const usage = ((diskSpace.total - diskSpace.free) / diskSpace.total * 100).toFixed(1);
-                        document.getElementById('disk-usage').textContent = usage + '%';
-                    }
-
-                    const redis = data.components.redis?.details;
-                    if (redis?.version) {
-                        document.getElementById('redis-version').textContent = redis.version;
-                    }
-
-                    const db = data.components.db?.details;
-                    if (db?.database) {
-                        document.getElementById('db-type').textContent = db.database;
-                    }
-                }
-
-                document.getElementById('http-status').textContent = data.status === 'UP' ? '✅ Healthy' : '⚠️ Degraded';
+                // Additional health data processing can be added here if needed
             } catch (error) {
                 console.error('Error fetching system health:', error);
             }
