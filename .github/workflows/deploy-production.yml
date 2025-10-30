@@ -1,0 +1,218 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to All VPS Nodes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.MAIN_VPS_IP }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Configure SSH
+          cat >> ~/.ssh/config <<EOF
+          Host main-vps
+            HostName ${{ secrets.MAIN_VPS_IP }}
+            User main
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking accept-new
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Mask sensitive data
+        run: |
+          # Mask the main VPS IP
+          echo "::add-mask::${{ secrets.MAIN_VPS_IP }}"
+
+          echo "✓ Security measures applied"
+
+      - name: Get replica node IPs
+        id: get-nodes
+        run: |
+          # Read replica IPs from main VPS
+          REPLICA_IPS=$(ssh main-vps "cat ~/SynaxicAPI/nginx/replica_ips.txt 2>/dev/null || echo ''")
+
+          # Mask each IP immediately
+          if [ -n "$REPLICA_IPS" ]; then
+            echo "$REPLICA_IPS" | while IFS= read -r ip; do
+              if [ -n "$ip" ]; then
+                echo "::add-mask::$ip"
+              fi
+            done
+          fi
+
+          # Count total nodes (main + replicas)
+          REPLICA_COUNT=$(echo "$REPLICA_IPS" | grep -v '^$' | wc -l)
+          TOTAL_NODES=$((REPLICA_COUNT + 1))
+
+          # Store for later steps
+          echo "replica_ips<<EOF" >> $GITHUB_OUTPUT
+          echo "$REPLICA_IPS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "total_nodes=$TOTAL_NODES" >> $GITHUB_OUTPUT
+
+          echo "✓ Infrastructure topology retrieved"
+
+      - name: Deploy to main VPS
+        id: deploy-main
+        run: |
+          echo "Deploying to main node..."
+
+          # Send sudo password and execute deployment
+          if ssh main-vps "echo '${{ secrets.VPS_SUDO_PASSWORD }}' | ~/SynaxicAPI/scripts/deploy-node.sh 2>&1" | grep -q "SUCCESS"; then
+            echo "✓ Main node deployed successfully"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Main node deployment failed"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Deploy to replica nodes
+        if: steps.get-nodes.outputs.total_nodes > 1
+        id: deploy-replicas
+        run: |
+          REPLICA_IPS="${{ steps.get-nodes.outputs.replica_ips }}"
+
+          if [ -z "$REPLICA_IPS" ]; then
+            echo "No replica nodes to deploy"
+            exit 0
+          fi
+
+          echo "Deploying to replica nodes..."
+
+          SUCCESS_COUNT=0
+          FAIL_COUNT=0
+          NODE_NUM=1
+
+          # Deploy to each replica in parallel
+          echo "$REPLICA_IPS" | while IFS= read -r REPLICA_IP; do
+            if [ -z "$REPLICA_IP" ]; then
+              continue
+            fi
+
+            (
+              # Add replica to known hosts
+              ssh-keyscan -H "$REPLICA_IP" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+              # Deploy to replica
+              if ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
+                  "echo '${{ secrets.VPS_SUDO_PASSWORD }}' | ~/SynaxicAPI/scripts/deploy-node.sh 2>&1" | grep -q "SUCCESS"; then
+                echo "success" > "/tmp/node-${NODE_NUM}.status"
+              else
+                echo "failed" > "/tmp/node-${NODE_NUM}.status"
+              fi
+            ) &
+
+            NODE_NUM=$((NODE_NUM + 1))
+          done
+
+          # Wait for all parallel deployments to complete
+          wait
+
+          # Count successes and failures
+          for status_file in /tmp/node-*.status; do
+            if [ -f "$status_file" ]; then
+              if grep -q "success" "$status_file"; then
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              else
+                FAIL_COUNT=$((FAIL_COUNT + 1))
+              fi
+              rm -f "$status_file"
+            fi
+          done
+
+          echo "success_count=$SUCCESS_COUNT" >> $GITHUB_OUTPUT
+          echo "fail_count=$FAIL_COUNT" >> $GITHUB_OUTPUT
+
+          REPLICA_COUNT=$(echo "$REPLICA_IPS" | grep -v '^$' | wc -l)
+          echo "✓ Replica nodes deployed: ${SUCCESS_COUNT}/${REPLICA_COUNT}"
+
+          if [ $FAIL_COUNT -gt 0 ]; then
+            echo "⚠️ Some replica nodes failed"
+          fi
+
+      - name: Verify deployment health
+        if: always()
+        run: |
+          echo "Verifying deployment health..."
+
+          TOTAL_NODES="${{ steps.get-nodes.outputs.total_nodes }}"
+          HEALTHY_COUNT=0
+
+          # Check main node health
+          if ssh main-vps "curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1"; then
+            HEALTHY_COUNT=$((HEALTHY_COUNT + 1))
+          fi
+
+          # Check replica nodes health
+          REPLICA_IPS="${{ steps.get-nodes.outputs.replica_ips }}"
+          if [ -n "$REPLICA_IPS" ]; then
+            echo "$REPLICA_IPS" | while IFS= read -r REPLICA_IP; do
+              if [ -n "$REPLICA_IP" ]; then
+                if ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
+                    "curl -f -s http://localhost:8080/actuator/health > /dev/null 2>&1"; then
+                  HEALTHY_COUNT=$((HEALTHY_COUNT + 1))
+                fi
+              fi
+            done
+          fi
+
+          echo "Health checks passed: ${HEALTHY_COUNT}/${TOTAL_NODES} nodes"
+
+          if [ "$HEALTHY_COUNT" -lt "$TOTAL_NODES" ]; then
+            echo "⚠️ Some nodes failed health checks"
+          fi
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Deployment Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo ""
+
+          if [ "${{ steps.deploy-main.outputs.success }}" == "true" ]; then
+            echo "✓ Main node: deployed"
+          else
+            echo "✗ Main node: failed"
+          fi
+
+          TOTAL_NODES="${{ steps.get-nodes.outputs.total_nodes }}"
+          if [ "$TOTAL_NODES" -gt 1 ]; then
+            SUCCESS="${{ steps.deploy-replicas.outputs.success_count }}"
+            FAIL="${{ steps.deploy-replicas.outputs.fail_count }}"
+            echo "✓ Replica nodes: ${SUCCESS} deployed"
+            if [ "$FAIL" -gt 0 ]; then
+              echo "✗ Replica nodes: ${FAIL} failed"
+            fi
+          fi
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Fail workflow if any deployment failed
+          if [ "${{ steps.deploy-main.outputs.success }}" != "true" ] || \
+             [ "${{ steps.deploy-replicas.outputs.fail_count }}" != "0" ]; then
+            echo "⚠️ Deployment completed with failures"
+            echo "Check logs on affected nodes for details"
+            exit 1
+          fi
+
+          echo "✓ All nodes deployed successfully"

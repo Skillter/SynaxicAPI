@@ -12,24 +12,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GITHUB_REPO="Skillter/SynaxicAPI"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
-# === VALIDATE REQUIRED ENVIRONMENT VARIABLES ===
-echo "Checking environment variables..."
-
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo ""
-    echo "ERROR: GITHUB_TOKEN environment variable is not set!"
-    echo ""
-    echo "Please set it with:"
-    echo "  echo \"export GITHUB_TOKEN='your_github_token_here'\" >> ~/.profile"
-    echo "Then re-run this script."
-    echo ""
-    echo "Get your token at: https://github.com/settings/tokens"
-    echo ""
-    exit 1
+# Read sudo password from stdin if provided (for automated deployments)
+if [ -t 0 ]; then
+    # Running interactively - sudo will prompt normally
+    SUDO_PREFIX=""
+else
+    # Running non-interactively - read password from stdin
+    read -r SUDO_PASSWORD
+    if [ -n "$SUDO_PASSWORD" ]; then
+        # Authenticate sudo session once
+        echo "$SUDO_PASSWORD" | sudo -S -v > /dev/null 2>&1
+    fi
+    SUDO_PREFIX=""
 fi
 
-# Configure git to use the token
-GIT_AUTH_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+# === CONFIGURE GIT URL ===
+echo "Checking environment variables..."
+
+# Use authenticated URL if token is available, otherwise use public URL
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "  ⓘ GITHUB_TOKEN not set. Using public repository URL."
+    GIT_AUTH_URL="https://github.com/${GITHUB_REPO}.git"
+else
+    echo "  ✓ GITHUB_TOKEN found. Using authenticated URL for faster clones."
+    GIT_AUTH_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+fi
 
 # Change to script directory
 cd "$SCRIPT_DIR"
