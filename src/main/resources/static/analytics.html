@@ -617,6 +617,7 @@
         </div>
     </footer>
 
+    <script src="/js/main.js"></script>
     <script>
         // Tab switching
         document.querySelectorAll('.dashboard-tab').forEach(tab => {
@@ -925,12 +926,6 @@
             setInterval(fetchMemoryMetrics, 30000);
             setInterval(fetchCacheMetrics, 30000);
         });
-
-        // Initialize auth check for login button
-        if (typeof Auth !== 'undefined') {
-            Auth.checkAuthStatus();
-        }
     </script>
-    <script src="/js/main.js"></script>
 </body>
 </html>
