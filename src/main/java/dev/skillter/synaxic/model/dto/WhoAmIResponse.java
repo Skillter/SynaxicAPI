@@ -24,7 +24,7 @@ public class WhoAmIResponse {
     private String ipVersion;
 
     @Schema(description = "A map of HTTP headers from the request. Sensitive headers are redacted.",
-            example = "{\"host\": \"api.synaxic.skillter.dev\", \"user-agent\": \"curl/7.81.0\", \"authorization\": \"[REDACTED]\"}")
+            example = "{\"host\": \"synaxic.skillter.dev\", \"user-agent\": \"curl/7.81.0\", \"authorization\": \"[REDACTED]\"}")
     private Map<String, String> headers;
 
     @Schema(description = "The User-Agent string from the request headers.", example = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...")

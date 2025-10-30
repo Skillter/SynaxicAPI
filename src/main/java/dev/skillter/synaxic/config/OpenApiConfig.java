@@ -42,7 +42,7 @@ public class OpenApiConfig {
 //                                .url("https://opensource.org/licenses/MIT"))
                                 )
                 .servers(List.of(
-                        new Server().url("https://api.synaxic.skillter.dev").description("Production Server"),
+                        new Server().url("https://synaxic.skillter.dev").description("Production Server"),
                         new Server().url("http://localhost:8080").description("Local Development Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

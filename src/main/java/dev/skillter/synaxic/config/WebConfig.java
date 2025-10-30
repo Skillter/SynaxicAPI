@@ -43,8 +43,7 @@ public class WebConfig implements WebMvcConfigurer {
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "https://docs.skillter.dev",
-                "https://synaxic.skillter.dev",
-                "https://api.synaxic.skillter.dev"
+                "https://synaxic.skillter.dev"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "HEAD", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
