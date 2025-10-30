@@ -122,7 +122,7 @@ To enable End-to-End Encryption with Cloudflare (Full Strict mode):
 
 ⚠️ **Important:** Cloudflare only shows the private key once. Copy it immediately!
 
-**Note on Multi-Domain Support:** Cloudflare Origin Certificates support Subject Alternative Names (SANs), meaning you can create a single certificate that covers multiple domains. When creating your certificate in Cloudflare, specify all the domains you need (e.g., `synaxic.skillter.dev, api.synaxic.skillter.dev`). Then when running the setup script, you can list all of them and they'll be automatically configured in Nginx.
+**Note on Multi-Domain Support:** Cloudflare Origin Certificates support Subject Alternative Names (SANs), meaning you can create a single certificate that covers multiple domains. When creating your certificate in Cloudflare, specify all the domains you need. Then when running the setup script, you can list all of them and they'll be automatically configured in Nginx. For this project, we're using `synaxic.skillter.dev` for both frontend and backend.
 
 ### Step 2: Configure SSL on Your VPS
 
@@ -140,8 +140,8 @@ To enable End-to-End Encryption with Cloudflare (Full Strict mode):
 
 The script will prompt you for:
 - **Domain name(s)** (can be one or multiple, comma-separated)
-  - Single domain: `api.example.com`
-  - Multiple domains: `synaxic.skillter.dev, api.synaxic.skillter.dev`
+  - Single domain: `synaxic.skillter.dev`
+  - Multiple domains: `example.com, www.example.com`
 - **Path to Origin Certificate** (PEM format)
 - **Path to Private Key** (PEM format)
 
