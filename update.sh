@@ -12,6 +12,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GITHUB_REPO="Skillter/SynaxicAPI"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
+# Branch configuration - default to production, allow override via argument
+BRANCH="${1:-production}"
+
+# Display usage information
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Usage: $0 [BRANCH]"
+    echo ""
+    echo "Updates the repository from the specified branch (default: production)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                # Pull from production branch"
+    echo "  $0 production     # Explicitly pull from production branch"
+    echo "  $0 master         # Pull from master branch"
+    echo "  $0 develop        # Pull from develop branch"
+    echo ""
+    exit 0
+fi
+
 # Read sudo password from stdin if provided (for automated deployments)
 if [ -t 0 ]; then
     # Running interactively - sudo will prompt normally
@@ -38,6 +56,12 @@ else
     GIT_AUTH_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
 fi
 
+echo ""
+echo "Repository Configuration:"
+echo "  Branch: $BRANCH"
+echo "  Repository: $GITHUB_REPO"
+echo ""
+
 # Change to script directory
 cd "$SCRIPT_DIR"
 
@@ -51,6 +75,7 @@ echo "Backing up generated configuration files..."
 BACKUP_DIR=$(mktemp -d)
 FILES_TO_PRESERVE=(
     ".env"
+    ".env.ssl"
     "nginx/replica_ips.txt"
     "nginx/nginx.conf"
     "prometheus.prod.yml"
@@ -77,10 +102,18 @@ for file in "${FILES_TO_PRESERVE[@]}"; do
     fi
 done
 
-# Force pull latest changes
-echo "Fetching latest changes..."
-git fetch "$GIT_AUTH_URL"
-git reset --hard FETCH_HEAD
+# Force pull latest changes from specified branch
+echo "Fetching latest changes from $BRANCH branch..."
+if ! git fetch "$GIT_AUTH_URL" "$BRANCH"; then
+    echo "[ERROR] Failed to fetch branch '$BRANCH'. Please check that the branch exists."
+    exit 1
+fi
+
+echo "Resetting to latest $BRANCH..."
+if ! git reset --hard FETCH_HEAD; then
+    echo "[ERROR] Failed to reset to FETCH_HEAD."
+    exit 1
+fi
 
 # Clean up any incorrectly created directories before git clean
 echo "Cleaning up incorrect directory structures..."
@@ -131,5 +164,5 @@ fi
 sudo chmod -R +x "$SCRIPT_DIR"
 
 echo ""
-echo "✓ Repository updated successfully!"
+echo "✓ Repository updated successfully from '$BRANCH' branch!"
 echo ""
