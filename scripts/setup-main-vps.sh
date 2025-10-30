@@ -281,6 +281,16 @@ EOL
     fi
     echo "[OK] Base config files created."
 
+    # Create empty replica IPs file if it doesn't exist
+    echo ">>> Ensuring replica management file exists..."
+    mkdir -p "$(dirname "$REPLICA_IP_FILE")"
+    if [ ! -f "$REPLICA_IP_FILE" ]; then
+        touch "$REPLICA_IP_FILE"
+        echo "[OK] Created empty replica IPs file at $REPLICA_IP_FILE"
+    else
+        echo "[OK] Replica IPs file already exists at $REPLICA_IP_FILE"
+    fi
+
     echo "=================================================="
     echo "Main VPS initial setup is complete!"
     echo "--------------------------------------------------"
