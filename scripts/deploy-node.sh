@@ -44,14 +44,14 @@ if ! ./update.sh > /dev/null 2>&1; then
     exit 2
 fi
 
-# Restart services (no --build, just pull new code and restart)
-if ! docker-compose -f "$COMPOSE_FILE" up -d --force-recreate > /dev/null 2>&1; then
-    echo "ERROR: Docker restart failed"
+# Rebuild and restart services (rebuild to include updated static files)
+if ! docker-compose -f "$COMPOSE_FILE" up -d --build --force-recreate > /dev/null 2>&1; then
+    echo "ERROR: Docker rebuild failed"
     exit 3
 fi
 
-# Wait for services to stabilize
-sleep 10
+# Wait for services to stabilize (longer wait due to rebuild)
+sleep 20
 
 # Verify containers are running
 RUNNING=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -c synaxic- || echo "0")
