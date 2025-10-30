@@ -26,29 +26,44 @@ setup_ssl_certificates() {
 
     # Check if SSL config already exists
     local DOMAIN_CONFIGURED="false"
-    local EXISTING_DOMAIN=""
+    local EXISTING_DOMAINS=""
     if [ -f "$SSL_CONFIG_FILE" ]; then
-        EXISTING_DOMAIN=$(grep "^DOMAIN=" "$SSL_CONFIG_FILE" | cut -d'=' -f2 | tr -d '"')
-        if [ -n "$EXISTING_DOMAIN" ]; then
-            echo "[OK] Domain already configured: $EXISTING_DOMAIN"
+        EXISTING_DOMAINS=$(grep "^DOMAINS=" "$SSL_CONFIG_FILE" | cut -d'=' -f2 | tr -d '"')
+        if [ -n "$EXISTING_DOMAINS" ]; then
+            echo "[OK] Domains already configured:"
+            # Display each domain on its own line
+            echo "$EXISTING_DOMAINS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | while read -r domain; do
+                echo "     - $domain"
+            done
             DOMAIN_CONFIGURED="true"
         fi
     fi
 
-    # If both certs and domain are already configured, we're done
+    # If both certs and domains are already configured, we're done
     if [ "$CERTS_EXIST" = "true" ] && [ "$DOMAIN_CONFIGURED" = "true" ]; then
         echo "[OK] SSL/TLS is already fully configured. Skipping setup."
         return 0
     fi
 
-    # Ask for domain only if not already configured
-    local DOMAIN="$EXISTING_DOMAIN"
+    # Ask for domains only if not already configured
+    local DOMAINS="$EXISTING_DOMAINS"
     if [ "$DOMAIN_CONFIGURED" != "true" ]; then
-        read -p "Enter your domain name (e.g., api.example.com): " DOMAIN
-        if [ -z "$DOMAIN" ]; then
-            echo "[ERROR] Domain cannot be empty."
+        echo ""
+        echo "Enter your domain(s) for this certificate."
+        echo "You can specify multiple domains separated by commas."
+        echo ""
+        echo "Examples:"
+        echo "  api.example.com"
+        echo "  api.example.com, example.com"
+        echo "  synaxic.skillter.dev, api.synaxic.skillter.dev"
+        echo ""
+        read -p "Enter domain(s): " DOMAINS
+        if [ -z "$DOMAINS" ]; then
+            echo "[ERROR] At least one domain is required."
             return 1
         fi
+        # Normalize domains - remove extra spaces
+        DOMAINS=$(echo "$DOMAINS" | sed 's/[[:space:]]*,[[:space:]]*/,/g')
     fi
 
     # Ask for certificates only if they don't already exist
@@ -95,7 +110,7 @@ setup_ssl_certificates() {
 
     # Save/update SSL configuration
     cat > "$SSL_CONFIG_FILE" << EOF
-DOMAIN="$DOMAIN"
+DOMAINS="$DOMAINS"
 SSL_ENABLED="true"
 CERT_PATH="$SSL_CERT_DIR/cert.pem"
 KEY_PATH="$SSL_CERT_DIR/key.pem"
@@ -124,7 +139,7 @@ update_configs() {
 
     # Load SSL configuration if it exists
     local SSL_ENABLED="false"
-    local DOMAIN="_"
+    local DOMAINS="_"
     local CERT_PATH=""
     local KEY_PATH=""
     if [ -f "$SSL_CONFIG_FILE" ]; then
@@ -154,7 +169,7 @@ EOL
     # HTTPS server (Cloudflare Full Strict mode)
     server {
         listen 443 ssl http2;
-        server_name $DOMAIN;
+        server_name $DOMAINS;
 
         ssl_certificate $CERT_PATH;
         ssl_certificate_key $KEY_PATH;
@@ -174,7 +189,7 @@ EOL
     # HTTP redirect to HTTPS
     server {
         listen 80;
-        server_name $DOMAIN;
+        server_name $DOMAINS;
         return 301 https://\$server_name\$request_uri;
     }
 }
