@@ -98,11 +98,15 @@ jobs:
           echo "Deploying to main node..."
 
           # Send sudo password and execute deployment
-          if ssh main-vps "echo '${{ secrets.VPS_SUDO_PASSWORD }}' | ~/SynaxicAPI/scripts/deploy-node.sh 2>&1" | grep -q "SUCCESS"; then
+          DEPLOY_OUTPUT=$(ssh main-vps "echo '${{ secrets.VPS_SUDO_PASSWORD }}' | ~/SynaxicAPI/scripts/deploy-node.sh 2>&1")
+
+          if echo "$DEPLOY_OUTPUT" | grep -q "SUCCESS"; then
             echo "✓ Main node deployed successfully"
             echo "success=true" >> $GITHUB_OUTPUT
           else
             echo "⚠️ Main node deployment failed"
+            echo "Debug info (non-sensitive):"
+            echo "$DEPLOY_OUTPUT" | grep -i "error\|fail\|not found\|permission denied" | head -5
             echo "success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
