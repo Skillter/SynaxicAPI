@@ -842,18 +842,10 @@
 
             <div class="privacy-action">
                 <div class="privacy-action-info">
-                    <div class="privacy-action-title">✏️ Rectify Information</div>
-                    <div class="privacy-action-desc">Correct inaccurate or incomplete information</div>
+                    <div class="privacy-action-title">🍪 Reset Cookie Consent</div>
+                    <div class="privacy-action-desc">Clear your cookie preferences and show the consent banner again</div>
                 </div>
-                <button class="btn btn-secondary" onclick="openRectifyModal()">Update Info</button>
-            </div>
-
-            <div class="privacy-action">
-                <div class="privacy-action-info">
-                    <div class="privacy-action-title">📊 Manage Analytics</div>
-                    <div class="privacy-action-desc">Control analytics cookies (essential cookies required)</div>
-                </div>
-                <button class="btn btn-secondary" onclick="manageCookies()">Cookie Settings</button>
+                <button class="btn btn-secondary" onclick="resetCookieConsent()">Reset Consent</button>
             </div>
 
             <div class="privacy-action">
@@ -1086,12 +1078,26 @@
 
                 const keys = await response.json();
 
+                // Update the "Create New Key" button based on key count
+                const createKeyBtn = document.querySelector('.section-header button.btn-primary');
+                if (createKeyBtn) {
+                    if (keys.length >= 2) {
+                        createKeyBtn.disabled = true;
+                        createKeyBtn.title = 'Maximum 2 keys per account. Delete a key to create a new one.';
+                        createKeyBtn.innerHTML = '<span>Maximum Keys Reached (2/2)</span>';
+                    } else {
+                        createKeyBtn.disabled = false;
+                        createKeyBtn.title = '';
+                        createKeyBtn.innerHTML = '<span>Create New Key</span>';
+                    }
+                }
+
                 if (keys.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
                             <div class="empty-state-icon">🔑</div>
                             <div class="empty-state-title">No API Keys Yet</div>
-                            <div class="empty-state-text">Create your first API key to start using the Synaxic API</div>
+                            <div class="empty-state-text">Create your first API key to start using the Synaxic API (Maximum 2 keys per account)</div>
                             <button class="btn btn-primary" onclick="openCreateKeyModal()">Create Your First Key</button>
                         </div>
                     `;
@@ -1099,7 +1105,7 @@
                 }
 
                 container.innerHTML = keys.map(key => renderApiKeyCard(key)).join('');
-                document.getElementById('total-keys').textContent = keys.length;
+                document.getElementById('total-keys').textContent = keys.length + '/2';
             } catch (error) {
                 console.error('Error loading API keys:', error);
                 container.innerHTML = '<div class="alert alert-error">Failed to load API keys. Please refresh the page.</div>';
@@ -1109,8 +1115,24 @@
 
         // Render API key card
         function renderApiKeyCard(key) {
-            const createdDate = new Date(key.createdAt).toLocaleDateString();
-            const lastUsedDate = key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : 'Never';
+            // Fix date parsing - handle both timestamp and ISO string
+            const createdAt = typeof key.createdAt === 'number' ? key.createdAt : new Date(key.createdAt).getTime();
+            const createdDate = new Date(createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            const lastUsedDate = key.lastUsedAt
+                ? new Date(typeof key.lastUsedAt === 'number' ? key.lastUsedAt : new Date(key.lastUsedAt).getTime()).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+                : 'Never';
+
             const maskedKey = key.keyPrefix + '***' + key.keySuffix;
             const usage = key.usageStats || {};
             const usagePercent = (usage.totalRequests / 10000 * 100).toFixed(1);
@@ -1119,10 +1141,9 @@
                 <div class="api-key-card">
                     <div class="api-key-header">
                         <div class="api-key-info">
-                            <div class="api-key-name">${key.name || 'Unnamed Key'}</div>
+                            <div class="api-key-name">${key.name || 'API Key'}</div>
                             <div class="api-key-value">
                                 ${maskedKey}
-                                <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${maskedKey}', this)">Copy</button>
                             </div>
                         </div>
                         <div class="api-key-actions">
@@ -1198,9 +1219,19 @@
                     body: JSON.stringify({ name: name || null })
                 });
 
-                if (!response.ok) throw new Error('Failed to create API key');
-
                 const result = await response.json();
+
+                if (!response.ok) {
+                    // Check if it's the maximum key limit error
+                    if (response.status === 400 && result.error) {
+                        showToast('error', 'Maximum Keys Reached', result.error);
+                    } else {
+                        throw new Error('Failed to create API key');
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    return;
+                }
 
                 closeModal('create-key-modal');
                 document.getElementById('key-name').value = '';
@@ -1210,6 +1241,9 @@
                 openModal('show-key-modal');
 
                 showToast('success', 'Success!', 'API key created successfully');
+
+                // Reload keys to update the list
+                await loadApiKeys();
             } catch (error) {
                 console.error('Error creating API key:', error);
                 showToast('error', 'Error', 'Failed to create API key. Please try again.');
@@ -1243,13 +1277,14 @@
                 if (!response.ok) throw new Error('Failed to delete API key');
 
                 closeModal('delete-key-modal');
-                keyToDelete = null;
                 showToast('success', 'Deleted', 'API key deleted successfully');
-                loadApiKeys();
-                loadStats();
+                await loadApiKeys();
+                await loadStats();
             } catch (error) {
                 console.error('Error deleting API key:', error);
                 showToast('error', 'Error', 'Failed to delete API key. Please try again.');
+            } finally {
+                keyToDelete = null;
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
@@ -1331,25 +1366,18 @@
             }
         }
 
-        // Cookie management
-        function manageCookies() {
-            // Re-show cookie consent banner
+        // Reset cookie consent
+        function resetCookieConsent() {
             const consent = localStorage.getItem('synaxic_cookie_consent');
             if (consent) {
                 localStorage.removeItem('synaxic_cookie_consent');
-                showToast('success', 'Settings Reset', 'Cookie preferences have been reset. Reloading page...');
+                showToast('success', 'Consent Reset', 'Cookie preferences have been cleared. Reloading page to show consent banner...');
                 setTimeout(() => {
                     window.location.reload();
                 }, 1500);
             } else {
-                showToast('info', 'No Preferences Found', 'No cookie preferences to reset.');
+                showToast('info', 'No Preferences Found', 'No cookie consent preferences to reset.');
             }
-        }
-
-        // Rectify information
-        function openRectifyModal() {
-            showToast('info', 'Manage via Google', 'To update your name and email, please manage your Google account.');
-            window.open('https://myaccount.google.com', '_blank');
         }
 
         // Modal utilities

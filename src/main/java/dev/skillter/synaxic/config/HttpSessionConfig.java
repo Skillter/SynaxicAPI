@@ -15,8 +15,9 @@ public class HttpSessionConfig {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SYNAXIC_SESSION");
         serializer.setCookiePath("/");
-        // Allow localhost and subdomains: localhost, *.example.com, etc.
-        serializer.setDomainNamePattern("^.+?(localhost|\\w+\\.[a-z]+)$");
+        // Match localhost or any domain with extension: localhost, example.com, sub.example.com
+        // Don't set domain pattern - let Spring Session handle it naturally for localhost
+        // Spring Session will NOT set a domain cookie attribute for localhost, which is correct
         return serializer;
     }
 }

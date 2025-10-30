@@ -32,4 +32,13 @@ public class UserService {
         log.info("Creating new user for email: {}", email);
         return userRepository.save(newUser);
     }
+
+    public java.util.Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        userRepository.deleteById(userId);
+    }
 }

@@ -91,4 +91,19 @@ public class ApiKeyService {
     public Optional<ApiKey> findByUserId(Long userId) {
         return apiKeyRepository.findByUser_Id(userId);
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<ApiKey> findAllByUserId(Long userId) {
+        return apiKeyRepository.findAllByUser_Id(userId);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        apiKeyRepository.findById(id).ifPresent(this::evictAndRevokeKey);
+    }
+
+    @Transactional
+    public void deleteAllByUserId(Long userId) {
+        apiKeyRepository.deleteAllByUser_Id(userId);
+    }
 }
