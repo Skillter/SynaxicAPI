@@ -13,20 +13,24 @@ const CookieConsent = {
             this.applyConsent(consent);
         }
 
-        // Event listeners
-        document.getElementById('cookie-accept-all').addEventListener('click', () => this.acceptAll());
-        document.getElementById('cookie-essential').addEventListener('click', () => this.acceptEssential());
-        document.getElementById('cookie-decline').addEventListener('click', () => this.declineAll());
+        // Event listeners - check if elements exist first
+        const acceptAllBtn = document.getElementById('cookie-accept-all');
+        const essentialBtn = document.getElementById('cookie-essential');
+        const declineBtn = document.getElementById('cookie-decline');
+
+        if (acceptAllBtn) acceptAllBtn.addEventListener('click', () => this.acceptAll());
+        if (essentialBtn) essentialBtn.addEventListener('click', () => this.acceptEssential());
+        if (declineBtn) declineBtn.addEventListener('click', () => this.declineAll());
     },
 
     showBanner() {
         const banner = document.getElementById('cookie-consent');
-        banner.classList.remove('hidden');
+        if (banner) banner.classList.remove('hidden');
     },
 
     hideBanner() {
         const banner = document.getElementById('cookie-consent');
-        banner.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
     },
 
     getConsent() {
