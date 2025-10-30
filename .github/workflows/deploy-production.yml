@@ -65,6 +65,9 @@ jobs:
       - name: Get replica node IPs
         id: get-nodes
         run: |
+          # Ensure replica IPs file exists on main VPS
+          ssh main-vps "mkdir -p ~/SynaxicAPI/nginx && touch ~/SynaxicAPI/nginx/replica_ips.txt"
+
           # Read replica IPs from main VPS
           REPLICA_IPS=$(ssh main-vps "cat ~/SynaxicAPI/nginx/replica_ips.txt 2>/dev/null || echo ''")
 
