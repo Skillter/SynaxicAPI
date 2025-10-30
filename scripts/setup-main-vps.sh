@@ -4,8 +4,86 @@ set -e
 
 # --- Configuration ---
 REPLICA_IP_FILE="nginx/replica_ips.txt"
+SSL_CONFIG_FILE=".env.ssl"
+SSL_CERT_DIR="/etc/ssl/cloudflare"
 
 # --- Helper Functions ---
+
+setup_ssl_certificates() {
+    echo "========================================"
+    echo "Cloudflare SSL/TLS Configuration Setup"
+    echo "========================================"
+    echo ""
+    echo "This will configure End-to-End Encryption with Cloudflare (Full Strict mode)."
+    echo ""
+
+    # Check if SSL config already exists
+    if [ -f "$SSL_CONFIG_FILE" ]; then
+        echo "SSL configuration already exists at $SSL_CONFIG_FILE"
+        read -p "Do you want to update it? (y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+    fi
+
+    # Prompt for domain
+    read -p "Enter your domain name (e.g., api.example.com): " DOMAIN
+    if [ -z "$DOMAIN" ]; then
+        echo "[ERROR] Domain cannot be empty."
+        return 1
+    fi
+
+    echo ""
+    echo "Next, you need to provide your Cloudflare Origin Certificate."
+    echo "Get it from: Cloudflare Dashboard > SSL/TLS > Origin Server > Create Certificate"
+    echo ""
+
+    # Prompt for certificate path
+    read -p "Enter path to Cloudflare Origin Certificate file (PEM format): " CERT_PATH
+    if [ -z "$CERT_PATH" ] || [ ! -f "$CERT_PATH" ]; then
+        echo "[ERROR] Certificate file not found at $CERT_PATH"
+        return 1
+    fi
+
+    # Prompt for private key path
+    read -p "Enter path to Cloudflare Private Key file (PEM format): " KEY_PATH
+    if [ -z "$KEY_PATH" ] || [ ! -f "$KEY_PATH" ]; then
+        echo "[ERROR] Private key file not found at $KEY_PATH"
+        return 1
+    fi
+
+    # Validate certificate format
+    if ! grep -q "BEGIN CERTIFICATE" "$CERT_PATH"; then
+        echo "[ERROR] Invalid certificate format. Must start with '-----BEGIN CERTIFICATE-----'"
+        return 1
+    fi
+
+    if ! grep -q "BEGIN.*KEY" "$KEY_PATH"; then
+        echo "[ERROR] Invalid private key format. Must start with '-----BEGIN.*KEY-----'"
+        return 1
+    fi
+
+    # Create SSL directory
+    echo ">>> Installing certificates..."
+    sudo mkdir -p "$SSL_CERT_DIR"
+    sudo cp "$CERT_PATH" "$SSL_CERT_DIR/cert.pem"
+    sudo cp "$KEY_PATH" "$SSL_CERT_DIR/key.pem"
+    sudo chmod 600 "$SSL_CERT_DIR/key.pem"
+    sudo chmod 644 "$SSL_CERT_DIR/cert.pem"
+    echo "[OK] Certificates installed to $SSL_CERT_DIR"
+
+    # Save SSL configuration
+    cat > "$SSL_CONFIG_FILE" << EOF
+DOMAIN="$DOMAIN"
+SSL_ENABLED="true"
+CERT_PATH="$SSL_CERT_DIR/cert.pem"
+KEY_PATH="$SSL_CERT_DIR/key.pem"
+EOF
+    echo "[OK] SSL configuration saved to $SSL_CONFIG_FILE"
+    echo ""
+}
+
 update_configs() {
     echo ">>> Updating configuration files based on replica IPs..."
 
@@ -23,6 +101,16 @@ update_configs() {
     # --- Nginx Config ---
     mkdir -p nginx
     [ -d "nginx/nginx.conf" ] && sudo rm -rf "nginx/nginx.conf"
+
+    # Load SSL configuration if it exists
+    local SSL_ENABLED="false"
+    local DOMAIN="_"
+    local CERT_PATH=""
+    local KEY_PATH=""
+    if [ -f "$SSL_CONFIG_FILE" ]; then
+        source "$SSL_CONFIG_FILE"
+    fi
+
     cat << EOL > nginx/nginx.conf
 user www-data;
 worker_processes auto;
@@ -37,7 +125,43 @@ http {
         server 127.0.0.1:8080; # Main VPS App (Always local)
 EOL
     for ip in "${ips[@]}"; do echo "        server $ip:8080;" >> nginx/nginx.conf; done
-    cat << EOL >> nginx/nginx.conf
+
+    # Add HTTPS server block if SSL is enabled
+    if [ "$SSL_ENABLED" = "true" ] && [ -n "$CERT_PATH" ] && [ -n "$KEY_PATH" ]; then
+        cat << EOL >> nginx/nginx.conf
+    }
+
+    # HTTPS server (Cloudflare Full Strict mode)
+    server {
+        listen 443 ssl http2;
+        server_name $DOMAIN;
+
+        ssl_certificate $CERT_PATH;
+        ssl_certificate_key $KEY_PATH;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+            proxy_pass http://synaxic_api;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto https;
+        }
+    }
+
+    # HTTP redirect to HTTPS
+    server {
+        listen 80;
+        server_name $DOMAIN;
+        return 301 https://\$server_name\$request_uri;
+    }
+}
+EOL
+    else
+        # HTTP-only configuration
+        cat << EOL >> nginx/nginx.conf
     }
     server {
         listen 80;
@@ -52,6 +176,7 @@ EOL
     }
 }
 EOL
+    fi
     echo "[OK] nginx.conf updated."
 
     # --- Prometheus Config ---
@@ -291,6 +416,14 @@ EOL
         echo "[OK] Replica IPs file already exists at $REPLICA_IP_FILE"
     fi
 
+    # Ask about Cloudflare SSL setup
+    echo ""
+    read -p "Do you want to set up Cloudflare SSL/TLS now? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        setup_ssl_certificates
+    fi
+
     echo "=================================================="
     echo "Main VPS initial setup is complete!"
     echo "--------------------------------------------------"
@@ -442,6 +575,12 @@ case "$1" in
     --setup-replication)
         setup_replication_user
         ;;
+    --setup-ssl)
+        setup_ssl_certificates
+        if [ $? -eq 0 ]; then
+            update_configs
+        fi
+        ;;
     --add-replica)
         if [ -z "$2" ]; then echo "Usage: $0 --add-replica <ip_address>"; exit 1; fi
         mkdir -p "$(dirname "$REPLICA_IP_FILE")"
@@ -473,10 +612,11 @@ case "$1" in
             update_configs
         else
             echo "Existing installation found. Use --install to force re-installation."
-            echo "Usage: $0 [--install|--setup-replication|--add-replica <ip>|--remove-replica <ip>|--update]"
+            echo "Usage: $0 [--install|--setup-ssl|--setup-replication|--add-replica <ip>|--remove-replica <ip>|--update]"
             echo ""
             echo "Options:"
             echo "  --install              Run initial installation"
+            echo "  --setup-ssl            Configure Cloudflare SSL/TLS certificates"
             echo "  --setup-replication    Configure PostgreSQL replication user (run after starting services)"
             echo "  --add-replica <ip>     Add a replica server IP to the cluster"
             echo "  --remove-replica <ip>  Remove a replica server IP from the cluster"

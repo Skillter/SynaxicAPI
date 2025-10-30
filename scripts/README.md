@@ -10,13 +10,17 @@ This directory contains scripts for deploying Synaxic across multiple VPS server
 # 1. Initial setup
 ./scripts/setup-main-vps.sh --install
 
-# 2. Start services
+# 2. (Optional) Configure Cloudflare SSL/TLS
+# This can also be done during --install by answering the SSL setup prompt
+./scripts/setup-main-vps.sh --setup-ssl
+
+# 3. Start services
 docker-compose -f docker-compose.prod.yml up --build -d
 
-# 3. Configure replication
+# 4. Configure replication
 ./scripts/setup-main-vps.sh --setup-replication
 
-# 4. Add replicas to load balancer
+# 5. Add replicas to load balancer
 ./scripts/setup-main-vps.sh --add-replica <replica-ip>
 ```
 
@@ -45,6 +49,7 @@ Manages the main VPS (PostgreSQL master, Redis master, primary app instance).
 
 **Options:**
 - `--install` - Initial installation (Docker, configs, .env)
+- `--setup-ssl` - Configure Cloudflare SSL/TLS certificates for End-to-End Encryption
 - `--setup-replication` - Create PostgreSQL replication user
 - `--add-replica <ip>` - Add replica to load balancer
 - `--remove-replica <ip>` - Remove replica from load balancer
@@ -95,16 +100,89 @@ Called by Docker on replica container startup.
 
 **Manual usage:** Not typically run directly (Docker runs automatically)
 
+## Cloudflare SSL/TLS Setup
+
+To enable End-to-End Encryption with Cloudflare (Full Strict mode):
+
+### Prerequisites
+1. Domain configured in Cloudflare
+2. Cloudflare SSL/TLS mode set to **"Full (Strict)"**
+
+### Step 1: Generate Cloudflare Origin Certificate
+
+1. Go to **Cloudflare Dashboard** → **SSL/TLS** → **Origin Server**
+2. Click **"Create Certificate"**
+3. Keep default settings (15-year validity, RSA 2048)
+4. You'll see two things:
+   - **Origin Certificate** (starts with `-----BEGIN CERTIFICATE-----`)
+   - **Private Key** (starts with `-----BEGIN PRIVATE KEY-----`)
+5. Save both to files on your local machine:
+   - `cloudflare-cert.pem` (certificate)
+   - `cloudflare-key.pem` (private key)
+
+⚠️ **Important:** Cloudflare only shows the private key once. Copy it immediately!
+
+### Step 2: Configure SSL on Your VPS
+
+#### Option A: During Initial Setup (Recommended)
+```bash
+./scripts/setup-main-vps.sh --install
+# When prompted "Do you want to set up Cloudflare SSL/TLS now?", answer: y
+# Then provide paths to your certificate and private key files
+```
+
+#### Option B: Configure SSL Separately
+```bash
+./scripts/setup-main-vps.sh --setup-ssl
+```
+
+The script will prompt you for:
+- **Domain name** (e.g., `api.example.com`)
+- **Path to Origin Certificate** (PEM format)
+- **Path to Private Key** (PEM format)
+
+### What Gets Set Up
+- Certificates installed to `/etc/ssl/cloudflare/`
+- Nginx configured for:
+  - HTTPS on port 443 with SSL/TLS
+  - Automatic HTTP→HTTPS redirect
+  - Proper SSL protocols (TLSv1.2, TLSv1.3)
+- Configuration saved to `.env.ssl` for future reference
+
+### Verify Setup
+After configuration, verify your Nginx config:
+```bash
+sudo nginx -t
+```
+
+Then restart Nginx:
+```bash
+sudo systemctl restart nginx
+```
+
+### Update Certificate
+If you need to update certificates (they expire after 15 years):
+```bash
+./scripts/setup-main-vps.sh --setup-ssl
+```
+
+The script is idempotent - it will update existing certificates without losing configuration.
+
 ## Script Flow Diagram
 
 ```
 Main VPS Setup:
   setup-main-vps.sh --install
     ├─> Install Docker & Docker Compose
-    ├─> Generate TLS certificates
+    ├─> Generate TLS certificates (Redis)
     ├─> Create .env with passwords
     ├─> Generate PostgreSQL master config
-    └─> Generate Redis config
+    ├─> Generate Redis config
+    └─> [Optional] setup-ssl-certificates (prompts for Cloudflare SSL)
+
+  [Optional] setup-main-vps.sh --setup-ssl
+    ├─> Install Cloudflare Origin Certificate
+    └─> Update Nginx config with SSL
 
   docker-compose -f docker-compose.prod.yml up -d
     ├─> Start PostgreSQL master
