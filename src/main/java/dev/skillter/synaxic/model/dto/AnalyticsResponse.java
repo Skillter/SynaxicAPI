@@ -23,4 +23,19 @@ public class AnalyticsResponse {
 
     @Schema(description = "Breakdowns of API usage by different dimensions.")
     private Map<String, List<BreakdownItem>> breakdowns;
+
+    @Schema(description = "Request and error rate statistics.")
+    private RateStats rates;
+
+    @Schema(description = "Cache performance statistics.")
+    private CacheStats cache;
+
+    @Schema(description = "Breakdown of requests by service type.")
+    private ServiceBreakdown serviceBreakdown;
+
+    @Schema(description = "Detailed response time statistics.")
+    private ResponseTimeStats responseTime;
+
+    @Schema(description = "API key usage statistics.")
+    private ApiKeyStats apiKeys;
 }
