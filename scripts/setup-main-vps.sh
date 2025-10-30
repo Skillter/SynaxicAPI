@@ -17,63 +17,83 @@ setup_ssl_certificates() {
     echo "This will configure End-to-End Encryption with Cloudflare (Full Strict mode)."
     echo ""
 
+    # Check if certificates already exist
+    local CERTS_EXIST="false"
+    if [ -f "$SSL_CERT_DIR/cert.pem" ] && [ -f "$SSL_CERT_DIR/key.pem" ]; then
+        echo "[OK] Certificates already exist at $SSL_CERT_DIR"
+        CERTS_EXIST="true"
+    fi
+
     # Check if SSL config already exists
+    local DOMAIN_CONFIGURED="false"
+    local EXISTING_DOMAIN=""
     if [ -f "$SSL_CONFIG_FILE" ]; then
-        echo "SSL configuration already exists at $SSL_CONFIG_FILE"
-        read -p "Do you want to update it? (y/n): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            return 0
+        EXISTING_DOMAIN=$(grep "^DOMAIN=" "$SSL_CONFIG_FILE" | cut -d'=' -f2 | tr -d '"')
+        if [ -n "$EXISTING_DOMAIN" ]; then
+            echo "[OK] Domain already configured: $EXISTING_DOMAIN"
+            DOMAIN_CONFIGURED="true"
         fi
     fi
 
-    # Prompt for domain
-    read -p "Enter your domain name (e.g., api.example.com): " DOMAIN
-    if [ -z "$DOMAIN" ]; then
-        echo "[ERROR] Domain cannot be empty."
-        return 1
+    # If both certs and domain are already configured, we're done
+    if [ "$CERTS_EXIST" = "true" ] && [ "$DOMAIN_CONFIGURED" = "true" ]; then
+        echo "[OK] SSL/TLS is already fully configured. Skipping setup."
+        return 0
     fi
 
-    echo ""
-    echo "Next, you need to provide your Cloudflare Origin Certificate."
-    echo "Get it from: Cloudflare Dashboard > SSL/TLS > Origin Server > Create Certificate"
-    echo ""
-
-    # Prompt for certificate path
-    read -p "Enter path to Cloudflare Origin Certificate file (PEM format): " CERT_PATH
-    if [ -z "$CERT_PATH" ] || [ ! -f "$CERT_PATH" ]; then
-        echo "[ERROR] Certificate file not found at $CERT_PATH"
-        return 1
+    # Ask for domain only if not already configured
+    local DOMAIN="$EXISTING_DOMAIN"
+    if [ "$DOMAIN_CONFIGURED" != "true" ]; then
+        read -p "Enter your domain name (e.g., api.example.com): " DOMAIN
+        if [ -z "$DOMAIN" ]; then
+            echo "[ERROR] Domain cannot be empty."
+            return 1
+        fi
     fi
 
-    # Prompt for private key path
-    read -p "Enter path to Cloudflare Private Key file (PEM format): " KEY_PATH
-    if [ -z "$KEY_PATH" ] || [ ! -f "$KEY_PATH" ]; then
-        echo "[ERROR] Private key file not found at $KEY_PATH"
-        return 1
+    # Ask for certificates only if they don't already exist
+    if [ "$CERTS_EXIST" != "true" ]; then
+        echo ""
+        echo "Next, you need to provide your Cloudflare Origin Certificate."
+        echo "Get it from: Cloudflare Dashboard > SSL/TLS > Origin Server > Create Certificate"
+        echo ""
+
+        # Prompt for certificate path
+        read -p "Enter path to Cloudflare Origin Certificate file (PEM format): " CERT_PATH
+        if [ -z "$CERT_PATH" ] || [ ! -f "$CERT_PATH" ]; then
+            echo "[ERROR] Certificate file not found at $CERT_PATH"
+            return 1
+        fi
+
+        # Prompt for private key path
+        read -p "Enter path to Cloudflare Private Key file (PEM format): " KEY_PATH
+        if [ -z "$KEY_PATH" ] || [ ! -f "$KEY_PATH" ]; then
+            echo "[ERROR] Private key file not found at $KEY_PATH"
+            return 1
+        fi
+
+        # Validate certificate format
+        if ! grep -q "BEGIN CERTIFICATE" "$CERT_PATH"; then
+            echo "[ERROR] Invalid certificate format. Must start with '-----BEGIN CERTIFICATE-----'"
+            return 1
+        fi
+
+        if ! grep -q "BEGIN.*KEY" "$KEY_PATH"; then
+            echo "[ERROR] Invalid private key format. Must start with '-----BEGIN.*KEY-----'"
+            return 1
+        fi
+
+        # Create SSL directory and install certificates
+        echo ">>> Installing certificates..."
+        sudo mkdir -p "$SSL_CERT_DIR"
+        sudo cp "$CERT_PATH" "$SSL_CERT_DIR/cert.pem"
+        sudo cp "$KEY_PATH" "$SSL_CERT_DIR/key.pem"
+        sudo chmod 600 "$SSL_CERT_DIR/key.pem"
+        sudo chmod 644 "$SSL_CERT_DIR/cert.pem"
+        echo "[OK] Certificates installed to $SSL_CERT_DIR"
     fi
 
-    # Validate certificate format
-    if ! grep -q "BEGIN CERTIFICATE" "$CERT_PATH"; then
-        echo "[ERROR] Invalid certificate format. Must start with '-----BEGIN CERTIFICATE-----'"
-        return 1
-    fi
-
-    if ! grep -q "BEGIN.*KEY" "$KEY_PATH"; then
-        echo "[ERROR] Invalid private key format. Must start with '-----BEGIN.*KEY-----'"
-        return 1
-    fi
-
-    # Create SSL directory
-    echo ">>> Installing certificates..."
-    sudo mkdir -p "$SSL_CERT_DIR"
-    sudo cp "$CERT_PATH" "$SSL_CERT_DIR/cert.pem"
-    sudo cp "$KEY_PATH" "$SSL_CERT_DIR/key.pem"
-    sudo chmod 600 "$SSL_CERT_DIR/key.pem"
-    sudo chmod 644 "$SSL_CERT_DIR/cert.pem"
-    echo "[OK] Certificates installed to $SSL_CERT_DIR"
-
-    # Save SSL configuration
+    # Save/update SSL configuration
     cat > "$SSL_CONFIG_FILE" << EOF
 DOMAIN="$DOMAIN"
 SSL_ENABLED="true"
