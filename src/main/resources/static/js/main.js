@@ -79,6 +79,9 @@ const MobileMenu = {
         const menuBtn = document.getElementById('mobile-menu-btn');
         const navLinks = document.querySelector('.nav-links');
 
+        // Only initialize if menu elements exist
+        if (!menuBtn || !navLinks) return;
+
         menuBtn.addEventListener('click', () => {
             navLinks.classList.toggle('active');
         });
@@ -127,6 +130,9 @@ const Stats = {
     updateDisplay(data) {
         const requestsEl = document.getElementById('total-requests');
         const usersEl = document.getElementById('total-users');
+
+        // Only update if elements exist on this page
+        if (!requestsEl || !usersEl) return;
 
         // Update requests with animation
         const oldRequestsText = this.formatNumber(this.currentStats.totalRequests);
@@ -261,6 +267,9 @@ const Stats = {
         const requestsEl = document.getElementById('total-requests');
         const usersEl = document.getElementById('total-users');
 
+        // Only show placeholders if elements exist
+        if (!requestsEl || !usersEl) return;
+
         requestsEl.textContent = '---';
         usersEl.textContent = '---';
     },
@@ -355,6 +364,9 @@ const APIDemo = {
         const endpointSelect = document.getElementById('api-endpoint');
         const executeBtn = document.getElementById('demo-execute');
         const copyBtn = document.getElementById('copy-code');
+
+        // Only initialize if demo elements exist on this page
+        if (!endpointSelect || !executeBtn || !copyBtn) return;
 
         endpointSelect.addEventListener('change', (e) => {
             this.currentEndpoint = e.target.value;
