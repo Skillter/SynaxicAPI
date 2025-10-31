@@ -363,10 +363,18 @@
     </div>
 
     <script src="/js/main.js"></script>
-    <script>
+    <script data-cfasync="false">
         async function loadHealth() {
             try {
                 const response = await fetch('/actuator/health');
+
+                if (!response.ok) {
+                    console.error('Failed to fetch health data:', response.status);
+                    document.getElementById('overall-status').className = 'status-badge down';
+                    document.getElementById('overall-status').innerHTML = '<span class="status-indicator"></span><span>System Status: Error</span>';
+                    return;
+                }
+
                 const data = await response.json();
 
                 const overallStatus = document.getElementById('overall-status');
