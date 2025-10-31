@@ -97,8 +97,8 @@ jobs:
         run: |
           echo "Deploying to main node..."
 
-          # Execute deployment with password argument
-          DEPLOY_OUTPUT=$(ssh main-vps "~/SynaxicAPI/scripts/deploy-node.sh '${{ secrets.VPS_SUDO_PASSWORD }}' 2>&1")
+          # Execute deployment with simplified script (bypasses update step)
+          DEPLOY_OUTPUT=$(ssh main-vps "~/SynaxicAPI/scripts/deploy-simple.sh 2>&1")
 
           if echo "$DEPLOY_OUTPUT" | grep -q "SUCCESS"; then
             echo "✓ Main node deployed successfully"
@@ -147,7 +147,7 @@ jobs:
 
               # Deploy to replica
               if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
-                  "~/SynaxicAPI/scripts/deploy-node.sh '${{ secrets.VPS_SUDO_PASSWORD }}' 2>&1" | grep -q "SUCCESS"; then
+                  "~/SynaxicAPI/scripts/deploy-simple.sh 2>&1" | grep -q "SUCCESS"; then
                 echo "success" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
               else
                 echo "failed" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
