@@ -40,24 +40,23 @@ fi
 # Ensure scripts are executable
 chmod +x scripts/*.sh > /dev/null 2>&1 || true
 
+# Double-check update script is executable specifically
+chmod +x scripts/update.sh > /dev/null 2>&1 || true
+
 # Run update script (handles sudo internally if needed)
 # Check if password is provided as first argument
 if [ -n "$1" ]; then
     # Password provided as argument
-    echo "Running update script with password..."
-    if ! ./update.sh "$1"; then
-        echo "ERROR: Update script failed with exit code $?"
+    if ! ./update.sh "$1" > /dev/null 2>&1; then
+        echo "ERROR: Update script failed"
         exit 2
     fi
-    echo "Update script completed successfully"
 else
     # No password provided as argument
-    echo "Running update script without password..."
     if ! ./update.sh > /dev/null 2>&1; then
-        echo "ERROR: Update script failed with exit code $?"
+        echo "ERROR: Update script failed"
         exit 2
     fi
-    echo "Update script completed successfully"
 fi
 
 # Rebuild and restart services (rebuild to include updated static files)
