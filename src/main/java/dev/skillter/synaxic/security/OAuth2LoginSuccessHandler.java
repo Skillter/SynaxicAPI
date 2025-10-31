@@ -28,8 +28,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        OAuth2User oauth2User = null;
         try {
-            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            oauth2User = (OAuth2User) authentication.getPrincipal();
             User user = userService.processOAuth2User(oauth2User);
 
             if (apiKeyService.findByUserId(user.getId()).isEmpty()) {
