@@ -34,6 +34,17 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Builder.Default
+    @Column(name = "account_rate_limit", nullable = false)
+    private Long accountRateLimit = 10000L;
+
+    @Builder.Default
+    @Column(name = "account_requests_used", nullable = false)
+    private Long accountRequestsUsed = 0L;
+
+    @Column(name = "rate_limit_reset_time")
+    private Instant rateLimitResetTime;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ApiKey> apiKeys;
 }

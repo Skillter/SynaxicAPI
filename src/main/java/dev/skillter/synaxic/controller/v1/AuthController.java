@@ -38,6 +38,7 @@ public class AuthController {
 
     private final ApiKeyService apiKeyService;
     private final dev.skillter.synaxic.service.UserService userService;
+    private final AccountUsageService accountUsageService;
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get Current User Info",
@@ -302,5 +303,33 @@ public class AuthController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/account-usage")
+    @Operation(summary = "Get Account Usage", description = "Returns detailed account-level usage statistics with breakdown by API key")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved account usage statistics.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AccountUsageDto.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
+    public ResponseEntity<AccountUsageDto> getAccountUsage(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        AccountUsageDto accountUsage = accountUsageService.getAccountUsage(user.getId());
+        return ResponseEntity.ok(accountUsage);
+    }
+
+    @GetMapping("/key-usage-breakdown")
+    @Operation(summary = "Get Key Usage Breakdown", description = "Returns usage breakdown for all API keys belonging to the account")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved key usage breakdown.")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.")
+    public ResponseEntity<List<AccountUsageDto.KeyUsageBreakdown>> getKeyUsageBreakdown(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        AccountUsageDto accountUsage = accountUsageService.getAccountUsage(user.getId());
+        return ResponseEntity.ok(accountUsage.getKeyUsageBreakdown());
     }
 }

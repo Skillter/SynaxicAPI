@@ -36,6 +36,12 @@ public class RateLimitService {
     @Value("${synaxic.rate-limit.static.refill-minutes:60}")
     private long staticRefillMinutes;
 
+    @Value("${synaxic.rate-limit.account.capacity:10000}")
+    private long accountCapacity;
+
+    @Value("${synaxic.rate-limit.account.refill-minutes:60}")
+    private long accountRefillMinutes;
+
     public Bucket resolveBucket(String key, RateLimitTier tier) {
         BucketConfiguration configuration = BucketConfiguration.builder()
                 .addLimit(getBandwidthForTier(tier))
@@ -48,6 +54,7 @@ public class RateLimitService {
             case API_KEY -> apiKeyCapacity;
             case STATIC -> staticCapacity;
             case ANONYMOUS -> anonymousCapacity;
+            case ACCOUNT -> accountCapacity;
         };
     }
 
@@ -69,10 +76,11 @@ public class RateLimitService {
             case API_KEY -> Bandwidth.simple(apiKeyCapacity, Duration.ofMinutes(apiKeyRefillMinutes));
             case STATIC -> Bandwidth.simple(staticCapacity, Duration.ofMinutes(staticRefillMinutes));
             case ANONYMOUS -> Bandwidth.simple(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes));
+            case ACCOUNT -> Bandwidth.simple(accountCapacity, Duration.ofMinutes(accountRefillMinutes));
         };
     }
 
     public enum RateLimitTier {
-        ANONYMOUS, API_KEY, STATIC
+        ANONYMOUS, API_KEY, STATIC, ACCOUNT
     }
 }
