@@ -102,6 +102,42 @@ for file in "${FILES_TO_PRESERVE[@]}"; do
     fi
 done
 
+# Check current branch and handle local changes
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
+    echo "Currently on branch '$CURRENT_BRANCH', need to switch to '$BRANCH'"
+
+    # Check if there are local changes that would prevent checkout
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "Local changes detected, stashing them before branch switch..."
+        if ! git stash push --include-untracked -m "Auto-stash before switching to $BRANCH branch"; then
+            echo "[WARNING] Failed to stash changes, attempting hard reset..."
+            git reset --hard HEAD
+            git clean -fd
+        fi
+    fi
+
+    # Switch to target branch
+    echo "Switching to $BRANCH branch..."
+    if ! git checkout "$BRANCH" 2>/dev/null; then
+        # If branch doesn't exist locally, create it from remote
+        if ! git checkout -b "$BRANCH" "origin/$BRANCH"; then
+            echo "[ERROR] Failed to switch to branch '$BRANCH'. Please check that the branch exists."
+            exit 1
+        fi
+    fi
+
+    # Restore stashed changes immediately after branch switch
+    if git stash list | grep -q "Auto-stash before switching to $BRANCH branch"; then
+        echo "Restoring stashed changes..."
+        if git stash pop; then
+            echo "  ✓ Stashed changes restored on new branch"
+        else
+            echo "  ⚠ Failed to restore stashed changes. You can restore them manually with 'git stash pop'"
+        fi
+    fi
+fi
+
 # Force pull latest changes from specified branch
 echo "Fetching latest changes from $BRANCH branch..."
 if ! git fetch "$GIT_AUTH_URL" "$BRANCH"; then
@@ -109,9 +145,16 @@ if ! git fetch "$GIT_AUTH_URL" "$BRANCH"; then
     exit 1
 fi
 
+# Ensure we're on the correct branch before reset
+CURRENT_BRANCH_AFTER_FETCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH_AFTER_FETCH" != "$BRANCH" ]; then
+    echo "ERROR: Branch switch failed. Current branch: $CURRENT_BRANCH_AFTER_FETCH, Expected: $BRANCH"
+    exit 1
+fi
+
 echo "Resetting to latest $BRANCH..."
-if ! git reset --hard FETCH_HEAD; then
-    echo "[ERROR] Failed to reset to FETCH_HEAD."
+if ! git reset --hard "origin/$BRANCH"; then
+    echo "[ERROR] Failed to reset to origin/$BRANCH."
     exit 1
 fi
 
@@ -145,6 +188,7 @@ fi
 
 # Clean up backup
 rm -rf "$BACKUP_DIR"
+
 
 # === REGENERATE CONFIG FILES IF NEEDED ===
 echo "Checking configuration files..."
