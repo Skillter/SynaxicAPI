@@ -2,6 +2,7 @@ package dev.skillter.synaxic.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.skillter.synaxic.model.entity.User;
+import dev.skillter.synaxic.service.AccountUsageService;
 import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.util.IpExtractor;
 import io.github.bucket4j.Bucket;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
+    private final AccountUsageService accountUsageService;
     private final IpExtractor ipExtractor;
     private final ObjectMapper objectMapper;
 
@@ -50,6 +52,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String key;
         RateLimitService.RateLimitTier tier;
+        String apiKeyPrefix = null;
+        Long apiKeyId = null;
 
         // Determine rate limit tier for API endpoints
         if (isStaticResource(path)) {
@@ -58,9 +62,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else {
             // Only API endpoints reach here (/v1/*, /api/*)
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof User user) {
-                key = user.getId().toString();
-                tier = RateLimitService.RateLimitTier.API_KEY;
+
+            if (authentication != null && authentication.isAuthenticated()) {
+                if (authentication instanceof ApiKeyAuthentication apiKeyAuth) {
+                    // API key authentication - use account-level rate limiting
+                    User user = apiKeyAuth.getApiKey().getUser();
+                    key = "account:" + user.getId();
+                    tier = RateLimitService.RateLimitTier.ACCOUNT;
+                    apiKeyPrefix = apiKeyAuth.getApiKey().getPrefix();
+                    apiKeyId = apiKeyAuth.getApiKey().getId();
+                } else if (authentication.getPrincipal() instanceof User user) {
+                    // OAuth2 authentication - use account-level rate limiting
+                    key = "account:" + user.getId();
+                    tier = RateLimitService.RateLimitTier.ACCOUNT;
+                } else {
+                    key = ipExtractor.extractClientIp(request);
+                    tier = RateLimitService.RateLimitTier.ANONYMOUS;
+                }
             } else {
                 key = ipExtractor.extractClientIp(request);
                 tier = RateLimitService.RateLimitTier.ANONYMOUS;
@@ -75,6 +93,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (probe.isConsumed()) {
             response.addHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
+
+            // Record API key usage for account-level tracking
+            if (apiKeyId != null && apiKeyPrefix != null) {
+                try {
+                    accountUsageService.recordApiKeyUsage(apiKeyId, apiKeyPrefix);
+                } catch (Exception e) {
+                    log.warn("Failed to record API key usage for key {}: {}", apiKeyPrefix, e.getMessage());
+                }
+            }
+
             filterChain.doFilter(request, response);
         } else {
             handleRateLimitExceeded(request, response, probe);
