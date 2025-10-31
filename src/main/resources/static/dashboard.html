@@ -640,7 +640,320 @@
             transition: width 0.3s ease;
         }
 
+        /* Account Usage Styles */
+        .account-usage-container {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .account-usage-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            opacity: 0.8;
+        }
+
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            gap: 24px;
+        }
+
+        .usage-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .usage-subtitle {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .usage-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .usage-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+
+        .usage-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .usage-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .usage-stat-divider {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin: 0 4px;
+        }
+
+        .usage-progress-container {
+            margin-bottom: 32px;
+        }
+
+        .usage-progress-bar {
+            width: 100%;
+            height: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .usage-progress-fill {
+            height: 100%;
+            background: var(--gradient-1);
+            border-radius: 8px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .usage-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .usage-percentage {
+            text-align: right;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .key-breakdown-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .breakdown-title {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .key-breakdown-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .breakdown-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .key-usage-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .key-usage-item:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+        }
+
+        .key-color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .key-usage-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .key-usage-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .key-usage-prefix {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .key-usage-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .key-usage-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .key-usage-percentage {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .key-usage-bar {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .key-usage-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-tooltip);
+            color: var(--text-tooltip);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(99, 102, 241, 0.2) transparent transparent transparent;
+        }
+
         @media (max-width: 768px) {
+            .account-usage-container {
+                padding: 24px 20px;
+            }
+
+            .usage-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .usage-stats {
+                align-self: stretch;
+                justify-content: space-between;
+            }
+
+            .key-breakdown-container {
+                padding: 20px 16px;
+            }
+
+            .key-usage-item {
+                padding: 12px;
+            }
+
+            .key-usage-stats {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 8px;
+            }
+
             .dashboard-container {
                 padding: 100px 16px 60px;
             }
@@ -793,6 +1106,56 @@
             </div>
         </div>
 
+        <!-- Account Usage Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📊</span>
+                    Account Usage
+                </h2>
+            </div>
+
+            <!-- Account Quota Visualization -->
+            <div class="account-usage-container">
+                <div class="usage-header">
+                    <div class="usage-info">
+                        <h3 class="usage-title">Account Quota Usage</h3>
+                        <p class="usage-subtitle">Track your API consumption across all keys</p>
+                    </div>
+                    <div class="usage-stats">
+                        <div class="usage-stat">
+                            <span class="usage-stat-value" id="account-used">0</span>
+                            <span class="usage-stat-label">Used</span>
+                        </div>
+                        <div class="usage-stat-divider">/</div>
+                        <div class="usage-stat">
+                            <span class="usage-stat-value" id="account-limit">10K</span>
+                            <span class="usage-stat-label">Limit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="usage-progress-container">
+                    <div class="usage-progress-bar">
+                        <div class="usage-progress-fill" id="usage-progress"></div>
+                    </div>
+                    <div class="usage-percentage" id="usage-percentage">0%</div>
+                </div>
+
+                <!-- Key Usage Breakdown -->
+                <div class="key-breakdown-container">
+                    <h4 class="breakdown-title">Usage by API Key</h4>
+                    <div class="key-breakdown-chart" id="key-breakdown">
+                        <div class="breakdown-empty">
+                            <div class="empty-icon">📈</div>
+                            <div class="empty-text">No API usage this hour</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Stats -->
         <div class="dashboard-grid">
             <div class="stat-card-mini">
@@ -806,10 +1169,6 @@
             <div class="stat-card-mini">
                 <div class="label">Requests Today</div>
                 <div class="value" id="requests-today">0</div>
-            </div>
-            <div class="stat-card-mini">
-                <div class="label">Rate Limit</div>
-                <div class="value" id="rate-limit">10K/hr</div>
             </div>
         </div>
 
@@ -1208,20 +1567,163 @@
             `;
         }
 
-        // Load stats
+        // Load account usage and stats
         async function loadStats() {
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/stats`, {
+                // Load account usage
+                const usageResponse = await fetch(`${API_BASE}/v1/auth/account-usage`, {
                     credentials: 'include'
                 });
 
-                if (response.ok) {
-                    const stats = await response.json();
+                if (usageResponse.ok) {
+                    const accountUsage = await usageResponse.json();
+                    displayAccountUsage(accountUsage);
+                }
+
+                // Load legacy stats
+                const statsResponse = await fetch(`${API_BASE}/v1/auth/stats`, {
+                    credentials: 'include'
+                });
+
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
                     document.getElementById('total-requests').textContent = (stats.totalRequests || 0).toLocaleString();
                     document.getElementById('requests-today').textContent = (stats.requestsToday || 0).toLocaleString();
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        // Display account usage visualization
+        function displayAccountUsage(usage) {
+            // Update account usage header
+            const used = usage.accountRequestsUsed || 0;
+            const limit = usage.accountRateLimit || 10000;
+            const percentage = usage.usagePercentage || 0;
+
+            document.getElementById('account-used').textContent = formatNumber(used);
+            document.getElementById('account-limit').textContent = formatNumber(limit);
+            document.getElementById('usage-percentage').textContent = `${percentage.toFixed(1)}%`;
+
+            // Update progress bar
+            const progressFill = document.getElementById('usage-progress');
+            setTimeout(() => {
+                progressFill.style.width = `${Math.min(percentage, 100)}%`;
+
+                // Change color based on usage level
+                if (percentage >= 90) {
+                    progressFill.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
+                } else if (percentage >= 75) {
+                    progressFill.style.background = 'linear-gradient(135deg, #feca57, #ff9ff3)';
+                } else {
+                    progressFill.style.background = 'var(--gradient-1)';
+                }
+            }, 100);
+
+            // Display key usage breakdown
+            displayKeyUsageBreakdown(usage.keyUsageBreakdown || []);
+        }
+
+        // Display key usage breakdown
+        function displayKeyUsageBreakdown(keyBreakdown) {
+            const container = document.getElementById('key-breakdown');
+
+            if (!keyBreakdown || keyBreakdown.length === 0) {
+                container.innerHTML = `
+                    <div class="breakdown-empty">
+                        <div class="empty-icon">📈</div>
+                        <div class="empty-text">No API usage this hour</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
+
+            container.innerHTML = keyBreakdown.map((key, index) => {
+                const percentage = totalRequests > 0 ? (key.requestCount / totalRequests) * 100 : 0;
+                const displayName = key.keyName || `API Key ${index + 1}`;
+
+                return `
+                    <div class="key-usage-item"
+                         onmouseenter="showKeyUsageTooltip(event, '${key.keyPrefix}', ${key.requestCount})"
+                         onmouseleave="hideKeyUsageTooltip()">
+                        <div class="key-color-indicator" style="background-color: ${key.color}"></div>
+                        <div class="key-usage-info">
+                            <div class="key-usage-name">
+                                <span>${displayName}</span>
+                                <span class="key-usage-prefix">${key.keyPrefix}</span>
+                            </div>
+                            <div class="key-usage-bar">
+                                <div class="key-usage-bar-fill"
+                                     style="width: ${percentage}%; background-color: ${key.color}"></div>
+                            </div>
+                        </div>
+                        <div class="key-usage-stats">
+                            <div class="key-usage-count">${key.requestCount} requests</div>
+                            <div class="key-usage-percentage">${percentage.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Animate the bars
+            setTimeout(() => {
+                container.querySelectorAll('.key-usage-bar-fill').forEach((bar, index) => {
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 100 * index);
+                });
+            }, 200);
+        }
+
+        // Format numbers for display
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Tooltip functionality
+        let activeTooltip = null;
+
+        function showKeyUsageTooltip(event, keyPrefix, requestCount) {
+            hideKeyUsageTooltip();
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.innerHTML = `
+                <strong>${keyPrefix}</strong><br>
+                ${requestCount} requests this hour
+            `;
+
+            document.body.appendChild(tooltip);
+
+            // Position tooltip
+            const rect = event.target.getBoundingClientRect();
+            tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+
+            // Show tooltip
+            setTimeout(() => tooltip.classList.add('show'), 10);
+            activeTooltip = tooltip;
+        }
+
+        function hideKeyUsageTooltip() {
+            if (activeTooltip) {
+                activeTooltip.classList.remove('show');
+                setTimeout(() => {
+                    if (activeTooltip && activeTooltip.parentNode) {
+                        activeTooltip.parentNode.removeChild(activeTooltip);
+                    }
+                    activeTooltip = null;
+                }, 200);
             }
         }
 
