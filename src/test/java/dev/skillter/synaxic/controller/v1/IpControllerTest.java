@@ -21,6 +21,7 @@ import org.redisson.spring.starter.RedissonAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -51,17 +52,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 RedissonAutoConfiguration.class,
                 SessionAutoConfiguration.class,
                 CacheAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration.class
         })
 @Import(TestSecurityConfig.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class IpControllerTest {
 
     @Autowired
