@@ -16,11 +16,12 @@ public class HttpSessionConfig {
         serializer.setCookieName("SYNAXIC_SESSION");
         serializer.setCookiePath("/");
         serializer.setUseHttpOnlyCookie(true);
-        serializer.setSameSite("Lax"); // Protect against CSRF
+        // Try Lax first - more secure and usually works for OAuth
+        serializer.setSameSite("Lax");
         // Use secure cookie in production (HTTPS)
         serializer.setUseSecureCookie(true);
-        // Don't set domain pattern - let Spring Session handle it naturally for localhost
-        // Spring Session will NOT set a domain cookie attributes for localhost, which is correct
+        // Set domain for the exact domain
+        serializer.setDomainName("synaxic.skillter.dev");
         return serializer;
     }
 }
