@@ -37,6 +37,9 @@ else
     fi
 fi
 
+# Ensure scripts are executable
+chmod +x scripts/*.sh > /dev/null 2>&1 || true
+
 # Run update script (handles sudo internally if needed)
 # Check if password is provided as first argument
 if [ -n "$1" ]; then
