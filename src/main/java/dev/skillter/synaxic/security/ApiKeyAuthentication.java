@@ -17,6 +17,10 @@ public class ApiKeyAuthentication implements Authentication {
         this.apiKey = apiKey;
     }
 
+    public ApiKey getApiKey() {
+        return apiKey;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();
