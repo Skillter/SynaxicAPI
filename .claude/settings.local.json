@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://synaxic.skillter.dev/js/main.js)",
+      "Bash(for file in src/main/resources/static/*.html)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(for file in src/main/resources/static/fair-use-policy.html src/main/resources/static/health.html src/main/resources/static/privacy-policy.html src/main/resources/static/terms-of-service.html)",
+      "Bash(curl:*)",
+      "Bash(./gradlew:*)",
+      "Bash(timeout:*)",
+      "Bash(echo:*)",
+      "WebFetch(domain:synaxic.skillter.dev)",
+      "WebSearch",
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
