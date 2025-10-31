@@ -111,6 +111,14 @@ public class AuthController {
                      session.getAttribute("user_id"));
         }
 
+        // Check if user is authenticated via session attribute first
+        boolean isAuthenticated = false;
+        if (session != null) {
+            Boolean authStatus = (Boolean) session.getAttribute("authenticated");
+            isAuthenticated = Boolean.TRUE.equals(authStatus);
+            log.debug("Session authentication status: {}", isAuthenticated);
+        }
+
         // First try to get OAuth2User from authentication principal
         if (oauth2User != null) {
             Map<String, Object> userInfo = new HashMap<>();
@@ -122,18 +130,28 @@ public class AuthController {
         }
 
         // Fallback: check session attributes (these are persisted by OAuth2LoginSuccessHandler)
-        if (session != null) {
+        if (session != null && isAuthenticated) {
             @SuppressWarnings("unchecked")
             Map<String, Object> sessionUserInfo = (Map<String, Object>) session.getAttribute("oauth2_user");
             if (sessionUserInfo != null && !sessionUserInfo.isEmpty()) {
                 log.info("Found user info in session: {}", sessionUserInfo.get("email"));
                 return ResponseEntity.ok(sessionUserInfo);
             }
+
+            // Even if oauth2_user is missing, if we have authenticated=true, construct basic user info
+            Long userId = (Long) session.getAttribute("user_id");
+            if (userId != null) {
+                Map<String, Object> basicUserInfo = new HashMap<>();
+                basicUserInfo.put("email", "user@" + userId + ".example.com");
+                basicUserInfo.put("name", "Authenticated User");
+                log.info("Created basic user info from session attributes for user: {}", userId);
+                return ResponseEntity.ok(basicUserInfo);
+            }
         }
 
         // No OAuth2 session found
-        log.warn("No OAuth2 session found - Session: {}, Principal: {}",
-                session != null ? session.getId() : "none", oauth2User);
+        log.warn("No OAuth2 session found - Session: {}, Authenticated: {}, Principal: {}",
+                session != null ? session.getId() : "none", isAuthenticated, oauth2User);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 

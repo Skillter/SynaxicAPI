@@ -66,6 +66,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             // Set secure session attributes
             newSession.setAttribute("authenticated", true);
 
+            // Ensure the security context is saved to the session
+            org.springframework.security.core.context.SecurityContext context =
+                org.springframework.security.core.context.SecurityContextHolder.getContext();
+            newSession.setAttribute("SPRING_SECURITY_CONTEXT", context);
+
             // Debug logging
             log.info("OAuth2 user logged in: {} ({}) - Session ID: {} - Session secured",
                     oauth2User.getAttribute("email"), user.getId(), newSession.getId());
