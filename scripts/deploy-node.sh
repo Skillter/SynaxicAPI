@@ -44,16 +44,20 @@ chmod +x scripts/*.sh > /dev/null 2>&1 || true
 # Check if password is provided as first argument
 if [ -n "$1" ]; then
     # Password provided as argument
-    if ! ./update.sh "$1" > /dev/null 2>&1; then
-        echo "ERROR: Update script failed"
+    echo "Running update script with password..."
+    if ! ./update.sh "$1"; then
+        echo "ERROR: Update script failed with exit code $?"
         exit 2
     fi
+    echo "Update script completed successfully"
 else
     # No password provided as argument
+    echo "Running update script without password..."
     if ! ./update.sh > /dev/null 2>&1; then
-        echo "ERROR: Update script failed"
+        echo "ERROR: Update script failed with exit code $?"
         exit 2
     fi
+    echo "Update script completed successfully"
 fi
 
 # Rebuild and restart services (rebuild to include updated static files)
