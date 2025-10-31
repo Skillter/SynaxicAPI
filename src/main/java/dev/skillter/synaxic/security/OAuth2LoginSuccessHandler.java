@@ -65,8 +65,15 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             // Set secure session attributes
             newSession.setAttribute("authenticated", true);
 
-            log.info("OAuth2 user logged in: {} ({}) - Session secured",
-                    oauth2User.getAttribute("email"), user.getId());
+            // Debug logging
+            log.info("OAuth2 user logged in: {} ({}) - Session ID: {} - Session secured",
+                    oauth2User.getAttribute("email"), user.getId(), newSession.getId());
+
+            // Log session attributes for debugging
+            log.debug("Session attributes: authenticated={}, user_id={}, login_time={}",
+                    newSession.getAttribute("authenticated"),
+                    newSession.getAttribute("user_id"),
+                    newSession.getAttribute("login_time"));
 
             this.setDefaultTargetUrl("/v1/auth/login-success");
             super.onAuthenticationSuccess(request, response, authentication);

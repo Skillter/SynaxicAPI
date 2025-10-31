@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/v1/auth")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Authentication", description = "User authentication and API key management.")
 @SecurityRequirement(name = "ApiKeyAuth")
 public class AuthController {
@@ -91,26 +93,41 @@ public class AuthController {
             @AuthenticationPrincipal OAuth2User oauth2User,
             jakarta.servlet.http.HttpServletRequest request) {
 
+        // Debug logging
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        log.debug("Session check - Session exists: {}, OAuth2User: {}",
+                 session != null, oauth2User != null);
+
+        if (session != null) {
+            log.debug("Session ID: {}, Authenticated: {}, User ID: {}",
+                     session.getId(),
+                     session.getAttribute("authenticated"),
+                     session.getAttribute("user_id"));
+        }
+
         // First try to get OAuth2User from authentication principal
         if (oauth2User != null) {
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("name", oauth2User.getAttribute("name"));
             userInfo.put("email", oauth2User.getAttribute("email"));
             userInfo.put("picture", oauth2User.getAttribute("picture"));
+            log.info("Found OAuth2User in principal: {}", oauth2User.getAttribute("email"));
             return ResponseEntity.ok(userInfo);
         }
 
         // Fallback: check session attributes (these are persisted by OAuth2LoginSuccessHandler)
-        jakarta.servlet.http.HttpSession session = request.getSession(false);
         if (session != null) {
             @SuppressWarnings("unchecked")
             Map<String, Object> sessionUserInfo = (Map<String, Object>) session.getAttribute("oauth2_user");
             if (sessionUserInfo != null && !sessionUserInfo.isEmpty()) {
+                log.info("Found user info in session: {}", sessionUserInfo.get("email"));
                 return ResponseEntity.ok(sessionUserInfo);
             }
         }
 
         // No OAuth2 session found
+        log.warn("No OAuth2 session found - Session: {}, Principal: {}",
+                session != null ? session.getId() : "none", oauth2User);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
