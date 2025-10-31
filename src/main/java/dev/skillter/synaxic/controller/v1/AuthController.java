@@ -114,7 +114,7 @@ public class AuthController {
             userInfo.put("name", oauth2User.getAttribute("name"));
             userInfo.put("email", oauth2User.getAttribute("email"));
             userInfo.put("picture", oauth2User.getAttribute("picture"));
-            log.info("Found OAuth2User in principal: {}", oauth2User.getAttribute("email"));
+            log.info("Found OAuth2User in principal: {}", (Object) oauth2User.getAttribute("email"));
             return ResponseEntity.ok(userInfo);
         }
 
