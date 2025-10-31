@@ -38,10 +38,19 @@ else
 fi
 
 # Run update script (handles sudo internally if needed)
-# Note: Only stdout/stderr are redirected, stdin is preserved for password
-if ! ./update.sh > /dev/null 2>&1; then
-    echo "ERROR: Update script failed"
-    exit 2
+# Read sudo password from stdin if provided
+if [ -t 0 ] && [ -n "$1" ]; then
+    # Password provided as argument
+    if ! ./update.sh "$1" > /dev/null 2>&1; then
+        echo "ERROR: Update script failed"
+        exit 2
+    fi
+else
+    # No password provided or stdin not a terminal
+    if ! ./update.sh > /dev/null 2>&1; then
+        echo "ERROR: Update script failed"
+        exit 2
+    fi
 fi
 
 # Rebuild and restart services (rebuild to include updated static files)
