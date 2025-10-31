@@ -1000,7 +1000,7 @@
     </div>
 
     <script src="/js/main.js"></script>
-    <script>
+    <script data-cfasync="false">
         const API_BASE = window.location.origin;
         let currentUser = null;
         let keyToDelete = null;
@@ -1045,8 +1045,15 @@
         async function checkAuth() {
             try {
                 const response = await fetch(`${API_BASE}/v1/auth/session`, {
-                    credentials: 'include'
+                    credentials: 'include',
+                    redirect: 'manual' // Prevent CORS errors from OAuth redirects
                 });
+
+                // Handle redirect (not authenticated)
+                if (response.type === 'opaqueredirect' || response.status === 0) {
+                    window.location.href = '/';
+                    return;
+                }
 
                 if (!response.ok) {
                     window.location.href = '/';
