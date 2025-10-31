@@ -45,7 +45,7 @@ public class WebConfig implements WebMvcConfigurer {
                 "https://docs.skillter.dev",
                 "https://synaxic.skillter.dev"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "HEAD", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "HEAD", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
