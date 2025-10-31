@@ -302,8 +302,18 @@ const Auth = {
     async checkAuthStatus() {
         try {
             const response = await fetch(`${API_BASE_URL}/v1/auth/session`, {
-                credentials: 'include'
+                credentials: 'include',
+                redirect: 'manual' // Don't follow redirects - prevents CORS errors
             });
+
+            // redirect: 'manual' makes fetch return opaque response for redirects
+            // Check if we got a successful response (not a redirect)
+            if (response.type === 'opaqueredirect' || response.status === 0) {
+                // Got redirected (user not authenticated)
+                this.isLoggedIn = false;
+                this.updateButtonForLoggedOut();
+                return;
+            }
 
             if (response.ok) {
                 const user = await response.json();

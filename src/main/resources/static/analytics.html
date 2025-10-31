@@ -662,7 +662,7 @@
     </footer>
 
     <script src="/js/main.js"></script>
-    <script>
+    <script data-cfasync="false">
         // Tab switching
         document.querySelectorAll('.dashboard-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -696,9 +696,21 @@
         // Fetch detailed analytics
         async function fetchDetailedAnalytics() {
             try {
-                const response = await fetch('/v1/admin/stats');
+                const response = await fetch('/v1/admin/stats', {
+                    credentials: 'include',
+                    redirect: 'manual'
+                });
+
+                // Handle redirect (not authenticated)
+                if (response.type === 'opaqueredirect' || response.status === 0) {
+                    console.log('Admin stats requires authentication');
+                    setLoadingPlaceholders('N/A');
+                    return;
+                }
 
                 if (!response.ok) {
+                    console.warn('Failed to fetch admin stats:', response.status);
+                    setLoadingPlaceholders('N/A');
                     return;
                 }
 
@@ -843,6 +855,12 @@
         async function fetchSystemHealth() {
             try {
                 const response = await fetch('/actuator/health');
+
+                if (!response.ok) {
+                    console.warn('Failed to fetch system health:', response.status);
+                    return;
+                }
+
                 const data = await response.json();
 
                 const isUp = data.status === 'UP';
@@ -964,6 +982,7 @@
         async function fetchMemoryMetrics() {
             try {
                 const response = await fetch('/actuator/metrics/jvm.memory.used');
+
                 if (response.ok) {
                     const data = await response.json();
                     const memoryUsed = data.measurements?.[0]?.value || 0;
@@ -981,6 +1000,7 @@
         async function fetchCacheMetrics() {
             try {
                 const response = await fetch('/actuator/metrics/cache.gets');
+
                 if (response.ok) {
                     const data = await response.json();
                     const hits = data.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
@@ -992,6 +1012,28 @@
                 console.error('Error fetching cache metrics:', error);
                 document.getElementById('cache-hit-rate').textContent = 'N/A';
             }
+        }
+
+        // Helper function to set placeholders for all loading elements
+        function setLoadingPlaceholders(value) {
+            const ids = [
+                'avg-response-time', 'success-rate', 'requests-per-min', 'error-rate',
+                'active-api-keys', 'cache-hit-rate', 'total-api-keys',
+                'ip-service-requests', 'email-service-requests',
+                'converter-service-requests', 'other-service-requests',
+                'response-min', 'response-avg', 'response-max',
+                'latency-p50', 'latency-p95', 'latency-p99',
+                'uptime', 'memory-usage',
+                'latency-p50-metric', 'latency-p95-metric', 'latency-p99-metric',
+                'avg-response-metric', 'success-rate-metric', 'uptime-metric', 'sessions-metric'
+            ];
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.textContent === 'Loading...') {
+                    el.textContent = value;
+                }
+            });
         }
 
         // Load data on page load
