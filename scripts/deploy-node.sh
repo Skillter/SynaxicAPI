@@ -38,15 +38,15 @@ else
 fi
 
 # Run update script (handles sudo internally if needed)
-# Read sudo password from stdin if provided
-if [ -t 0 ] && [ -n "$1" ]; then
+# Check if password is provided as first argument
+if [ -n "$1" ]; then
     # Password provided as argument
     if ! ./update.sh "$1" > /dev/null 2>&1; then
         echo "ERROR: Update script failed"
         exit 2
     fi
 else
-    # No password provided or stdin not a terminal
+    # No password provided as argument
     if ! ./update.sh > /dev/null 2>&1; then
         echo "ERROR: Update script failed"
         exit 2
