@@ -24,6 +24,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -333,5 +336,29 @@ public class AuthController {
 
         AccountUsageDto accountUsage = accountUsageService.getAccountUsage(user.getId());
         return ResponseEntity.ok(accountUsage.getKeyUsageBreakdown());
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Logs out the current OAuth2 user and invalidates the session")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Invalidate the HTTP session
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // Clear security context
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
+        // Clear session cookie
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("SYNAXIC_SESSION", "");
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setMaxAge(0);
+        // Note: SameSite attribute is handled by the CookieSerializer configuration
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
     }
 }
