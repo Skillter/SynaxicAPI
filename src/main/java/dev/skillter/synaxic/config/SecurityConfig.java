@@ -38,6 +38,8 @@ public class SecurityConfig {
             "/v1/color/**",
             "/v1/email/validate",
             "/v1/auth/login-success",
+            "/v1/auth/session",
+            "/v1/auth/logout",
             "/login",
             "/oauth2/**",
             "/swagger-ui.html",
