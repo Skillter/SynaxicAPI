@@ -12,6 +12,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -60,11 +64,62 @@ public class SecurityConfig {
             "/fair-use-policy"
     };
 
+    // Endpoints that don't require CSRF protection (API endpoints and OAuth2)
+    private static final String[] CSRF_EXCLUDED_ENDPOINTS = {
+            "/v1/**",
+            "/api/**",
+            "/oauth2/**",
+            "/login",
+            "/actuator/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Set the name of the attribute the CsrfToken will be populated on
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers(CSRF_EXCLUDED_ENDPOINTS)
+                )
+                .headers(headers -> headers
+                    // Content Security Policy to prevent XSS
+                    .contentSecurityPolicy(csp -> csp
+                        .policyDirectives(
+                            "default-src 'self'; " +
+                            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                            "font-src 'self' https://fonts.gstatic.com; " +
+                            "img-src 'self' data: https:; " +
+                            "connect-src 'self'; " +
+                            "frame-src 'none'; " +
+                            "object-src 'none'; " +
+                            "base-uri 'self'; " +
+                            "form-action 'self'; " +
+                            "frame-ancestors 'none'; " +
+                            "upgrade-insecure-requests"
+                        )
+                    )
+                    // Prevent content-type sniffing
+                    .contentTypeOptions(contentType -> contentType.disable())
+                    // Clickjacking protection
+                    .frameOptions(frameOptions -> frameOptions.deny())
+                    // Referrer policy
+                    .referrerPolicy(referrer -> referrer
+                        .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                    )
+                    // HSTS (HTTP Strict Transport Security)
+                    .httpStrictTransportSecurity(hsts -> hsts
+                        .maxAgeInSeconds(31536000) // 1 year
+                        .preload(false)
+                    )
+                )
                 .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
