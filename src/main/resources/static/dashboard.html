@@ -1085,6 +1085,7 @@
                     <div class="user-name">${user.name || 'User'}</div>
                     <div class="user-email">${user.email}</div>
                 </div>
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
             `;
         }
 
@@ -1390,6 +1391,30 @@
             }
         }
 
+        // Logout function
+        async function logout() {
+            try {
+                // Call logout endpoint to invalidate session
+                const response = await fetch(`${API_BASE}/v1/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                // Even if logout endpoint fails, redirect to home
+                showToast('success', 'Logged Out', 'You have been successfully logged out.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Still redirect even if API call fails
+                showToast('success', 'Logged Out', 'You have been successfully logged out.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            }
+        }
+
         // Reset cookie consent
         function resetCookieConsent() {
             const consent = localStorage.getItem('synaxic_cookie_consent');
@@ -1459,7 +1484,84 @@
             if (typeof MobileMenu !== 'undefined') {
                 MobileMenu.init();
             }
+
+            // Add keyboard event support for modals and inputs
+            initializeKeyboardSupport();
         });
+
+        // Keyboard event support for modals and forms
+        function initializeKeyboardSupport() {
+            // Escape key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const activeModal = document.querySelector('.modal.active');
+                    if (activeModal) {
+                        closeModal(activeModal.id);
+                    }
+                }
+            });
+
+            // Enter key support for input fields and modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const activeElement = document.activeElement;
+                    const activeModal = document.querySelector('.modal.active');
+
+                    // Handle Enter key in modals
+                    if (activeModal) {
+                        // For delete confirmation modal
+                        if (activeModal.id === 'delete-account-modal') {
+                            const confirmInput = document.getElementById('delete-confirm');
+                            if (activeElement === confirmInput) {
+                                const confirmation = confirmInput.value.trim();
+                                if (confirmation === 'DELETE') {
+                                    confirmDeleteAccount();
+                                }
+                                return;
+                            }
+                        }
+
+                        // For create API key modal - submit on Enter when in the name input
+                        if (activeModal.id === 'create-key-modal') {
+                            const nameInput = document.getElementById('key-name');
+                            if (activeElement === nameInput) {
+                                createApiKey();
+                                return;
+                            }
+                        }
+
+                        // For delete key modal - confirm deletion on Enter
+                        if (activeModal.id === 'delete-key-modal') {
+                            confirmDeleteKey();
+                            return;
+                        }
+                    }
+
+                    // Handle Enter key in regular inputs outside modals
+                    if (activeElement && activeElement.classList.contains('form-input')) {
+                        const form = activeElement.closest('form');
+                        if (form) {
+                            const submitBtn = form.querySelector('button[type="submit"], .btn-primary');
+                            if (submitBtn && !submitBtn.disabled) {
+                                submitBtn.click();
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Focus management for modals
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('shown', () => {
+                    // Focus the first input or button in the modal
+                    const firstInput = modal.querySelector('input:not([readonly]), button:not([disabled])');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
