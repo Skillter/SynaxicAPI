@@ -39,4 +39,7 @@ public class ApiKey {
 
     @Column(name = "last_used_at")
     private Instant lastUsedAt;
+
+    @Column(name = "key_name")
+    private String keyName;
 }
