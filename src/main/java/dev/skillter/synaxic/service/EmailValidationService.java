@@ -56,7 +56,16 @@ public class EmailValidationService {
                     .build();
         }
 
-        String domain = email.substring(email.indexOf('@') + 1);
+        // Safely extract domain with bounds checking
+        String domain = extractDomainSafely(email);
+        if (domain == null) {
+            // This shouldn't happen if EmailValidator passed, but let's be safe
+            return EmailValidationResponse.builder()
+                    .email(email)
+                    .isValidSyntax(false)
+                    .build();
+        }
+
         boolean isDisposable = isDisposable(domain);
         boolean hasMxRecords = dnsService.hasMxRecords(domain);
 
@@ -87,6 +96,31 @@ public class EmailValidationService {
             return disposableDomains.contains(domain);
         }
         return false;
+    }
+
+    /**
+     * Safely extracts the domain part from an email address with bounds checking.
+     * @param email The email address (must be validated first)
+     * @return The domain part, or null if extraction fails
+     */
+    private String extractDomainSafely(String email) {
+        if (email == null || email.isEmpty()) {
+            return null;
+        }
+
+        int atIndex = email.indexOf('@');
+        // Basic validation - should have exactly one @ and not at start/end
+        if (atIndex <= 0 || atIndex >= email.length() - 1) {
+            return null;
+        }
+
+        // Check for multiple @ symbols
+        if (email.indexOf('@', atIndex + 1) != -1) {
+            return null;
+        }
+
+        // Extract domain safely
+        return email.substring(atIndex + 1);
     }
 
     public Set<String> getDisposableDomains() {

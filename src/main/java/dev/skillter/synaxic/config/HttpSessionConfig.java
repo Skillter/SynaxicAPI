@@ -7,7 +7,7 @@ import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
 @Configuration
-@EnableRedisHttpSession
+@EnableRedisHttpSession(maxInactiveIntervalInSeconds = 1800) // 30 minutes
 public class HttpSessionConfig {
 
     @Bean
@@ -15,9 +15,12 @@ public class HttpSessionConfig {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SYNAXIC_SESSION");
         serializer.setCookiePath("/");
-        // Match localhost or any domain with extension: localhost, example.com, sub.example.com
+        serializer.setUseHttpOnlyCookie(true);
+        serializer.setSameSite("Lax"); // Protect against CSRF
+        // Use secure cookie in production (HTTPS)
+        serializer.setUseSecureCookie(true);
         // Don't set domain pattern - let Spring Session handle it naturally for localhost
-        // Spring Session will NOT set a domain cookie attribute for localhost, which is correct
+        // Spring Session will NOT set a domain cookie attributes for localhost, which is correct
         return serializer;
     }
 }
