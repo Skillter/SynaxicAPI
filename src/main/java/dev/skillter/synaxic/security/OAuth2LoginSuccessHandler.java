@@ -28,47 +28,56 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        User user = userService.processOAuth2User(oauth2User);
+        try {
+            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            User user = userService.processOAuth2User(oauth2User);
 
-        if (apiKeyService.findByUserId(user.getId()).isEmpty()) {
-            apiKeyService.generateAndSaveKey(user);
+            if (apiKeyService.findByUserId(user.getId()).isEmpty()) {
+                apiKeyService.generateAndSaveKey(user);
+            }
+
+            // Session fixation protection: invalidate existing session and create new one
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+
+            // Create new session with security settings
+            HttpSession newSession = request.getSession(true);
+
+            // Set session timeout (30 minutes)
+            newSession.setMaxInactiveInterval(1800);
+
+            // Minimal user data storage - only store essential information
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("name", sanitizeString(oauth2User.getAttribute("name")));
+            userInfo.put("email", sanitizeString(oauth2User.getAttribute("email")));
+            // Store picture URL but validate it's a proper URL format
+            String pictureUrl = sanitizeString(oauth2User.getAttribute("picture"));
+            if (isValidUrl(pictureUrl)) {
+                userInfo.put("picture", pictureUrl);
+            }
+
+            newSession.setAttribute("oauth2_user", userInfo);
+            newSession.setAttribute("user_id", user.getId());
+            newSession.setAttribute("login_time", System.currentTimeMillis());
+
+            // Set secure session attributes
+            newSession.setAttribute("authenticated", true);
+
+            log.info("OAuth2 user logged in: {} ({}) - Session secured",
+                    oauth2User.getAttribute("email"), user.getId());
+
+            this.setDefaultTargetUrl("/v1/auth/login-success");
+            super.onAuthenticationSuccess(request, response, authentication);
+        } catch (Exception e) {
+            log.error("Error during OAuth2 login success for user: {}",
+                    oauth2User != null ? oauth2User.getAttribute("email") : "unknown", e);
+
+            // Fallback: still try to redirect but with error logging
+            this.setDefaultTargetUrl("/v1/auth/login-success");
+            super.onAuthenticationSuccess(request, response, authentication);
         }
-
-        // Session fixation protection: invalidate existing session and create new one
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-
-        // Create new session with security settings
-        HttpSession newSession = request.getSession(true);
-
-        // Set session timeout (30 minutes)
-        newSession.setMaxInactiveInterval(1800);
-
-        // Minimal user data storage - only store essential information
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("name", sanitizeString(oauth2User.getAttribute("name")));
-        userInfo.put("email", sanitizeString(oauth2User.getAttribute("email")));
-        // Store picture URL but validate it's a proper URL format
-        String pictureUrl = sanitizeString(oauth2User.getAttribute("picture"));
-        if (isValidUrl(pictureUrl)) {
-            userInfo.put("picture", pictureUrl);
-        }
-
-        newSession.setAttribute("oauth2_user", userInfo);
-        newSession.setAttribute("user_id", user.getId());
-        newSession.setAttribute("login_time", System.currentTimeMillis());
-
-        // Set secure session attributes
-        newSession.setAttribute("authenticated", true);
-
-        log.info("OAuth2 user logged in: {} ({}) - Session secured",
-                oauth2User.getAttribute("email"), user.getId());
-
-        this.setDefaultTargetUrl("/v1/auth/login-success");
-        super.onAuthenticationSuccess(request, response, authentication);
     }
 
     /**

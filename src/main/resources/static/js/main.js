@@ -735,4 +735,43 @@ document.addEventListener('DOMContentLoaded', () => {
     AnimateOnScroll.init();
     ScrollProgress.init();
     Parallax.init();
+
+    // Initialize keyboard support
+    initKeyboardSupport();
 });
+
+// Keyboard support for forms and inputs
+function initKeyboardSupport() {
+    // Enter key support for API demo inputs
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const activeElement = document.activeElement;
+
+            // Handle Enter key in API demo inputs
+            if (activeElement && activeElement.classList.contains('form-input')) {
+                const demoInputs = document.getElementById('demo-inputs');
+                if (demoInputs && demoInputs.contains(activeElement)) {
+                    // Find and click the execute button
+                    const executeBtn = document.getElementById('demo-execute');
+                    if (executeBtn && !executeBtn.disabled) {
+                        executeBtn.click();
+                        return;
+                    }
+                }
+            }
+
+            // Handle Enter key in cookie consent inputs
+            if (activeElement && activeElement.type === 'text' || activeElement.type === 'email') {
+                const form = activeElement.closest('form');
+                if (form) {
+                    const submitBtn = form.querySelector('button[type="submit"], .btn-primary');
+                    if (submitBtn && !submitBtn.disabled) {
+                        e.preventDefault();
+                        submitBtn.click();
+                        return;
+                    }
+                }
+            }
+        }
+    });
+}
