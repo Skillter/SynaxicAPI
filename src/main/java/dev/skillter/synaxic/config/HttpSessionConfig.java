@@ -20,8 +20,9 @@ public class HttpSessionConfig {
         serializer.setSameSite("Lax");
         // Use secure cookie in production (HTTPS)
         serializer.setUseSecureCookie(true);
-        // Set domain for the exact domain
-        serializer.setDomainName("synaxic.skillter.dev");
+        // Remove explicit domain setting to let browser handle it automatically
+        // This fixes session cookie visibility issues
+        // serializer.setDomainName("synaxic.skillter.dev");
         return serializer;
     }
 }
