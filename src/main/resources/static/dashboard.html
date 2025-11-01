@@ -1691,6 +1691,37 @@
         let keyToDelete = null;
         let apiKeyColors = new Map(); // Store consistent colors for API keys
 
+        // Create authenticated fetch headers
+        function getAuthHeaders() {
+            const headers = {};
+
+            // Check if we're using API key authentication (look for API key in URL or localStorage)
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiKey = urlParams.get('api_key') || localStorage.getItem('apiKey');
+
+            if (apiKey) {
+                headers['Authorization'] = `ApiKey ${apiKey}`;
+            }
+
+            return headers;
+        }
+
+        // Create authenticated fetch function
+        async function authenticatedFetch(url, options = {}) {
+            const authHeaders = getAuthHeaders();
+            const headers = {
+                ...authHeaders,
+                ...(options.headers || {})
+            };
+
+            const apiKey = authHeaders.Authorization;
+            return fetch(url, {
+                ...options,
+                headers,
+                credentials: apiKey ? 'omit' : 'include'
+            });
+        }
+
         // Color palette for API keys
         const colorPalette = [
             '#6366f1', // Primary blue
@@ -1754,6 +1785,7 @@
         // Check authentication on load
         async function checkAuth() {
             try {
+                // For session check, always use credentials-based auth (not API key)
                 const response = await fetch(`${API_BASE}/v1/auth/session`, {
                     credentials: 'include',
                     redirect: 'manual' // Prevent CORS errors from OAuth redirects
@@ -1800,9 +1832,7 @@
             container.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Loading API keys...</div></div>';
 
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/api-keys`, {
-                    credentials: 'include'
-                });
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/api-keys`);
 
                 if (!response.ok) throw new Error('Failed to load API keys');
 
@@ -1924,19 +1954,17 @@
         async function loadStats() {
             try {
                 // Load account usage
-                const usageResponse = await fetch(`${API_BASE}/v1/auth/account-usage`, {
-                    credentials: 'include'
-                });
+                const usageResponse = await authenticatedFetch(`${API_BASE}/v1/auth/account-usage`);
 
                 if (usageResponse.ok) {
                     const accountUsage = await usageResponse.json();
                     displayAccountUsage(accountUsage);
+                } else {
+                    console.error('Failed to load account usage:', usageResponse.status);
                 }
 
                 // Load legacy stats
-                const statsResponse = await fetch(`${API_BASE}/v1/auth/stats`, {
-                    credentials: 'include'
-                });
+                const statsResponse = await authenticatedFetch(`${API_BASE}/v1/auth/stats`);
 
                 if (statsResponse.ok) {
                     const stats = await statsResponse.json();
@@ -1976,8 +2004,8 @@
             let svgContent = '';
             let legendContent = '';
 
-            if (keyBreakdown.length === 0 || used === 0) {
-                // Empty state - hide donut chart and show minimal content
+            if (keyBreakdown.length === 0) {
+                // No API keys exist - show empty state
                 svg.style.display = 'none';
                 const donutContainer = document.querySelector('.donut-chart-container');
                 if (donutContainer) {
@@ -1994,6 +2022,16 @@
                     </div>
                 `;
             } else {
+                // API keys exist - show donut chart (even with 0 usage)
+                svg.style.display = 'block';
+                const donutContainer = document.querySelector('.donut-chart-container');
+                if (donutContainer) {
+                    donutContainer.style.display = 'block';
+                }
+
+                // Calculate angles for each segment
+                let currentAngle = 0;
+                const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
                 // Show donut chart when there is usage
                 svg.style.display = 'block';
                 const donutContainer = document.querySelector('.donut-chart-container');
@@ -2173,9 +2211,8 @@
             btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div>';
 
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/api-key/create`, {
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/api-key/create`, {
                     method: 'POST',
-                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -2232,9 +2269,8 @@
             btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div>';
 
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/api-key/${keyToDelete}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/api-key/${keyToDelete}`, {
+                    method: 'DELETE'
                 });
 
                 if (!response.ok) throw new Error('Failed to delete API key');
@@ -2262,9 +2298,7 @@
             btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Exporting...';
 
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/export-data`, {
-                    credentials: 'include'
-                });
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/export-data`);
 
                 if (!response.ok) throw new Error('Failed to export data');
 
@@ -2310,9 +2344,8 @@
             btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Deleting...';
 
             try {
-                const response = await fetch(`${API_BASE}/v1/auth/delete-account`, {
-                    method: 'DELETE',
-                    credentials: 'include'
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/delete-account`, {
+                    method: 'DELETE'
                 });
 
                 if (!response.ok) throw new Error('Failed to delete account');
@@ -2333,9 +2366,8 @@
         async function logout() {
             try {
                 // Call logout endpoint to invalidate session
-                const response = await fetch(`${API_BASE}/v1/auth/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
+                const response = await authenticatedFetch(`${API_BASE}/v1/auth/logout`, {
+                    method: 'POST'
                 });
 
                 // Even if logout endpoint fails, redirect to home
