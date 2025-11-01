@@ -105,6 +105,28 @@
 
         .section-icon {
             font-size: 28px;
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Fallback for emoji rendering issues */
+        .section-icon.chart-icon::before {
+            content: "📊";
+        }
+
+        @supports not (font-variation-settings: normal) {
+            .section-icon.chart-icon {
+                background: var(--gradient-1);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                font-weight: bold;
+                font-size: 24px;
+            }
         }
 
         .stat-card-mini {
@@ -640,14 +662,17 @@
             transition: width 0.3s ease;
         }
 
-        /* Account Usage Styles */
+        /* Account Usage Styles - Enhanced */
         .account-usage-container {
             background: var(--bg-tertiary);
-            border-radius: 16px;
-            padding: 32px;
+            border-radius: 20px;
+            padding: 40px;
             border: 1px solid rgba(99, 102, 241, 0.2);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .account-usage-container::before {
@@ -656,73 +681,141 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: var(--gradient-1);
-            opacity: 0.8;
+            opacity: 0.9;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .account-usage-container::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
         }
 
         .usage-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 32px;
-            gap: 24px;
+            margin-bottom: 48px;
+            gap: 32px;
+            position: relative;
+            z-index: 1;
         }
 
         .usage-info h3 {
-            margin: 0 0 8px 0;
-            font-size: 24px;
-            font-weight: 700;
+            margin: 0 0 12px 0;
+            font-size: 28px;
+            font-weight: 800;
             color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 12px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .usage-subtitle {
             margin: 0;
             color: var(--text-secondary);
             font-size: 16px;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-weight: 400;
         }
 
         .usage-stats {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             background: var(--bg-card);
-            padding: 16px 24px;
-            border-radius: 12px;
+            padding: 20px 32px;
+            border-radius: 16px;
             border: 1px solid rgba(99, 102, 241, 0.2);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .usage-stats::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
         }
 
         .usage-stat {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 60px;
+            min-width: 70px;
+            position: relative;
         }
 
         .usage-stat-value {
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 28px;
+            font-weight: 900;
             color: var(--text-primary);
             line-height: 1;
+            letter-spacing: -0.5px;
+            position: relative;
         }
 
         .usage-stat-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
+            letter-spacing: 1px;
+            margin-top: 6px;
+            font-weight: 600;
+            opacity: 0.9;
         }
 
         .usage-stat-divider {
-            font-size: 20px;
+            font-size: 24px;
             color: var(--text-muted);
             font-weight: 400;
-            margin: 0 4px;
+            margin: 0 8px;
+            opacity: 0.5;
+        }
+
+        /* Enhanced responsive styles */
+        @media (max-width: 1024px) {
+            .donut-chart-container {
+                width: 260px;
+                height: 260px;
+            }
+
+            .donut-chart-center {
+                width: 120px;
+                height: 120px;
+            }
+
+            .donut-percentage {
+                font-size: 36px;
+            }
         }
 
         .usage-progress-container {
@@ -892,21 +985,252 @@
             transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Donut Chart Styles - Enhanced */
+        .donut-chart-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 40px;
+            filter: drop-shadow(0 8px 32px rgba(99, 102, 241, 0.15));
+            animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .donut-chart {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 4px 20px rgba(99, 102, 241, 0.25));
+        }
+
+        .donut-chart-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2),
+                        0 4px 16px rgba(99, 102, 241, 0.1);
+            backdrop-filter: blur(8px);
+        }
+
+        .donut-percentage {
+            font-size: 42px;
+            font-weight: 900;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            letter-spacing: -1px;
+            position: relative;
+        }
+
+        .donut-percentage::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -5px;
+            right: -5px;
+            bottom: 0;
+            background: var(--gradient-1);
+            filter: blur(8px);
+            opacity: 0.3;
+            z-index: -1;
+            border-radius: 8px;
+        }
+
+        .donut-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        .donut-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 32px;
+            padding: 0 20px;
+            animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.6s both;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legend-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .legend-item:hover::before {
+            left: 100%;
+        }
+
+        .legend-item:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+                       0 0 0 1px rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legend-color::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .legend-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .legend-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 12px;
+            letter-spacing: 0.2px;
+        }
+
+        .legend-requests {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* API Key Color Indicators - Enhanced */
+        .api-key-color-indicator {
+            width: 6px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2),
+                       2px 0 8px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .api-key-color-indicator::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                rgba(255,255,255,0.3) 0%,
+                transparent 50%,
+                rgba(0,0,0,0.2) 100%);
+            animation: slideDown 4s ease-in-out infinite;
+        }
+
+        @keyframes slideDown {
+            0%, 100% { top: -100%; }
+            50% { top: 100%; }
+        }
+
+        .api-key-card {
+            position: relative;
+            padding-left: 32px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateZ(0);
+        }
+
+        .api-key-card:hover {
+            transform: translateY(-6px) translateZ(0);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15),
+                        0 0 0 1px rgba(99, 102, 241, 0.2);
+        }
+
+        .api-key-card:hover .api-key-color-indicator::after {
+            animation-duration: 2s;
+        }
+
         /* Tooltip styles */
         .tooltip {
             position: absolute;
-            background: var(--bg-tooltip);
-            color: var(--text-tooltip);
-            padding: 8px 12px;
-            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
             pointer-events: none;
             z-index: 1000;
             opacity: 0;
             transition: opacity 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            max-width: 200px;
         }
 
         .tooltip.show {
@@ -918,10 +1242,10 @@
             position: absolute;
             top: 100%;
             left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
+            margin-left: -6px;
+            border-width: 6px;
             border-style: solid;
-            border-color: rgba(99, 102, 241, 0.2) transparent transparent transparent;
+            border-color: rgba(99, 102, 241, 0.3) transparent transparent transparent;
         }
 
         @media (max-width: 768px) {
@@ -1110,7 +1434,7 @@
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">
-                    <span class="section-icon">📊</span>
+                    <span class="section-icon chart-icon">📊</span>
                     Account Usage
                 </h2>
             </div>
@@ -1135,23 +1459,20 @@
                     </div>
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="usage-progress-container">
-                    <div class="usage-progress-bar">
-                        <div class="usage-progress-fill" id="usage-progress"></div>
+                <!-- Donut Chart -->
+                <div class="donut-chart-container">
+                    <svg class="donut-chart" viewBox="0 0 300 300" id="donut-chart">
+                        <!-- Donut segments will be dynamically added here -->
+                    </svg>
+                    <div class="donut-chart-center">
+                        <div class="donut-percentage" id="donut-percentage">0%</div>
+                        <div class="donut-label">Used</div>
                     </div>
-                    <div class="usage-percentage" id="usage-percentage">0%</div>
                 </div>
 
-                <!-- Key Usage Breakdown -->
-                <div class="key-breakdown-container">
-                    <h4 class="breakdown-title">Usage by API Key</h4>
-                    <div class="key-breakdown-chart" id="key-breakdown">
-                        <div class="breakdown-empty">
-                            <div class="empty-icon">📈</div>
-                            <div class="empty-text">No API usage this hour</div>
-                        </div>
-                    </div>
+                <!-- Legend -->
+                <div class="donut-legend" id="donut-legend">
+                    <!-- Legend items will be dynamically added here -->
                 </div>
             </div>
         </div>
@@ -1368,6 +1689,31 @@
         const API_BASE = window.location.origin;
         let currentUser = null;
         let keyToDelete = null;
+        let apiKeyColors = new Map(); // Store consistent colors for API keys
+
+        // Color palette for API keys
+        const colorPalette = [
+            '#6366f1', // Primary blue
+            '#8b5cf6', // Purple
+            '#06b6d4', // Cyan
+            '#10b981', // Emerald
+            '#f59e0b', // Amber
+            '#ef4444', // Red
+            '#ec4899', // Pink
+            '#84cc16', // Lime
+            '#f97316', // Orange
+            '#14b8a6'  // Teal
+        ];
+
+        // Generate consistent color for API key based on its ID
+        function getKeyColor(keyId) {
+            if (!apiKeyColors.has(keyId)) {
+                const hash = keyId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const colorIndex = hash % colorPalette.length;
+                apiKeyColors.set(keyId, colorPalette[colorIndex]);
+            }
+            return apiKeyColors.get(keyId);
+        }
 
         // Toast notification system
         function showToast(type, title, message) {
@@ -1534,10 +1880,11 @@
 
             const maskedKey = key.keyPrefix + '***' + key.keySuffix;
             const usage = key.usageStats || {};
-            const usagePercent = (usage.totalRequests / 10000 * 100).toFixed(1);
+            const keyColor = getKeyColor(key.id);
 
             return `
                 <div class="api-key-card">
+                    <div class="api-key-color-indicator" style="background-color: ${keyColor}"></div>
                     <div class="api-key-header">
                         <div class="api-key-info">
                             <div class="api-key-name">${key.name || 'API Key'}</div>
@@ -1567,15 +1914,6 @@
                         <div class="api-key-stat">
                             <div class="api-key-stat-label">Created</div>
                             <div class="api-key-stat-value" style="font-size: 12px;">${createdDate}</div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 16px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">
-                            <span>Hourly Rate Limit</span>
-                            <span>${(usage.totalRequests || 0).toLocaleString()} / 10,000</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: ${Math.min(usagePercent, 100)}%"></div>
                         </div>
                     </div>
                 </div>
@@ -1610,7 +1948,7 @@
             }
         }
 
-        // Display account usage visualization
+        // Display account usage visualization with donut chart
         function displayAccountUsage(usage) {
             // Update account usage header
             const used = usage.accountRequestsUsed || 0;
@@ -1619,80 +1957,163 @@
 
             document.getElementById('account-used').textContent = formatNumber(used);
             document.getElementById('account-limit').textContent = formatNumber(limit);
-            document.getElementById('usage-percentage').textContent = `${percentage.toFixed(1)}%`;
+            document.getElementById('donut-percentage').textContent = `${percentage.toFixed(1)}%`;
 
-            // Update progress bar
-            const progressFill = document.getElementById('usage-progress');
-            setTimeout(() => {
-                progressFill.style.width = `${Math.min(percentage, 100)}%`;
-
-                // Change color based on usage level
-                if (percentage >= 90) {
-                    progressFill.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
-                } else if (percentage >= 75) {
-                    progressFill.style.background = 'linear-gradient(135deg, #feca57, #ff9ff3)';
-                } else {
-                    progressFill.style.background = 'var(--gradient-1)';
-                }
-            }, 100);
-
-            // Display key usage breakdown
-            displayKeyUsageBreakdown(usage.keyUsageBreakdown || []);
+            // Create donut chart
+            createDonutChart(used, limit, usage.keyUsageBreakdown || []);
         }
 
-        // Display key usage breakdown
-        function displayKeyUsageBreakdown(keyBreakdown) {
-            const container = document.getElementById('key-breakdown');
+        // Create donut chart with SVG
+        function createDonutChart(used, limit, keyBreakdown) {
+            const svg = document.getElementById('donut-chart');
+            const legend = document.getElementById('donut-legend');
 
-            if (!keyBreakdown || keyBreakdown.length === 0) {
-                container.innerHTML = `
-                    <div class="breakdown-empty">
-                        <div class="empty-icon">📈</div>
-                        <div class="empty-text">No API usage this hour</div>
+            const centerX = 150;
+            const centerY = 150;
+            const outerRadius = 130;
+            const innerRadius = 90;
+
+            let svgContent = '';
+            let legendContent = '';
+
+            if (keyBreakdown.length === 0 || used === 0) {
+                // Empty state - show grey circle
+                const percentage = limit > 0 ? (used / limit) : 0;
+                const dashArray = 2 * Math.PI * outerRadius;
+                const dashOffset = dashArray * (1 - percentage);
+
+                svgContent = `
+                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                            fill="none" stroke="rgba(156, 163, 175, 0.2)"
+                            stroke-width="${outerRadius - innerRadius}"/>
+                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                            fill="none" stroke="rgba(156, 163, 175, 0.4)"
+                            stroke-width="${outerRadius - innerRadius}"
+                            stroke-dasharray="${dashArray}"
+                            stroke-dashoffset="${dashOffset}"
+                            stroke-linecap="round"/>
+                `;
+
+                legendContent = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(156, 163, 175, 0.4)"></div>
+                        <div class="legend-info">
+                            <div class="legend-name">No Usage</div>
+                            <div class="legend-requests">0 requests</div>
+                        </div>
                     </div>
                 `;
-                return;
+            } else {
+                // Calculate angles for each segment
+                let currentAngle = 0;
+                const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
+
+                keyBreakdown.forEach((key, index) => {
+                    const percentage = totalRequests > 0 ? (key.requestCount / totalRequests) : 0;
+                    const angle = percentage * 360;
+                    const color = getKeyColor(key.keyId || key.keyPrefix);
+
+                    const startAngle = currentAngle;
+                    const endAngle = currentAngle + angle;
+
+                    const x1 = centerX + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                    const y1 = centerY + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+                    const x2 = centerX + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                    const y2 = centerY + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+
+                    const x3 = centerX + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                    const y3 = centerY + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+                    const x4 = centerX + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                    const y4 = centerY + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+
+                    const largeArc = angle > 180 ? 1 : 0;
+
+                    if (percentage > 0) {
+                        svgContent += `
+                            <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}
+                                     L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z"
+                                  fill="${color}"
+                                  stroke="var(--bg-secondary)"
+                                  stroke-width="2"
+                                  class="donut-segment"
+                                  style="cursor: pointer; transition: transform 0.2s ease; transform-origin: ${centerX}px ${centerY}px;"
+                                  onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', ${key.requestCount}, '${color}')"
+                                  onmouseleave="hideDonutTooltip()"
+                                  onmouseover="this.style.transform='scale(1.05)'"
+                                  onmouseout="this.style.transform='scale(1)'"/>
+                        `;
+
+                        legendContent += `
+                            <div class="legend-item"
+                                 onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', ${key.requestCount}, '${color}')"
+                                 onmouseleave="hideDonutTooltip()">
+                                <div class="legend-color" style="background-color: ${color}"></div>
+                                <div class="legend-info">
+                                    <div class="legend-name">${key.keyName || key.keyPrefix}</div>
+                                    <div class="legend-requests">${key.requestCount.toLocaleString()} requests</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    currentAngle = endAngle;
+                });
+
+                // Add remaining quota as grey segment
+                const usedPercentage = Math.min((used / limit), 1);
+                if (usedPercentage < 1) {
+                    const remainingAngle = (1 - usedPercentage) * 360;
+                    const startAngle = currentAngle;
+                    const endAngle = startAngle + remainingAngle;
+
+                    const x1 = centerX + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                    const y1 = centerY + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+                    const x2 = centerX + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                    const y2 = centerY + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+
+                    const x3 = centerX + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                    const y3 = centerY + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+                    const x4 = centerX + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                    const y4 = centerY + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+
+                    const largeArc = remainingAngle > 180 ? 1 : 0;
+
+                    svgContent += `
+                        <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}
+                                 L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z"
+                              fill="rgba(156, 163, 175, 0.2)"
+                              stroke="var(--bg-secondary)"
+                              stroke-width="2"/>
+                    `;
+
+                    legendContent += `
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(156, 163, 175, 0.4)"></div>
+                            <div class="legend-info">
+                                <div class="legend-name">Available</div>
+                                <div class="legend-requests">${(limit - used).toLocaleString()} requests</div>
+                            </div>
+                        </div>
+                    `;
+                }
             }
 
-            const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
+            svg.innerHTML = svgContent;
+            legend.innerHTML = legendContent;
 
-            container.innerHTML = keyBreakdown.map((key, index) => {
-                const percentage = totalRequests > 0 ? (key.requestCount / totalRequests) * 100 : 0;
-                const displayName = key.keyName || `API Key ${index + 1}`;
-
-                return `
-                    <div class="key-usage-item"
-                         onmouseenter="showKeyUsageTooltip(event, '${key.keyPrefix}', ${key.requestCount})"
-                         onmouseleave="hideKeyUsageTooltip()">
-                        <div class="key-color-indicator" style="background-color: ${key.color}"></div>
-                        <div class="key-usage-info">
-                            <div class="key-usage-name">
-                                <span>${displayName}</span>
-                                <span class="key-usage-prefix">${key.keyPrefix}</span>
-                            </div>
-                            <div class="key-usage-bar">
-                                <div class="key-usage-bar-fill"
-                                     style="width: ${percentage}%; background-color: ${key.color}"></div>
-                            </div>
-                        </div>
-                        <div class="key-usage-stats">
-                            <div class="key-usage-count">${key.requestCount} requests</div>
-                            <div class="key-usage-percentage">${percentage.toFixed(1)}%</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Animate the bars
+            // Animate the donut segments on load
             setTimeout(() => {
-                container.querySelectorAll('.key-usage-bar-fill').forEach((bar, index) => {
-                    const width = bar.style.width;
-                    bar.style.width = '0%';
+                const segments = svg.querySelectorAll('.donut-segment');
+                segments.forEach((segment, index) => {
+                    segment.style.opacity = '0';
+                    segment.style.transform = 'scale(0)';
                     setTimeout(() => {
-                        bar.style.width = width;
-                    }, 100 * index);
+                        segment.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        segment.style.opacity = '1';
+                        segment.style.transform = 'scale(1)';
+                    }, index * 100);
                 });
-            }, 200);
+            }, 100);
         }
 
         // Format numbers for display
@@ -1705,17 +2126,20 @@
             return num.toString();
         }
 
-        // Tooltip functionality
+        // Donut chart tooltip functionality
         let activeTooltip = null;
 
-        function showKeyUsageTooltip(event, keyPrefix, requestCount) {
-            hideKeyUsageTooltip();
+        function showDonutTooltip(event, keyName, requestCount, color) {
+            hideDonutTooltip();
 
             const tooltip = document.createElement('div');
             tooltip.className = 'tooltip';
             tooltip.innerHTML = `
-                <strong>${keyPrefix}</strong><br>
-                ${requestCount} requests this hour
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <div style="width: 12px; height: 12px; background: ${color}; border-radius: 2px;"></div>
+                    <strong>${keyName}</strong>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">${requestCount.toLocaleString()} requests</div>
             `;
 
             document.body.appendChild(tooltip);
@@ -1730,7 +2154,7 @@
             activeTooltip = tooltip;
         }
 
-        function hideKeyUsageTooltip() {
+        function hideDonutTooltip() {
             if (activeTooltip) {
                 activeTooltip.classList.remove('show');
                 setTimeout(() => {
