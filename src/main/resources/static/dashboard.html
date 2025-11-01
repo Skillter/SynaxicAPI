@@ -1798,17 +1798,33 @@
                 }
 
                 if (!response.ok) {
+                    console.error('Session check failed with status:', response.status);
                     window.location.href = '/';
                     return;
                 }
 
                 currentUser = await response.json();
-                displayUserProfile(currentUser);
-                loadApiKeys();
-                loadStats();
+                if (currentUser) {
+                    displayUserProfile(currentUser);
+                    loadApiKeys();
+                    loadStats();
+                } else {
+                    console.error('No user data received');
+                    window.location.href = '/';
+                }
             } catch (error) {
                 console.error('Auth check failed:', error);
-                window.location.href = '/';
+                // Show error state instead of infinite loading
+                document.getElementById('user-profile').innerHTML = `
+                    <div class="alert alert-error">
+                        Authentication failed. Please <a href="/" style="color: var(--primary);">login again</a>.
+                    </div>
+                `;
+                document.getElementById('api-keys-list').innerHTML = `
+                    <div class="alert alert-error">
+                        Failed to load API keys. Please refresh the page or <a href="/" style="color: var(--primary);">login again</a>.
+                    </div>
+                `;
             }
         }
 
@@ -1832,9 +1848,20 @@
             container.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><div class="loading-text">Loading API keys...</div></div>';
 
             try {
-                const response = await authenticatedFetch(`${API_BASE}/v1/auth/api-keys`);
+                // Add timeout to prevent infinite loading
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timeout')), 10000)
+                );
 
-                if (!response.ok) throw new Error('Failed to load API keys');
+                const response = await Promise.race([
+                    authenticatedFetch(`${API_BASE}/v1/auth/api-keys`),
+                    timeoutPromise
+                ]);
+
+                if (!response.ok) {
+                    console.error('API keys response status:', response.status);
+                    throw new Error(`Failed to load API keys: ${response.status}`);
+                }
 
                 const keys = await response.json();
 
@@ -1868,8 +1895,18 @@
                 document.getElementById('total-keys').textContent = keys.length + '/2';
             } catch (error) {
                 console.error('Error loading API keys:', error);
-                container.innerHTML = '<div class="alert alert-error">Failed to load API keys. Please refresh the page.</div>';
-                showToast('error', 'Error', 'Failed to load API keys');
+                let errorMessage = 'Failed to load API keys. Please refresh the page.';
+
+                if (error.message === 'Request timeout') {
+                    errorMessage = 'Request timed out. Please check your connection and refresh the page.';
+                } else if (error.message.includes('401')) {
+                    errorMessage = 'Authentication expired. Please <a href="/" style="color: var(--primary);">login again</a>.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Access denied. Please <a href="/" style="color: var(--primary);">login again</a>.';
+                }
+
+                container.innerHTML = `<div class="alert alert-error">${errorMessage}</div>`;
+                showToast('error', 'Error', errorMessage);
             }
         }
 
@@ -2032,16 +2069,89 @@
                 // Calculate angles for each segment
                 let currentAngle = 0;
                 const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
-                // Show donut chart when there is usage
-                svg.style.display = 'block';
-                const donutContainer = document.querySelector('.donut-chart-container');
-                if (donutContainer) {
-                    donutContainer.style.display = 'block';
-                }
 
-                // Calculate angles for each segment
-                let currentAngle = 0;
-                const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
+                // If there are no requests made, show all API keys as available
+                if (totalRequests === 0) {
+                    // Show each API key with 0 usage
+                    keyBreakdown.forEach((key, index) => {
+                        const color = getKeyColor(key.keyId || key.keyPrefix);
+
+                        // Create a small segment for each key to show they exist
+                        const smallAngle = 5; // Small visible segment
+                        const startAngle = currentAngle;
+                        const endAngle = currentAngle + smallAngle;
+
+                        const x1 = centerX + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                        const y1 = centerY + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+                        const x2 = centerX + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                        const y2 = centerY + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+
+                        const x3 = centerX + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
+                        const y3 = centerY + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
+                        const x4 = centerX + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
+                        const y4 = centerY + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
+
+                        svgContent += `
+                            <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 0 1 ${x2} ${y2}
+                                     L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 0 0 ${x4} ${y4} Z"
+                                  fill="${color}"
+                                  stroke="var(--bg-secondary)"
+                                  stroke-width="2"
+                                  class="donut-segment"
+                                  style="cursor: pointer; transition: transform 0.2s ease; transform-origin: ${centerX}px ${centerY}px;"
+                                  onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}')"
+                                  onmouseleave="hideDonutTooltip()"
+                                  onmouseover="this.style.transform='scale(1.05)'"
+                                  onmouseout="this.style.transform='scale(1)'"/>
+                        `;
+
+                        legendContent += `
+                            <div class="legend-item"
+                                 onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}')"
+                                 onmouseleave="hideDonutTooltip()">
+                                <div class="legend-color" style="background-color: ${color}"></div>
+                                <div class="legend-info">
+                                    <div class="legend-name">${key.keyName || key.keyPrefix}</div>
+                                    <div class="legend-requests">0 requests</div>
+                                </div>
+                            </div>
+                        `;
+
+                        currentAngle = endAngle + 10; // Add gap between keys
+                    });
+
+                    // Fill the rest with available quota
+                    const remainingAngle = 360 - currentAngle;
+                    if (remainingAngle > 0) {
+                        const x1 = centerX + outerRadius * Math.cos((currentAngle - 90) * Math.PI / 180);
+                        const y1 = centerY + outerRadius * Math.sin((currentAngle - 90) * Math.PI / 180);
+                        const x2 = centerX + outerRadius * Math.cos((360 - 90) * Math.PI / 180);
+                        const y2 = centerY + outerRadius * Math.sin((360 - 90) * Math.PI / 180);
+
+                        const x3 = centerX + innerRadius * Math.cos((360 - 90) * Math.PI / 180);
+                        const y3 = centerY + innerRadius * Math.sin((360 - 90) * Math.PI / 180);
+                        const x4 = centerX + innerRadius * Math.cos((currentAngle - 90) * Math.PI / 180);
+                        const y4 = centerY + innerRadius * Math.sin((currentAngle - 90) * Math.PI / 180);
+
+                        svgContent += `
+                            <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 1 1 ${x2} ${y2}
+                                     L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 1 0 ${x4} ${y4} Z"
+                                  fill="rgba(156, 163, 175, 0.2)"
+                                  stroke="var(--bg-secondary)"
+                                  stroke-width="2"/>
+                        `;
+
+                        legendContent += `
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: rgba(156, 163, 175, 0.4)"></div>
+                                <div class="legend-info">
+                                    <div class="legend-name">Available</div>
+                                    <div class="legend-requests">${limit.toLocaleString()} requests</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
 
                 keyBreakdown.forEach((key, index) => {
                     const percentage = totalRequests > 0 ? (key.requestCount / totalRequests) : 0;
