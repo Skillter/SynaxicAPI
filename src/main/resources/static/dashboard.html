@@ -1499,16 +1499,31 @@
 
         // Render API key card
         function renderApiKeyCard(key) {
-            // Fix date parsing - handle both timestamp and ISO string
-            const createdAt = typeof key.createdAt === 'number' ? key.createdAt : new Date(key.createdAt).getTime();
+            // Fix date parsing - handle both timestamp (seconds) and ISO string
+            let createdAt;
+            if (typeof key.createdAt === 'number') {
+                // If it's a large number, it's likely milliseconds already
+                // If it's a smaller number (like 17xxxxxxx), it's seconds and needs conversion
+                createdAt = key.createdAt > 1000000000000 ? key.createdAt : key.createdAt * 1000;
+            } else {
+                createdAt = new Date(key.createdAt).getTime();
+            }
             const createdDate = new Date(createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             });
 
+            let lastUsedAt;
+            if (key.lastUsedAt) {
+                if (typeof key.lastUsedAt === 'number') {
+                    lastUsedAt = key.lastUsedAt > 1000000000000 ? key.lastUsedAt : key.lastUsedAt * 1000;
+                } else {
+                    lastUsedAt = new Date(key.lastUsedAt).getTime();
+                }
+            }
             const lastUsedDate = key.lastUsedAt
-                ? new Date(typeof key.lastUsedAt === 'number' ? key.lastUsedAt : new Date(key.lastUsedAt).getTime()).toLocaleString('en-US', {
+                ? new Date(lastUsedAt).toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
