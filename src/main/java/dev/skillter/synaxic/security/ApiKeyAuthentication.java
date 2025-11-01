@@ -53,7 +53,6 @@ public class ApiKeyAuthentication implements Authentication {
 
     @Override
     public String getName() {
-        User user = apiKey.getUser();
-        return user != null ? user.getEmail() : null;
+        return apiKey.getPrefix();
     }
 }
