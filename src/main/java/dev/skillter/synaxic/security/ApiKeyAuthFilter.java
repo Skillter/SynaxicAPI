@@ -49,8 +49,14 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private String extractApiKey(HttpServletRequest request) {
         String headerValue = request.getHeader("Authorization");
-        if (StringUtils.hasText(headerValue) && headerValue.startsWith("ApiKey ")) {
-            return headerValue.substring(7);
+        if (StringUtils.hasText(headerValue)) {
+            if (headerValue.startsWith("ApiKey ")) {
+                return headerValue.substring(7);
+            }
+            // Also accept bare API key format (e.g., "syn_live_...")
+            if (headerValue.startsWith("syn_live_") || headerValue.startsWith("syn_test_")) {
+                return headerValue;
+            }
         }
 
         return request.getHeader("X-API-Key");
