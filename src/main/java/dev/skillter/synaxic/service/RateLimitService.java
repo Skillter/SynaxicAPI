@@ -60,14 +60,15 @@ public class RateLimitService {
 
     public RateLimitStatus getStatus(String key, RateLimitTier tier) {
         Bucket bucket = resolveBucket(key, tier);
-        io.github.bucket4j.ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(0);
+        // Get available tokens without consuming any
+        long availableTokens = bucket.getAvailableTokens();
 
         return RateLimitStatus.builder()
                 .key(key)
                 .tier(tier)
                 .limit(getLimit(tier))
-                .remainingTokens(probe.getRemainingTokens())
-                .isConsumed(probe.isConsumed())
+                .remainingTokens(availableTokens)
+                .isConsumed(true) // Status check doesn't consume tokens
                 .build();
     }
 
