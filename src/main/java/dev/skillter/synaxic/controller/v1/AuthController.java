@@ -5,8 +5,10 @@ import dev.skillter.synaxic.model.dto.GeneratedApiKey;
 import dev.skillter.synaxic.model.dto.UserDto;
 import dev.skillter.synaxic.model.entity.ApiKey;
 import dev.skillter.synaxic.model.entity.User;
+import dev.skillter.synaxic.security.ApiKeyAuthentication;
 import dev.skillter.synaxic.service.AccountUsageService;
 import dev.skillter.synaxic.service.ApiKeyService;
+import dev.skillter.synaxic.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -334,8 +336,34 @@ public class AuthController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AccountUsageDto.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<AccountUsageDto> getAccountUsage(@AuthenticationPrincipal User user) {
+    public ResponseEntity<AccountUsageDto> getAccountUsage(@AuthenticationPrincipal Object principal) {
+        User user = null;
+
+        // Handle OAuth2 authentication
+        if (principal instanceof OAuth2User oauth2User) {
+            String email = oauth2User.getAttribute("email");
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+                log.debug("Found user via OAuth2: {}", email);
+            } else {
+                log.warn("OAuth2 user not found in database: {}", email);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
+        // Handle API key authentication
+        else if (principal instanceof User) {
+            user = (User) principal;
+            log.debug("Found user via API key: {}", user.getId());
+        }
+        // Handle API key authentication via ApiKeyAuthentication
+        else if (principal instanceof ApiKeyAuthentication apiKeyAuth) {
+            user = apiKeyAuth.getApiKey().getUser();
+            log.debug("Found user via ApiKeyAuthentication: {}", user.getId());
+        }
+
         if (user == null) {
+            log.warn("No authenticated user found for account usage request");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
