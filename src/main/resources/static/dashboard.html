@@ -1785,25 +1785,42 @@
         // Check authentication on load
         async function checkAuth() {
             try {
+                console.log('Starting authentication check...');
+
+                // Add timeout to prevent infinite loading
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Authentication check timeout')), 5000)
+                );
+
                 // For session check, always use credentials-based auth (not API key)
-                const response = await fetch(`${API_BASE}/v1/auth/session`, {
+                const responsePromise = fetch(`${API_BASE}/v1/auth/session`, {
                     credentials: 'include',
                     redirect: 'manual' // Prevent CORS errors from OAuth redirects
                 });
 
+                const response = await Promise.race([responsePromise, timeoutPromise]);
+                console.log('Session check response status:', response.status);
+
                 // Handle redirect (not authenticated)
                 if (response.type === 'opaqueredirect' || response.status === 0) {
+                    console.log('Redirect detected - not authenticated');
                     window.location.href = '/';
                     return;
                 }
 
                 if (!response.ok) {
                     console.error('Session check failed with status:', response.status);
-                    window.location.href = '/';
-                    return;
+                    if (response.status === 401) {
+                        // Not authenticated - redirect to login
+                        window.location.href = '/';
+                        return;
+                    }
+                    throw new Error(`Session check failed: ${response.status}`);
                 }
 
                 currentUser = await response.json();
+                console.log('User data received:', currentUser);
+
                 if (currentUser) {
                     displayUserProfile(currentUser);
                     loadApiKeys();
@@ -1814,16 +1831,19 @@
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
+
                 // Show error state instead of infinite loading
+                let errorMessage = 'Authentication failed. Please <a href="/" style="color: var(--primary);">login again</a>.';
+
+                if (error.message === 'Authentication check timeout') {
+                    errorMessage = 'Authentication check timed out. Please check your connection and <a href="/" style="color: var(--primary);">try again</a>.';
+                }
+
                 document.getElementById('user-profile').innerHTML = `
-                    <div class="alert alert-error">
-                        Authentication failed. Please <a href="/" style="color: var(--primary);">login again</a>.
-                    </div>
+                    <div class="alert alert-error">${errorMessage}</div>
                 `;
                 document.getElementById('api-keys-list').innerHTML = `
-                    <div class="alert alert-error">
-                        Failed to load API keys. Please refresh the page or <a href="/" style="color: var(--primary);">login again</a>.
-                    </div>
+                    <div class="alert alert-error">Failed to load API keys. Please refresh the page or <a href="/" style="color: var(--primary);">login again</a>.</div>
                 `;
             }
         }
@@ -2152,46 +2172,35 @@
                         `;
                     }
                 } else {
+                    // API keys have actual usage - simplified donut chart
+                    const percentage = Math.min((used / limit), 1);
+                    const dashArray = 2 * Math.PI * outerRadius;
+                    const dashOffset = dashArray * (1 - percentage);
 
-                keyBreakdown.forEach((key, index) => {
-                    const percentage = totalRequests > 0 ? (key.requestCount / totalRequests) : 0;
-                    const angle = percentage * 360;
-                    const color = getKeyColor(key.keyId || key.keyPrefix);
+                    svgContent = `
+                        <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                                fill="none" stroke="rgba(156, 163, 175, 0.2)"
+                                stroke-width="${outerRadius - innerRadius}"/>
+                        <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                                fill="none" stroke="url(#gradient1)"
+                                stroke-width="${outerRadius - innerRadius}"
+                                stroke-dasharray="${dashArray}"
+                                stroke-dashoffset="${dashOffset}"
+                                stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    `;
 
-                    const startAngle = currentAngle;
-                    const endAngle = currentAngle + angle;
-
-                    const x1 = centerX + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                    const y1 = centerY + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-                    const x2 = centerX + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                    const y2 = centerY + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-
-                    const x3 = centerX + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                    const y3 = centerY + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-                    const x4 = centerX + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                    const y4 = centerY + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-
-                    const largeArc = angle > 180 ? 1 : 0;
-
-                    if (percentage > 0) {
-                        svgContent += `
-                            <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}
-                                     L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z"
-                                  fill="${color}"
-                                  stroke="var(--bg-secondary)"
-                                  stroke-width="2"
-                                  class="donut-segment"
-                                  style="cursor: pointer; transition: transform 0.2s ease; transform-origin: ${centerX}px ${centerY}px;"
-                                  onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', ${key.requestCount}, '${color}')"
-                                  onmouseleave="hideDonutTooltip()"
-                                  onmouseover="this.style.transform='scale(1.05)'"
-                                  onmouseout="this.style.transform='scale(1)'"/>
-                        `;
+                    // Show API keys with usage
+                    keyBreakdown.forEach((key) => {
+                        const color = getKeyColor(key.keyId || key.keyPrefix);
 
                         legendContent += `
-                            <div class="legend-item"
-                                 onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', ${key.requestCount}, '${color}')"
-                                 onmouseleave="hideDonutTooltip()">
+                            <div class="legend-item">
                                 <div class="legend-color" style="background-color: ${color}"></div>
                                 <div class="legend-info">
                                     <div class="legend-name">${key.keyName || key.keyPrefix}</div>
@@ -2199,66 +2208,12 @@
                                 </div>
                             </div>
                         `;
-                    }
-
-                    currentAngle = endAngle;
-                });
-
-                // Add remaining quota as grey segment
-                const usedPercentage = Math.min((used / limit), 1);
-                if (usedPercentage < 1) {
-                    const remainingAngle = (1 - usedPercentage) * 360;
-                    const startAngle = currentAngle;
-                    const endAngle = startAngle + remainingAngle;
-
-                    const x1 = centerX + outerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                    const y1 = centerY + outerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-                    const x2 = centerX + outerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                    const y2 = centerY + outerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-
-                    const x3 = centerX + innerRadius * Math.cos((endAngle - 90) * Math.PI / 180);
-                    const y3 = centerY + innerRadius * Math.sin((endAngle - 90) * Math.PI / 180);
-                    const x4 = centerX + innerRadius * Math.cos((startAngle - 90) * Math.PI / 180);
-                    const y4 = centerY + innerRadius * Math.sin((startAngle - 90) * Math.PI / 180);
-
-                    const largeArc = remainingAngle > 180 ? 1 : 0;
-
-                    svgContent += `
-                        <path d="M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}
-                                 L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z"
-                              fill="rgba(156, 163, 175, 0.2)"
-                              stroke="var(--bg-secondary)"
-                              stroke-width="2"/>
-                    `;
-
-                    legendContent += `
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: rgba(156, 163, 175, 0.4)"></div>
-                            <div class="legend-info">
-                                <div class="legend-name">Available</div>
-                                <div class="legend-requests">${(limit - used).toLocaleString()} requests</div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
+                    });
 
             svg.innerHTML = svgContent;
             legend.innerHTML = legendContent;
-
-            // Animate the donut segments on load
-            setTimeout(() => {
-                const segments = svg.querySelectorAll('.donut-segment');
-                segments.forEach((segment, index) => {
-                    segment.style.opacity = '0';
-                    segment.style.transform = 'scale(0)';
-                    setTimeout(() => {
-                        segment.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                        segment.style.opacity = '1';
-                        segment.style.transform = 'scale(1)';
-                    }, index * 100);
-                });
-            }, 100);
+            }
+        }
         }
 
         // Format numbers for display
@@ -2558,6 +2513,28 @@
 
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard page loaded - starting initialization...');
+
+            // Add a safety timeout to prevent infinite loading
+            setTimeout(() => {
+                const profileLoading = document.querySelector('#user-profile .loading-container');
+                const keysLoading = document.querySelector('#api-keys-list .loading-container');
+
+                if (profileLoading || keysLoading) {
+                    console.log('Safety timeout triggered - showing error state');
+                    document.getElementById('user-profile').innerHTML = `
+                        <div class="alert alert-error">
+                            Loading timeout. Please <a href="/" style="color: var(--primary);">login again</a>.
+                        </div>
+                    `;
+                    document.getElementById('api-keys-list').innerHTML = `
+                        <div class="alert alert-error">
+                            Loading timeout. Please refresh the page or <a href="/" style="color: var(--primary);">login again</a>.
+                        </div>
+                    `;
+                }
+            }, 15000); // 15 second safety timeout
+
             checkAuth();
 
             // Initialize mobile menu and other common features
