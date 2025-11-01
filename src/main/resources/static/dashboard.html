@@ -113,20 +113,20 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Fallback for emoji rendering issues */
-        .section-icon.chart-icon::before {
-            content: "📊";
+        /* Chart icon using emoji */
+        .section-icon.chart-icon {
+            font-size: 28px;
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        @supports not (font-variation-settings: normal) {
-            .section-icon.chart-icon {
-                background: var(--gradient-1);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                font-weight: bold;
-                font-size: 24px;
-            }
+        .section-icon.chart-icon::before {
+            content: "⭐";
+            margin-right: 0;
         }
 
         .stat-card-mini {
@@ -1434,7 +1434,7 @@
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">
-                    <span class="section-icon chart-icon">📊</span>
+                    <span class="section-icon chart-icon"></span>
                     Account Usage
                 </h2>
             </div>
@@ -1977,22 +1977,12 @@
             let legendContent = '';
 
             if (keyBreakdown.length === 0 || used === 0) {
-                // Empty state - show grey circle
-                const percentage = limit > 0 ? (used / limit) : 0;
-                const dashArray = 2 * Math.PI * outerRadius;
-                const dashOffset = dashArray * (1 - percentage);
-
-                svgContent = `
-                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
-                            fill="none" stroke="rgba(156, 163, 175, 0.2)"
-                            stroke-width="${outerRadius - innerRadius}"/>
-                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
-                            fill="none" stroke="rgba(156, 163, 175, 0.4)"
-                            stroke-width="${outerRadius - innerRadius}"
-                            stroke-dasharray="${dashArray}"
-                            stroke-dashoffset="${dashOffset}"
-                            stroke-linecap="round"/>
-                `;
+                // Empty state - hide donut chart and show minimal content
+                svg.style.display = 'none';
+                const donutContainer = document.querySelector('.donut-chart-container');
+                if (donutContainer) {
+                    donutContainer.style.display = 'none';
+                }
 
                 legendContent = `
                     <div class="legend-item">
@@ -2004,6 +1994,13 @@
                     </div>
                 `;
             } else {
+                // Show donut chart when there is usage
+                svg.style.display = 'block';
+                const donutContainer = document.querySelector('.donut-chart-container');
+                if (donutContainer) {
+                    donutContainer.style.display = 'block';
+                }
+
                 // Calculate angles for each segment
                 let currentAngle = 0;
                 const totalRequests = keyBreakdown.reduce((sum, key) => sum + key.requestCount, 0);
