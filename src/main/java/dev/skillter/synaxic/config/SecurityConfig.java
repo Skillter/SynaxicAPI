@@ -95,7 +95,7 @@ public class SecurityConfig {
                     .contentSecurityPolicy(csp -> csp
                         .policyDirectives(
                             "default-src 'self'; " +
-                            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com; " +
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                             "font-src 'self' https://fonts.gstatic.com; " +
                             "img-src 'self' data: https:; " +
