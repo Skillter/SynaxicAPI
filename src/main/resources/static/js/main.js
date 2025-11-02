@@ -107,9 +107,25 @@ const Stats = {
     currentStats: { totalRequests: 0, totalUsers: 0 },
 
     async init() {
-        await this.fetchStats();
-        // Refresh stats every 5 seconds for live updates
-        setInterval(() => this.fetchStats(), 5000);
+        // Only fetch stats if the page has stats elements
+        if (this.hasStatsElements()) {
+            await this.fetchStats();
+            // Refresh stats every 5 seconds for live updates
+            setInterval(() => this.fetchStats(), 5000);
+        }
+    },
+
+    hasStatsElements() {
+        // Check if the page has any stats-related elements
+        const statsElements = [
+            'total-requests',
+            'total-users',
+            'total-requests-stat',
+            'total-users-stat',
+            'total-requests-metric'
+        ];
+
+        return statsElements.some(id => document.getElementById(id));
     },
 
     async fetchStats() {

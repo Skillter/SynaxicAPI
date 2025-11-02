@@ -30,4 +30,20 @@ public interface ApiKeyUsageRepository extends JpaRepository<ApiKeyUsage, Long> 
     @Query("SELECT COUNT(DISTINCT a.apiKey.id) FROM ApiKeyUsage a WHERE a.apiKey.user.id = :userId " +
            "AND a.periodType = 'hourly' AND a.periodStart >= :hourStart AND a.requestCount > 0")
     Integer getActiveKeysCountForUser(@Param("userId") Long userId, @Param("hourStart") Instant hourStart);
+
+    @Query("SELECT COALESCE(SUM(a.requestCount), 0) FROM ApiKeyUsage a WHERE a.apiKey.user.id = :userId " +
+           "AND a.periodType = 'hourly'")
+    Long getTotalRequestsForUser(@Param("userId") Long userId);
+
+    @Query("SELECT COALESCE(SUM(a.requestCount), 0) FROM ApiKeyUsage a WHERE a.apiKey.user.id = :userId " +
+           "AND a.periodType = 'hourly' AND a.periodStart >= :todayStart")
+    Long getTodayRequestsForUser(@Param("userId") Long userId, @Param("todayStart") Instant todayStart);
+
+    @Query("SELECT COALESCE(SUM(a.requestCount), 0) FROM ApiKeyUsage a WHERE a.apiKey.id = :keyId " +
+           "AND a.periodType = 'hourly' AND a.periodStart >= :todayStart")
+    Long getTodayRequestsForApiKey(@Param("keyId") Long keyId, @Param("todayStart") Instant todayStart);
+
+    @Query("SELECT COALESCE(SUM(a.requestCount), 0) FROM ApiKeyUsage a WHERE a.apiKey.id = :keyId " +
+           "AND a.periodType = 'hourly'")
+    Long getTotalRequestsForApiKey(@Param("keyId") Long keyId);
 }
