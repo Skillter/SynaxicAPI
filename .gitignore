@@ -86,3 +86,4 @@ hs_err_pid*
 qodana.yaml
 /redis/tls
 redis/redis.conf
+cookies.txt
