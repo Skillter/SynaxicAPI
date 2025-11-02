@@ -2,12 +2,15 @@ package dev.skillter.synaxic.controller.v1;
 
 import dev.skillter.synaxic.model.dto.AccountUsageDto;
 import dev.skillter.synaxic.model.dto.GeneratedApiKey;
+import dev.skillter.synaxic.model.dto.RateLimitStatus;
 import dev.skillter.synaxic.model.dto.UserDto;
 import dev.skillter.synaxic.model.entity.ApiKey;
 import dev.skillter.synaxic.model.entity.User;
+import dev.skillter.synaxic.repository.ApiKeyUsageRepository;
 import dev.skillter.synaxic.security.ApiKeyAuthentication;
 import dev.skillter.synaxic.service.AccountUsageService;
 import dev.skillter.synaxic.service.ApiKeyService;
+import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +50,8 @@ public class AuthController {
     private final ApiKeyService apiKeyService;
     private final dev.skillter.synaxic.service.UserService userService;
     private final AccountUsageService accountUsageService;
+    private final ApiKeyUsageRepository apiKeyUsageRepository;
+    private final RateLimitService rateLimitService;
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get Current User Info",
@@ -176,11 +182,22 @@ public class AuthController {
         List<Map<String, Object>> result = keys.stream().map(key -> {
             Map<String, Object> keyMap = new HashMap<>();
             keyMap.put("id", key.getId().toString());
-            keyMap.put("name", "API Key");
+            keyMap.put("name", key.getKeyName() != null ? key.getKeyName() : "API Key");
             keyMap.put("keyPrefix", key.getPrefix());
             keyMap.put("keySuffix", key.getPrefix().substring(Math.max(0, key.getPrefix().length() - 4)));
             keyMap.put("createdAt", key.getCreatedAt());
             keyMap.put("lastUsedAt", key.getLastUsedAt());
+
+            // Add usage statistics
+            Map<String, Object> usageStats = new HashMap<>();
+            Instant todayStart = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+            Long todayRequests = apiKeyUsageRepository.getTodayRequestsForApiKey(key.getId(), todayStart);
+            Long totalRequests = apiKeyUsageRepository.getTotalRequestsForApiKey(key.getId());
+
+            usageStats.put("requestsToday", todayRequests != null ? todayRequests : 0L);
+            usageStats.put("totalRequests", totalRequests != null ? totalRequests : 0L);
+            keyMap.put("usageStats", usageStats);
+
             return keyMap;
         }).collect(Collectors.toList());
 
@@ -261,11 +278,13 @@ public class AuthController {
             return ResponseEntity.ok(stats);
         }
 
-        // For now, return placeholder stats
-        // TODO: Implement actual stats tracking from ApiStats table if needed
+        // Get actual statistics from AccountUsageService
+        Long totalRequests = accountUsageService.getTotalRequestsForUser(userOpt.get().getId());
+        Long todayRequests = accountUsageService.getTodayRequestsForUser(userOpt.get().getId());
+
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalRequests", 0);
-        stats.put("requestsToday", 0);
+        stats.put("totalRequests", totalRequests);
+        stats.put("requestsToday", todayRequests);
 
         return ResponseEntity.ok(stats);
     }
@@ -382,6 +401,44 @@ public class AuthController {
 
         AccountUsageDto accountUsage = accountUsageService.getAccountUsage(user.getId());
         return ResponseEntity.ok(accountUsage.getKeyUsageBreakdown());
+    }
+
+    @GetMapping("/rate-limit-status")
+    @Operation(summary = "Get Real-time Rate Limit Status", description = "Returns the current real-time rate limit status that matches API headers")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved rate limit status.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RateLimitStatus.class)))
+    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.")
+    public ResponseEntity<RateLimitStatus> getRateLimitStatus(@AuthenticationPrincipal Object principal) {
+        User user = null;
+
+        // Handle OAuth2 authentication
+        if (principal instanceof OAuth2User oauth2User) {
+            String email = oauth2User.getAttribute("email");
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isPresent()) {
+                user = userOpt.get();
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        }
+        // Handle API key authentication
+        else if (principal instanceof User) {
+            user = (User) principal;
+        }
+        // Handle API key authentication via ApiKeyAuthentication
+        else if (principal instanceof ApiKeyAuthentication apiKeyAuth) {
+            user = apiKeyAuth.getApiKey().getUser();
+        }
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Get real-time rate limit status using the same system as API headers
+        String accountKey = "account:" + user.getId();
+        RateLimitStatus status = rateLimitService.getStatus(accountKey, RateLimitService.RateLimitTier.ACCOUNT);
+
+        return ResponseEntity.ok(status);
     }
 
     @PostMapping("/logout")

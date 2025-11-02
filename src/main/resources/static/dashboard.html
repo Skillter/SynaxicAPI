@@ -988,22 +988,99 @@
         /* Donut Chart Styles - Enhanced */
         .donut-chart-container {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 320px;
+            height: 320px;
             margin: 0 auto 40px;
-            filter: drop-shadow(0 8px 32px rgba(99, 102, 241, 0.15));
-            animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+            filter: drop-shadow(0 15px 50px rgba(99, 102, 241, 0.25));
+            animation: fadeInScale 1.2s cubic-bezier(0.23, 1, 0.32, 1) 0.3s both;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .donut-chart-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: radial-gradient(circle at center,
+                rgba(99, 102, 241, 0.08) 0%,
+                transparent 70%);
+            border-radius: 50%;
+            animation: rotateGlow 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotateGlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .donut-chart-container:hover {
+            transform: scale(1.05);
+        }
+
+        .donut-chart-container:hover::before {
+            background: radial-gradient(circle at center,
+                rgba(99, 102, 241, 0.12) 0%,
+                transparent 70%);
         }
 
         @keyframes fadeInScale {
-            from {
+            0% {
                 opacity: 0;
-                transform: scale(0.8);
+                transform: scale(0.6) rotate(-5deg);
             }
-            to {
+            50% {
+                transform: scale(1.05) rotate(2deg);
+            }
+            100% {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1) rotate(0deg);
             }
+        }
+
+        .donut-segment {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            filter: drop-shadow(0 4px 15px rgba(0, 0, 0, 0.15))
+                     brightness(1.0);
+            position: relative;
+        }
+
+        .donut-segment::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg,
+                rgba(255,255,255,0.2) 0%,
+                transparent 50%,
+                rgba(0,0,0,0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .donut-segment:hover::before {
+            opacity: 1;
+        }
+
+        .donut-segment:hover {
+            filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.3))
+                     brightness(1.1)
+                     saturate(1.2);
+            transform: scale(1.08) translateY(-2px);
+        }
+
+        .donut-segment:active {
+            transform: scale(1.02) translateY(0px);
+            filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.25))
+                     brightness(1.05);
         }
 
         .donut-chart {
@@ -1020,29 +1097,50 @@
             transform: translate(-50%, -50%);
             text-align: center;
             pointer-events: none;
-            background: var(--bg-secondary);
+            background: linear-gradient(145deg,
+                rgba(15, 23, 42, 0.95) 0%,
+                rgba(30, 41, 59, 0.9) 50%,
+                rgba(51, 65, 85, 0.85) 100%);
             border-radius: 50%;
-            width: 140px;
-            height: 140px;
+            width: 160px;
+            height: 160px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.2),
-                        0 4px 16px rgba(99, 102, 241, 0.1);
-            backdrop-filter: blur(8px);
+            box-shadow:
+                inset 0 4px 20px rgba(0, 0, 0, 0.4),
+                inset 0 -2px 8px rgba(255, 255, 255, 0.05),
+                0 12px 40px rgba(99, 102, 241, 0.2),
+                0 0 0 1px rgba(99, 102, 241, 0.3);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            animation: centerPulse 3s ease-in-out infinite;
         }
 
         .donut-percentage {
             font-size: 42px;
             font-weight: 900;
-            background: var(--gradient-1);
+            background: linear-gradient(135deg,
+                #6366F1 0%,
+                #8B5CF6 25%,
+                #A855F7 50%,
+                #8B5CF6 75%,
+                #6366F1 100%);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             line-height: 1;
             letter-spacing: -1px;
             position: relative;
+            animation: gradientShift 4s ease-in-out infinite;
+            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .donut-percentage::after {
@@ -1053,10 +1151,22 @@
             right: -5px;
             bottom: 0;
             background: var(--gradient-1);
-            filter: blur(8px);
-            opacity: 0.3;
+            filter: blur(12px);
+            opacity: 0.4;
             z-index: -1;
             border-radius: 8px;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
         }
 
         .donut-label {
@@ -1067,6 +1177,78 @@
             margin-top: 6px;
             font-weight: 600;
             opacity: 0.8;
+        }
+
+        @keyframes centerPulse {
+            0%, 100% {
+                box-shadow:
+                    inset 0 4px 20px rgba(0, 0, 0, 0.4),
+                    inset 0 -2px 8px rgba(255, 255, 255, 0.05),
+                    0 12px 40px rgba(99, 102, 241, 0.2),
+                    0 0 0 1px rgba(99, 102, 241, 0.3),
+                    0 0 20px rgba(99, 102, 241, 0.1);
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                box-shadow:
+                    inset 0 4px 25px rgba(0, 0, 0, 0.5),
+                    inset 0 -2px 10px rgba(255, 255, 255, 0.08),
+                    0 16px 50px rgba(99, 102, 241, 0.3),
+                    0 0 0 1px rgba(99, 102, 241, 0.4),
+                    0 0 30px rgba(99, 102, 241, 0.15);
+                transform: translate(-50%, -50%) scale(1.02);
+            }
+        }
+
+        .donut-chart-center::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg,
+                rgba(99, 102, 241, 0.3),
+                rgba(139, 92, 246, 0.2),
+                rgba(168, 85, 247, 0.3),
+                rgba(99, 102, 241, 0.3));
+            border-radius: 50%;
+            z-index: -1;
+            animation: rotateBorderGradient 4s linear infinite;
+        }
+
+        @keyframes rotateBorderGradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .donut-chart-center::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle,
+                rgba(255, 255, 255, 0.3) 0%,
+                transparent 70%);
+            border-radius: 50%;
+            animation: floatGlint 6s ease-in-out infinite;
+        }
+
+        @keyframes floatGlint {
+            0%, 100% {
+                transform: translate(0, 0) scale(0.8);
+                opacity: 0.5;
+            }
+            33% {
+                transform: translate(10px, -10px) scale(1);
+                opacity: 0.8;
+            }
+            66% {
+                transform: translate(-5px, 5px) scale(0.9);
+                opacity: 0.6;
+            }
         }
 
         .donut-legend {
@@ -1114,8 +1296,34 @@
         .legend-item:hover {
             background: rgba(99, 102, 241, 0.15);
             border-color: rgba(99, 102, 241, 0.3);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.25);
+        }
+
+        .legend-item:active {
+            transform: translateY(-1px) scale(1.01);
+            transition: all 0.1s ease;
+        }
+
+        .legend-item {
+            animation: slideInFade 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        .legend-item:nth-child(1) { animation-delay: 0.1s; }
+        .legend-item:nth-child(2) { animation-delay: 0.2s; }
+        .legend-item:nth-child(3) { animation-delay: 0.3s; }
+        .legend-item:nth-child(4) { animation-delay: 0.4s; }
+        .legend-item:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes slideInFade {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .legend-color {
@@ -1215,26 +1423,30 @@
             animation-duration: 2s;
         }
 
-        /* Tooltip styles */
+        /* Enhanced Tooltip styles */
         .tooltip {
             position: absolute;
-            background: var(--bg-secondary);
+            background: linear-gradient(135deg, var(--bg-secondary), rgba(30, 41, 59, 0.95));
             color: var(--text-primary);
-            padding: 12px 16px;
-            border-radius: 8px;
+            padding: 16px 20px;
+            border-radius: 12px;
             font-size: 14px;
             font-weight: 500;
             pointer-events: none;
             z-index: 1000;
             opacity: 0;
-            transition: opacity 0.2s ease;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            max-width: 200px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(99, 102, 241, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            max-width: 280px;
+            backdrop-filter: blur(12px);
+            transform: translateY(-8px);
         }
 
         .tooltip.show {
             opacity: 1;
+            transform: translateY(0);
         }
 
         .tooltip::after {
@@ -1242,10 +1454,72 @@
             position: absolute;
             top: 100%;
             left: 50%;
-            margin-left: -6px;
-            border-width: 6px;
+            margin-left: -8px;
+            border-width: 8px;
             border-style: solid;
-            border-color: rgba(99, 102, 241, 0.3) transparent transparent transparent;
+            border-color: rgba(99, 102, 241, 0.4) transparent transparent transparent;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .tooltip-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .tooltip-key-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .tooltip-key-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .tooltip-key-id {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        .tooltip-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .tooltip-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tooltip-stat-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary-light);
+            line-height: 1;
+        }
+
+        .tooltip-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
@@ -1715,11 +1989,23 @@
             };
 
             const apiKey = authHeaders.Authorization;
-            return fetch(url, {
+            const response = await fetch(url, {
                 ...options,
                 headers,
                 credentials: apiKey ? 'omit' : 'include'
             });
+
+            // Extract rate limit headers for real-time prediction
+            if (response.ok) {
+                const rateLimit = response.headers.get('X-RateLimit-Limit');
+                const remaining = response.headers.get('X-RateLimit-Remaining');
+
+                if (rateLimit && remaining) {
+                    updateRealTimeRateLimit(parseInt(rateLimit), parseInt(remaining));
+                }
+            }
+
+            return response;
         }
 
         // Color palette for API keys
@@ -1747,6 +2033,438 @@
                 apiKeyColors.set(keyId, colorPalette[colorIndex]);
             }
             return apiKeyColors.get(keyId);
+        }
+
+        // Real-time usage prediction system
+        class RealTimeUsagePredictor {
+            constructor() {
+                this.rateLimit = 10000; // Default rate limit
+                this.lastServerUpdate = Date.now();
+                this.serverRemainingRequests = 10000; // Actual value from server
+                this.serverUsedRequests = 0; // Actual value from server
+                this.currentRemainingRequests = 10000; // Client-side predicted value
+                this.currentUsedRequests = 0; // Client-side predicted value
+
+                // Countdown calculation variables
+                this.countdownInterval = null;
+                this.serverSyncInterval = null;
+                this.countdownIntervalMs = 1000; // Update every second for smooth display
+                this.serverSyncIntervalMs = 10000; // Sync with server every 10 seconds
+
+                this.isVisible = !document.hidden;
+                this.invalidDataCount = 0;
+                this.maxInvalidData = 5;
+
+                // Track visibility changes
+                document.addEventListener('visibilitychange', () => {
+                    this.isVisible = !document.hidden;
+                    if (this.isVisible) {
+                        this.startCountdown();
+                        this.startServerSync();
+                    } else {
+                        this.stopCountdown();
+                        this.stopServerSync();
+                    }
+                });
+            }
+
+            updateServerData(used, limit, remaining = null) {
+                // Validate server data
+                if (typeof used !== 'number' || used < 0 || used > limit) {
+                    console.warn('Invalid used value from server:', { used, limit });
+                    this.invalidDataCount++;
+                    if (this.invalidDataCount >= this.maxInvalidData) {
+                        this.resetToSafeDefaults();
+                    }
+                    return;
+                }
+
+                if (typeof limit !== 'number' || limit <= 0) {
+                    console.warn('Invalid limit value from server:', limit);
+                    this.invalidDataCount++;
+                    if (this.invalidDataCount >= this.maxInvalidData) {
+                        this.resetToSafeDefaults();
+                    }
+                    return;
+                }
+
+                // Valid data received, reset invalid counter
+                this.invalidDataCount = 0;
+
+                this.usedRequests = used;
+                this.rateLimit = limit;
+                this.lastUpdate = Date.now();
+
+                if (remaining !== null && typeof remaining === 'number' && remaining >= 0) {
+                    this.remainingRequests = Math.min(remaining, limit - used);
+                } else {
+                    this.remainingRequests = Math.max(0, limit - used);
+                }
+
+                // Calculate request rate based on change since last update
+                if (this.previousUsed !== undefined && typeof this.previousUsed === 'number') {
+                    const timeDelta = (this.lastUpdate - this.previousTimestamp) / 1000; // seconds
+                    const usageDelta = used - this.previousUsed;
+                    if (timeDelta > 0 && usageDelta >= 0) {
+                        // Smooth the request rate with exponential moving average
+                        const alpha = 0.3; // Smoothing factor
+                        const instantRate = usageDelta / timeDelta;
+                        this.requestRate = Math.max(0, this.requestRate * (1 - alpha) + instantRate * alpha);
+                    }
+                }
+
+                this.previousUsed = used;
+                this.previousTimestamp = this.lastUpdate;
+                console.log('Updated server data:', { used, limit, remaining: this.remainingRequests, requestRate: this.requestRate });
+            }
+
+            resetToSafeDefaults() {
+                console.warn('Resetting predictor to safe defaults due to invalid data');
+                this.usedRequests = 0;
+                this.remainingRequests = this.rateLimit;
+                this.requestRate = 0;
+                this.lastUpdate = Date.now();
+                this.previousUsed = 0;
+                this.previousTimestamp = Date.now();
+                this.invalidDataCount = 0;
+
+                // Update UI with safe values
+                this.updateUI({
+                    used: 0,
+                    remaining: this.rateLimit,
+                    limit: this.rateLimit,
+                    percentage: 0,
+                    requestRate: 0,
+                    timeSinceUpdate: 0
+                });
+            }
+
+            updateFromRateLimitHeaders(limit, remaining) {
+                // Validate and sanitize header data
+                if (!limit || limit <= 0 || !Number.isInteger(limit)) {
+                    console.warn('Invalid rate limit from headers:', limit);
+                    return; // Ignore invalid data
+                }
+
+                if (!remaining || remaining < 0 || remaining > limit) {
+                    console.warn('Invalid remaining requests from headers:', { limit, remaining });
+                    return; // Ignore invalid data
+                }
+
+                // Only update if this is for the account-level tier (10000 requests)
+                // Skip lower-tier limits like static resources (1000 requests)
+                if (limit < 5000) {
+                    console.log('Ignoring lower-tier rate limit:', limit);
+                    return;
+                }
+
+                const calculatedUsed = limit - remaining;
+
+                // Validate calculated used value
+                if (calculatedUsed < 0 || calculatedUsed > limit) {
+                    console.warn('Invalid calculated usage from headers:', { limit, remaining, calculatedUsed });
+                    return;
+                }
+
+                // Update server data and reset client prediction to match
+                // Ensure all values are integers
+                this.rateLimit = Math.floor(limit);
+                this.serverRemainingRequests = Math.floor(remaining);
+                this.serverUsedRequests = Math.floor(calculatedUsed);
+                this.currentRemainingRequests = Math.floor(remaining);
+                this.currentUsedRequests = Math.floor(calculatedUsed);
+                this.lastServerUpdate = Date.now();
+
+                console.log('Updated from headers:', {
+                    limit,
+                    remaining,
+                    used: this.serverUsedRequests,
+                    countdownRate: this.getCountdownRatePerSecond()
+                });
+
+                // Restart countdown with new data
+                this.restartCountdown();
+            }
+
+            // Calculate how many requests are recovered per second
+            getCountdownRatePerSecond() {
+                // Rate limit refreshes per hour, so calculate recovery rate
+                return this.rateLimit / 3600; // requests per second
+            }
+
+            // Calculate interval in milliseconds for countdown to decrease by 1
+            getCountdownIntervalMs() {
+                const ratePerSecond = this.getCountdownRatePerSecond();
+                if (ratePerSecond <= 0) return 1000; // Default to 1 second if rate is 0
+
+                // Calculate how often to decrement by 1
+                // If rate is 2.77 req/sec, then 1 / 2.77 = 0.36 seconds = 360ms
+                return Math.max(100, Math.min(10000, 1000 / ratePerSecond)); // Clamp between 100ms and 10s
+            }
+
+            getCurrentState() {
+                // Ensure all request counts are integers
+                const used = Math.max(0, Math.min(this.rateLimit, Math.floor(this.currentUsedRequests)));
+                const remaining = Math.max(0, Math.min(this.rateLimit, Math.floor(this.currentRemainingRequests)));
+                const limit = Math.floor(this.rateLimit);
+
+                return {
+                    used: used,
+                    remaining: remaining,
+                    limit: limit,
+                    percentage: Math.min(100, Math.max(0, (used / limit) * 100)),
+                    countdownRate: this.getCountdownRatePerSecond(),
+                    countdownInterval: this.getCountdownIntervalMs(),
+                    timeSinceServerUpdate: (Date.now() - this.lastServerUpdate) / 1000
+                };
+            }
+
+            // Countdown system methods
+            startCountdown() {
+                if (this.countdownInterval) return;
+
+                const intervalMs = this.getCountdownIntervalMs();
+                console.log(`Starting countdown: decreasing by 1 every ${intervalMs}ms`);
+
+                this.countdownInterval = setInterval(() => {
+                    if (this.isVisible && this.currentRemainingRequests > 0) {
+                        // Decrease used requests by 1 (simulating quota recovery)
+                        // Always use integers for request counts
+                        this.currentUsedRequests = Math.max(0, Math.floor(this.currentUsedRequests) - 1);
+                        this.currentRemainingRequests = Math.min(this.rateLimit, Math.floor(this.rateLimit - this.currentUsedRequests));
+
+                        // Update UI
+                        this.updateUI(this.getCurrentState());
+                    }
+                }, intervalMs);
+            }
+
+            stopCountdown() {
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                    console.log('Stopped countdown');
+                }
+            }
+
+            restartCountdown() {
+                this.stopCountdown();
+                if (this.isVisible) {
+                    this.startCountdown();
+                }
+            }
+
+            // Server sync methods
+            startServerSync() {
+                if (this.serverSyncInterval) return;
+
+                console.log(`Starting server sync: every ${this.serverSyncIntervalMs}ms`);
+                this.serverSyncInterval = setInterval(() => {
+                    if (this.isVisible) {
+                        this.syncWithServer();
+                    }
+                }, this.serverSyncIntervalMs);
+            }
+
+            stopServerSync() {
+                if (this.serverSyncInterval) {
+                    clearInterval(this.serverSyncInterval);
+                    this.serverSyncInterval = null;
+                    console.log('Stopped server sync');
+                }
+            }
+
+            async syncWithServer() {
+                try {
+                    console.log('Syncing usage data with server...');
+                    // Try to get current hour usage from account usage endpoint
+                    const response = await authenticatedFetch(`${API_BASE}/v1/account/usage`);
+
+                    if (response.ok) {
+                        const usageData = await response.json();
+                        console.log('Account usage sync response:', usageData);
+
+                        // Update server data with current hour usage
+                        if (usageData.accountRequestsUsed !== undefined && usageData.accountRateLimit !== undefined) {
+                            const serverUsed = Math.floor(usageData.accountRequestsUsed);
+                            const serverLimit = Math.floor(usageData.accountRateLimit);
+                            const serverRemaining = Math.max(0, serverLimit - serverUsed);
+
+                            this.serverUsedRequests = serverUsed;
+                            this.serverRemainingRequests = serverRemaining;
+                            this.rateLimit = serverLimit;
+                            this.lastServerUpdate = Date.now();
+
+                            console.log(`Updated from account usage: ${serverUsed}/${serverLimit} used, ${serverRemaining} remaining`);
+
+                            // Smoothly adjust client prediction to match server
+                            this.adjustClientToServerValues();
+                        } else {
+                            console.log('Account usage endpoint missing expected fields, relying on rate limit headers');
+                        }
+                    } else {
+                        console.log('Account usage endpoint failed, relying on rate limit headers for accuracy');
+                    }
+                } catch (error) {
+                    console.error('Server sync failed:', error);
+                    console.log('Relying on rate limit headers for accuracy');
+                }
+            }
+
+            adjustClientToServerValues() {
+                // Calculate the difference between client prediction and server reality
+                const usedDiff = this.serverUsedRequests - this.currentUsedRequests;
+                const remainingDiff = this.serverRemainingRequests - this.currentRemainingRequests;
+
+                // If difference is small, snap to server values immediately
+                if (Math.abs(usedDiff) <= 5) {
+                    this.currentUsedRequests = Math.floor(this.serverUsedRequests);
+                    this.currentRemainingRequests = Math.floor(this.serverRemainingRequests);
+                    console.log('Client prediction synced to server values (small difference)');
+                }
+                // If difference is larger, gradually adjust to avoid jarring changes
+                else if (Math.abs(usedDiff) > 0) {
+                    const adjustmentRate = 0.3; // Adjust 30% of the difference each sync
+                    this.currentUsedRequests = Math.floor(this.currentUsedRequests + (usedDiff * adjustmentRate));
+                    this.currentRemainingRequests = Math.floor(this.rateLimit - this.currentUsedRequests);
+                    console.log(`Client prediction adjusting to server: ${Math.floor(usedDiff)} difference, ${adjustmentRate * 100}% adjustment`);
+                }
+            }
+
+            // Legacy method names for compatibility
+            startPrediction() {
+                this.startCountdown();
+                this.startServerSync();
+            }
+
+            stopPrediction() {
+                this.stopCountdown();
+                this.stopServerSync();
+            }
+
+            // Initialize the countdown system
+            initialize() {
+                console.log('Initializing real-time countdown system...');
+                if (this.isVisible) {
+                    this.startCountdown();
+                    this.startServerSync();
+                }
+            }
+
+            updateUI(state) {
+                // Update the usage counter
+                const usedElement = document.getElementById('account-used');
+                const limitElement = document.getElementById('account-limit');
+                const percentageElement = document.getElementById('donut-percentage');
+
+                if (usedElement) usedElement.textContent = formatNumber(state.used);
+                if (limitElement) limitElement.textContent = formatNumber(state.limit);
+                if (percentageElement) percentageElement.textContent = `${state.percentage.toFixed(1)}%`;
+
+                // Update the donut chart
+                this.updateDonutChart(state.used, state.limit);
+
+                // Log countdown info for debugging
+                if (state.timeSinceServerUpdate > 10) {
+                    console.log('Countdown active:', {
+                        used: state.used,
+                        remaining: state.remaining,
+                        rate: state.countdownRate.toFixed(2) + ' req/sec',
+                        interval: state.countdownInterval + 'ms',
+                        timeSinceUpdate: state.timeSinceServerUpdate.toFixed(1) + 's'
+                    });
+                }
+            }
+
+            updateDonutChart(used, limit) {
+                const svg = document.getElementById('donut-chart');
+                if (!svg) return;
+
+                const centerX = 150;
+                const centerY = 150;
+                const outerRadius = 130;
+                const innerRadius = 90;
+
+                const percentage = Math.min((used / limit), 1);
+                const dashArray = 2 * Math.PI * outerRadius;
+                const dashOffset = dashArray * (1 - percentage);
+
+                const svgContent = `
+                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                            fill="none" stroke="rgba(156, 163, 175, 0.2)"
+                            stroke-width="${outerRadius - innerRadius}"/>
+                    <circle cx="${centerX}" cy="${centerY}" r="${outerRadius}"
+                            fill="none" stroke="url(#gradient1)"
+                            stroke-width="${outerRadius - innerRadius}"
+                            stroke-dasharray="${dashArray}"
+                            stroke-dashoffset="${dashOffset}"
+                            stroke-linecap="round"
+                            style="transition: stroke-dashoffset 0.3s ease;"/>
+                    <defs>
+                        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                `;
+
+                svg.innerHTML = svgContent;
+            }
+
+            startPeriodicServerUpdates() {
+                if (this.serverUpdateInterval) return;
+
+                this.serverUpdateInterval = setInterval(async () => {
+                    if (this.isVisible && currentUser) {
+                        try {
+                            const usageResponse = await authenticatedFetch(`${API_BASE}/v1/auth/account-usage`);
+                            if (usageResponse.ok) {
+                                const accountUsage = await usageResponse.json();
+                                this.updateServerData(
+                                    accountUsage.accountRequestsUsed,
+                                    accountUsage.accountRateLimit,
+                                    accountUsage.remainingRequests
+                                );
+                            }
+                        } catch (error) {
+                            console.warn('Failed to update usage from server:', error);
+                        }
+                    }
+                }, 30000); // Update from server every 30 seconds
+            }
+
+            stopPeriodicServerUpdates() {
+                if (this.serverUpdateInterval) {
+                    clearInterval(this.serverUpdateInterval);
+                    this.serverUpdateInterval = null;
+                }
+            }
+
+            destroy() {
+                this.stopPrediction();
+                this.stopPeriodicServerUpdates();
+            }
+        }
+
+        // Global predictor instance
+        let usagePredictor = null;
+
+        // Debug mode for troubleshooting (set to true to enable detailed logging)
+        const DEBUG_PREDICTOR = false;
+
+        // Update function for rate limit headers
+        function updateRealTimeRateLimit(limit, remaining) {
+            if (usagePredictor) {
+                usagePredictor.updateFromRateLimitHeaders(limit, remaining);
+            }
+        }
+
+        // Debug function to manually trigger predictor reset
+        function resetUsagePredictor() {
+            if (usagePredictor) {
+                usagePredictor.resetToSafeDefaults();
+                console.log('Usage predictor manually reset');
+            }
         }
 
         // Toast notification system
@@ -1827,7 +2545,8 @@
                 if (currentUser) {
                     displayUserProfile(currentUser);
                     loadApiKeys();
-                    loadStats();
+                    loadStats(); // Load initial stats
+                    // Note: Real-time updates are now handled by the predictor
                 } else {
                     console.error('No user data received');
                     window.location.href = '/';
@@ -2013,7 +2732,7 @@
         // Load account usage and stats
         async function loadStats() {
             try {
-                // Load account usage
+                // Load account usage (now with real-time data)
                 const usageResponse = await authenticatedFetch(`${API_BASE}/v1/auth/account-usage`);
 
                 if (usageResponse.ok) {
@@ -2036,12 +2755,37 @@
             }
         }
 
+        // Refresh account usage more frequently to show real-time updates
+        let statsRefreshInterval;
+
+        function startStatsRefresh() {
+            // Load immediately
+            loadStats();
+
+            // Then refresh every 30 seconds to show real-time quota changes
+            statsRefreshInterval = setInterval(() => {
+                loadStats();
+            }, 30000); // 30 seconds
+        }
+
+        function stopStatsRefresh() {
+            if (statsRefreshInterval) {
+                clearInterval(statsRefreshInterval);
+                statsRefreshInterval = null;
+            }
+        }
+
         // Display account usage visualization with donut chart
         function displayAccountUsage(usage) {
             // Update account usage header
             const used = usage.accountRequestsUsed || 0;
             const limit = usage.accountRateLimit || 10000;
             const percentage = usage.usagePercentage || 0;
+
+            // Update the real-time predictor with server data
+            if (usagePredictor) {
+                usagePredictor.updateServerData(used, limit, usage.remainingRequests);
+            }
 
             document.getElementById('account-used').textContent = formatNumber(used);
             document.getElementById('account-limit').textContent = formatNumber(limit);
@@ -2056,10 +2800,10 @@
             const svg = document.getElementById('donut-chart');
             const legend = document.getElementById('donut-legend');
 
-            const centerX = 150;
-            const centerY = 150;
-            const outerRadius = 130;
-            const innerRadius = 90;
+            const centerX = 160;
+            const centerY = 160;
+            const outerRadius = 140;
+            const innerRadius = 100;
 
             let svgContent = '';
             let legendContent = '';
@@ -2119,18 +2863,16 @@
                                      L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 0 0 ${x4} ${y4} Z"
                                   fill="${color}"
                                   stroke="var(--bg-secondary)"
-                                  stroke-width="2"
+                                  stroke-width="3"
                                   class="donut-segment"
-                                  style="cursor: pointer; transition: transform 0.2s ease; transform-origin: ${centerX}px ${centerY}px;"
-                                  onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}')"
-                                  onmouseleave="hideDonutTooltip()"
-                                  onmouseover="this.style.transform='scale(1.05)'"
-                                  onmouseout="this.style.transform='scale(1)'"/>
+                                  style="cursor: pointer; transform-origin: ${centerX}px ${centerY}px;"
+                                  onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}', '${key.keyPrefix}', '${key.keyId}')"
+                                  onmouseleave="hideDonutTooltip()"/>
                         `;
 
                         legendContent += `
                             <div class="legend-item"
-                                 onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}')"
+                                 onmouseenter="showDonutTooltip(event, '${key.keyName || key.keyPrefix}', 0, '${color}', '${key.keyPrefix}', '${key.keyId}')"
                                  onmouseleave="hideDonutTooltip()">
                                 <div class="legend-color" style="background-color: ${color}"></div>
                                 <div class="legend-info">
@@ -2229,31 +2971,70 @@
             return num.toString();
         }
 
-        // Donut chart tooltip functionality
+        // Enhanced Donut chart tooltip functionality
         let activeTooltip = null;
 
-        function showDonutTooltip(event, keyName, requestCount, color) {
+        function showDonutTooltip(event, keyName, requestCount, color, keyPrefix, keyId) {
             hideDonutTooltip();
 
             const tooltip = document.createElement('div');
             tooltip.className = 'tooltip';
+
+            // Create enhanced tooltip content
+            const keyDisplay = keyName || keyPrefix || 'Unknown Key';
+            const prefixDisplay = keyPrefix ? keyPrefix.substring(0, 12) + '...' : '';
+            const idDisplay = keyId ? '#' + keyId.toString().substring(-6) : '';
+
             tooltip.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <div style="width: 12px; height: 12px; background: ${color}; border-radius: 2px;"></div>
-                    <strong>${keyName}</strong>
+                <div class="tooltip-header">
+                    <div class="tooltip-key-icon" style="background-color: ${color}"></div>
+                    <div class="tooltip-key-name">${keyDisplay}</div>
+                    ${prefixDisplay ? `<div class="tooltip-key-id">${prefixDisplay}</div>` : ''}
                 </div>
-                <div style="font-size: 12px; color: var(--text-muted);">${requestCount.toLocaleString()} requests</div>
+                <div class="tooltip-stats">
+                    <div class="tooltip-stat">
+                        <div class="tooltip-stat-value">${requestCount.toLocaleString()}</div>
+                        <div class="tooltip-stat-label">Requests</div>
+                    </div>
+                    <div class="tooltip-stat">
+                        <div class="tooltip-stat-value">${requestCount > 0 ? ((requestCount / 10000) * 100).toFixed(1) : '0'}%</div>
+                        <div class="tooltip-stat-label">Usage</div>
+                    </div>
+                </div>
             `;
 
             document.body.appendChild(tooltip);
 
-            // Position tooltip
+            // Position tooltip with smart positioning
             const rect = event.target.getBoundingClientRect();
-            tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-            tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
 
-            // Show tooltip
-            setTimeout(() => tooltip.classList.add('show'), 10);
+            let left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
+            let top = rect.top - tooltip.offsetHeight - 15;
+
+            // Adjust horizontal position if tooltip goes off screen
+            if (left < 10) {
+                left = 10;
+            } else if (left + tooltip.offsetWidth > viewportWidth - 10) {
+                left = viewportWidth - tooltip.offsetWidth - 10;
+            }
+
+            // Adjust vertical position if tooltip goes off screen (show below instead)
+            if (top < 10) {
+                top = rect.bottom + 15;
+                tooltip.style.setProperty('--tooltip-arrow-direction', 'up');
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+
+            // Show tooltip with smooth animation
+            requestAnimationFrame(() => {
+                tooltip.classList.add('show');
+            });
+
             activeTooltip = tooltip;
         }
 
@@ -2265,7 +3046,7 @@
                         activeTooltip.parentNode.removeChild(activeTooltip);
                     }
                     activeTooltip = null;
-                }, 200);
+                }, 300);
             }
         }
 
@@ -2540,6 +3321,10 @@
 
             checkAuth();
 
+            // Initialize the real-time usage predictor
+            usagePredictor = new RealTimeUsagePredictor();
+            usagePredictor.initialize();
+
             // Initialize mobile menu and other common features
             if (typeof MobileMenu !== 'undefined') {
                 MobileMenu.init();
@@ -2547,6 +3332,27 @@
 
             // Add keyboard event support for modals and inputs
             initializeKeyboardSupport();
+        });
+
+        // Cleanup when page is unloaded
+        window.addEventListener('beforeunload', () => {
+            stopStatsRefresh();
+            if (usagePredictor) {
+                usagePredictor.destroy();
+                usagePredictor = null;
+            }
+        });
+
+        // Also cleanup when page becomes hidden (tab switch)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopStatsRefresh();
+            } else {
+                // Page became visible again, restart refresh if user is logged in
+                if (currentUser) {
+                    startStatsRefresh();
+                }
+            }
         });
 
         // Keyboard event support for modals and forms
