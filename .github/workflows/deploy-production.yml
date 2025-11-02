@@ -97,6 +97,9 @@ jobs:
         run: |
           echo "Deploying to main node..."
 
+          # Ensure scripts are executable before deployment
+          ssh main-vps "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-simple.sh"
+
           # Execute deployment with simplified script (bypasses update step)
           DEPLOY_OUTPUT=$(ssh main-vps "~/SynaxicAPI/scripts/deploy-simple.sh 2>&1")
 
@@ -144,6 +147,10 @@ jobs:
 
               # Add replica to known hosts
               ssh-keyscan -H "$REPLICA_IP" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+              # Ensure scripts are executable on replica before deployment
+              ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
+                  "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-simple.sh" > /dev/null 2>&1 || true
 
               # Deploy to replica
               if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
