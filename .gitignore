@@ -87,3 +87,4 @@ qodana.yaml
 /redis/tls
 redis/redis.conf
 cookies.txt
+synaxicdb.mv.db
