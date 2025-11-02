@@ -1738,6 +1738,9 @@
 
         // Generate consistent color for API key based on its ID
         function getKeyColor(keyId) {
+            if (!keyId || typeof keyId !== 'string') {
+                keyId = String(keyId || 'unknown');
+            }
             if (!apiKeyColors.has(keyId)) {
                 const hash = keyId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
                 const colorIndex = hash % colorPalette.length;
