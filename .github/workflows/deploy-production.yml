@@ -98,10 +98,10 @@ jobs:
           echo "Deploying to main node..."
 
           # Ensure scripts are executable before deployment
-          ssh main-vps "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-simple.sh"
+          ssh main-vps "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-node.sh"
 
-          # Execute deployment with simplified script (bypasses update step)
-          DEPLOY_OUTPUT=$(ssh main-vps "~/SynaxicAPI/scripts/deploy-simple.sh 2>&1")
+          # Execute deployment with full update (pulls latest code and rebuilds)
+          DEPLOY_OUTPUT=$(ssh main-vps "~/SynaxicAPI/scripts/deploy-node.sh 2>&1")
 
           if echo "$DEPLOY_OUTPUT" | grep -q "SUCCESS"; then
             echo "✓ Main node deployed successfully"
@@ -150,11 +150,11 @@ jobs:
 
               # Ensure scripts are executable on replica before deployment
               ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
-                  "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-simple.sh" > /dev/null 2>&1 || true
+                  "cd ~/SynaxicAPI && chmod +x scripts/*.sh && chmod +x *.sh && chmod +x scripts/deploy-node.sh" > /dev/null 2>&1 || true
 
               # Deploy to replica
               if ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -i ~/.ssh/id_rsa main@"$REPLICA_IP" \
-                  "~/SynaxicAPI/scripts/deploy-simple.sh 2>&1" | grep -q "SUCCESS"; then
+                  "~/SynaxicAPI/scripts/deploy-node.sh 2>&1" | grep -q "SUCCESS"; then
                 echo "success" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
               else
                 echo "failed" > "/tmp/deploy-node-${MY_NODE_NUM}.status"
