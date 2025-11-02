@@ -8,6 +8,13 @@ set -e
 # Navigate to project directory
 cd ~/SynaxicAPI
 
+# Ensure scripts are executable (including this script)
+echo "Setting script permissions..."
+chmod +x scripts/*.sh > /dev/null 2>&1 || true
+chmod +x *.sh > /dev/null 2>&1 || true
+chmod +x update.sh > /dev/null 2>&1 || true
+chmod +x scripts/deploy-simple.sh > /dev/null 2>&1 || true
+
 # Check for required tools
 if ! command -v curl &> /dev/null; then
     echo "ERROR: curl not installed"

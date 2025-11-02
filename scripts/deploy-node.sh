@@ -37,11 +37,15 @@ else
     fi
 fi
 
-# Ensure scripts are executable
+# Ensure scripts are executable (including this script)
+echo "Setting script permissions..."
 chmod +x scripts/*.sh > /dev/null 2>&1 || true
+chmod +x *.sh > /dev/null 2>&1 || true
+chmod +x update.sh > /dev/null 2>&1 || true
+chmod +x scripts/deploy-node.sh > /dev/null 2>&1 || true
 
 # Double-check update script is executable specifically
-chmod +x scripts/update.sh > /dev/null 2>&1 || true
+chmod +x update.sh > /dev/null 2>&1 || true
 
 # Run update script (handles sudo internally if needed)
 # Check if password is provided as first argument
@@ -58,6 +62,13 @@ else
         exit 2
     fi
 fi
+
+# Ensure scripts are executable again after update (fix permissions after git pull)
+echo "Fixing post-update permissions..."
+chmod +x scripts/*.sh > /dev/null 2>&1 || true
+chmod +x *.sh > /dev/null 2>&1 || true
+chmod +x update.sh > /dev/null 2>&1 || true
+chmod +x scripts/deploy-node.sh > /dev/null 2>&1 || true
 
 # Rebuild and restart services (rebuild to include updated static files)
 if ! docker-compose -f "$COMPOSE_FILE" up -d --build --force-recreate > /dev/null 2>&1; then

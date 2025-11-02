@@ -204,8 +204,13 @@ if [ -f "nginx/replica_ips.txt" ] && [ ! -f "prometheus.prod.yml" ]; then
     fi
 fi
 
-# Make all files executable
-sudo chmod -R +x "$SCRIPT_DIR"
+# Make all files executable and fix script permissions specifically
+echo "Fixing script permissions..."
+sudo chmod -R +x "$SCRIPT_DIR" > /dev/null 2>&1 || true
+chmod +x "$SCRIPT_DIR"/*.sh > /dev/null 2>&1 || true
+chmod +x "$SCRIPT_DIR"/scripts/*.sh > /dev/null 2>&1 || true
+chmod +x "$SCRIPT_DIR"/update.sh > /dev/null 2>&1 || true
+chmod +x "$SCRIPT_DIR"/scripts/deploy-node.sh > /dev/null 2>&1 || true
 
 echo ""
 echo "✓ Repository updated successfully from '$BRANCH' branch!"
