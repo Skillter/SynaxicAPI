@@ -3,9 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Analytics - Synaxic API - Real-time performance metrics and health">
+    <meta name="description" content="Analytics - Synaxic API - Real-time performance metrics and health monitoring for enterprise-grade developer utilities">
+    <meta name="keywords" content="API analytics, performance metrics, system health, developer tools, Synaxic API">
+    <meta name="author" content="Skillter">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://synaxic.skillter.dev/analytics">
+    <meta property="og:title" content="Analytics - Synaxic API">
+    <meta property="og:description" content="Real-time performance metrics and health monitoring for enterprise-grade developer utilities">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://synaxic.skillter.dev/analytics">
+    <meta property="twitter:title" content="Analytics - Synaxic API">
+    <meta property="twitter:description" content="Real-time performance metrics and health monitoring for enterprise-grade developer utilities">
+
     <title>Analytics - Synaxic API</title>
-    <link rel="stylesheet" href="/css/main.css">
+
+    <link rel="canonical" href="https://synaxic.skillter.dev/analytics">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Synaxic API Analytics",
+        "description": "Real-time performance metrics and health monitoring for Synaxic API enterprise-grade developer utilities",
+        "url": "https://synaxic.skillter.dev/analytics",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Analytics Dashboard",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "1.0.0",
+        "datePublished": "2025-01-01",
+        "dateModified": "2025-01-06",
+        "author": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "provider": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "isPartOf": {
+            "@type": "WebApplication",
+            "name": "Synaxic API",
+            "url": "https://synaxic.skillter.dev"
+        },
+        "license": "https://synaxic.skillter.dev/terms-of-service",
+        "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
+    }
+    </script>
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- Critical CSS for preventing layout shift and above-the-fold content -->
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-primary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-secondary: #cbd5e1;
+            --primary-light: #818cf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-display: swap;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+            background: var(--primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+    </style>
+
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
     <style>
         .dashboard-tabs {
             display: flex;
@@ -345,7 +465,7 @@
                     <span>Login with Google</span>
                 </button>
             </div>
-            <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle mobile navigation menu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -666,7 +786,7 @@
         </div>
     </footer>
 
-    <script src="/js/main.js"></script>
+    <script src="/js/main.js" defer></script>
     <script data-cfasync="false">
         // Tab switching
         document.querySelectorAll('.dashboard-tab').forEach(tab => {

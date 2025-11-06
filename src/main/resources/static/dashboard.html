@@ -3,9 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="User Dashboard - Synaxic API - Manage your API keys and account">
+    <meta name="description" content="User Dashboard - Synaxic API - Manage your API keys and account with enterprise-grade developer utilities">
+    <meta name="keywords" content="API dashboard, developer tools, API key management, Synaxic API">
+    <meta name="author" content="Skillter">
     <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://synaxic.skillter.dev/dashboard">
+    <meta property="og:title" content="Dashboard - Synaxic API">
+    <meta property="og:description" content="Manage your API keys and account with enterprise-grade developer utilities">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://synaxic.skillter.dev/dashboard">
+    <meta property="twitter:title" content="Dashboard - Synaxic API">
+    <meta property="twitter:description" content="Manage your API keys and account with enterprise-grade developer utilities">
+
     <title>Dashboard - Synaxic API</title>
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <link rel="canonical" href="https://synaxic.skillter.dev/dashboard">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Synaxic API Dashboard",
+        "description": "User dashboard for managing API keys and account settings for Synaxic API enterprise-grade developer utilities",
+        "url": "https://synaxic.skillter.dev/dashboard",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Developer Dashboard",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "1.0.0",
+        "datePublished": "2025-01-01",
+        "dateModified": "2025-01-06",
+        "author": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "provider": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "isPartOf": {
+            "@type": "WebApplication",
+            "name": "Synaxic API",
+            "url": "https://synaxic.skillter.dev"
+        },
+        "license": "https://synaxic.skillter.dev/terms-of-service",
+        "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
+    }
+    </script>
 
     <style>
         .btn {
@@ -23,7 +85,8 @@
         }
     </style>
 
-    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
     <style>
         .dashboard-container {
             max-width: 1400px;
@@ -1672,7 +1735,7 @@
                     <span>Dashboard</span>
                 </button>
             </div>
-            <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle mobile navigation menu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -1958,7 +2021,7 @@
         </div>
     </div>
 
-    <script src="/js/main.js"></script>
+    <script src="/js/main.js" defer></script>
     <script data-cfasync="false">
         const API_BASE = window.location.origin;
         let currentUser = null;

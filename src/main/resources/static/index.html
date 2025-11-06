@@ -10,21 +10,47 @@
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://api.skillter.dev/">
+    <meta property="og:url" content="https://synaxic.skillter.dev/">
     <meta property="og:title" content="Synaxic API - Enterprise Developer Utilities Hub">
     <meta property="og:description" content="Professional API hub with IP inspection, email validation, and conversion tools. Built on distributed infrastructure with Redis and PostgreSQL replication.">
-    <meta property="og:image" content="/assets/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://api.skillter.dev/">
+    <meta property="twitter:url" content="https://synaxic.skillter.dev/">
     <meta property="twitter:title" content="Synaxic API - Enterprise Developer Utilities Hub">
     <meta property="twitter:description" content="Professional API hub with IP inspection, email validation, and conversion tools.">
 
     <title>Synaxic API - Enterprise Developer Utilities Hub</title>
 
-    <!-- Critical CSS for preventing layout shift on button -->
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- Critical CSS for preventing layout shift and above-the-fold content -->
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-primary: #0f172a;
+            --text-primary: #f1f5f9;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-display: swap;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -37,11 +63,104 @@
             border: none;
             cursor: pointer;
             white-space: nowrap;
+            background: var(--primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-secondary {
+            background: #4b5563;
+        }
+
+        .btn-large {
+            padding: 15px 30px;
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .gradient-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .hero-content {
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            .hero-cta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Optimize sections below fold */
+        .features, .demo, .tech-stack, .contact {
+            content-visibility: auto;
+            contain-intrinsic-size: 500px;
         }
     </style>
 
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="canonical" href="https://api.skillter.dev/">
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
+    <link rel="canonical" href="https://synaxic.skillter.dev/">
 
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
@@ -49,15 +168,50 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Synaxic API",
-        "description": "Enterprise-grade developer utilities API hub",
-        "url": "https://api.skillter.dev",
+        "description": "Enterprise-grade developer utilities API hub providing IP inspection, email validation, unit conversions, and color tools with distributed infrastructure for high reliability and performance",
+        "url": "https://synaxic.skillter.dev",
         "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Developer API",
         "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "1.0.0",
+        "datePublished": "2025-01-01",
+        "dateModified": "2025-01-06",
+        "author": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
         "offers": {
             "@type": "Offer",
             "price": "0",
-            "priceCurrency": "USD"
-        }
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+        },
+        "serviceEndpoint": "https://synaxic.skillter.dev",
+        "documentation": "https://synaxic.skillter.dev/swagger-ui.html",
+        "provider": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "featureList": [
+            "IP inspection and geolocation",
+            "Email validation with disposable domain detection",
+            "Unit conversion with JSR-385 standards",
+            "Byte conversion between SI and IEC units",
+            "Color conversion with WCAG accessibility checking",
+            "OAuth2 authentication and API key management",
+            "Distributed rate limiting",
+            "Two-tier caching system"
+        ],
+        "license": "https://synaxic.skillter.dev/terms-of-service",
+        "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
     }
     </script>
 </head>
@@ -92,7 +246,7 @@
                     <span>Login with Google</span>
                 </button>
             </div>
-            <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle mobile navigation menu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -236,7 +390,7 @@
 
                 <div class="demo-response">
                     <div class="response-header">
-                        <h4>Response</h4>
+                        <h3>Response</h3>
                         <span id="response-status" class="response-status"></span>
                         <span id="response-time" class="response-time"></span>
                     </div>
@@ -244,7 +398,7 @@
                 </div>
 
                 <div class="demo-code-example">
-                    <h4>Code Examples</h4>
+                    <h3>Code Examples</h3>
                     <div class="code-tabs">
                         <button class="code-tab active" data-lang="curl">cURL</button>
                         <button class="code-tab" data-lang="javascript">JavaScript</button>
@@ -402,6 +556,6 @@
         </div>
     </footer>
 
-    <script src="/js/main.js"></script>
+    <script src="/js/main.js" defer></script>
 </body>
 </html>

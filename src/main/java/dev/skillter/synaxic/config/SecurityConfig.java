@@ -91,12 +91,13 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(CSRF_EXCLUDED_ENDPOINTS)
                 )
                 .headers(headers -> headers
-                    // Content Security Policy to prevent XSS
+                    // Content Security Policy to prevent XSS - hardened without unsafe-inline
                     .contentSecurityPolicy(csp -> csp
                         .policyDirectives(
                             "default-src 'self'; " +
-                            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com; " +
-                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                            "script-src 'self' https://static.cloudflareinsights.com; " +
+                            "style-src 'self' https://fonts.googleapis.com; " +
+                            "style-src-attr 'unsafe-inline'; " +
                             "font-src 'self' https://fonts.gstatic.com; " +
                             "img-src 'self' data: https:; " +
                             "connect-src 'self'; " +
@@ -105,7 +106,8 @@ public class SecurityConfig {
                             "base-uri 'self'; " +
                             "form-action 'self'; " +
                             "frame-ancestors 'none'; " +
-                            "upgrade-insecure-requests"
+                            "upgrade-insecure-requests; " +
+                            "require-trusted-types-for 'script'"
                         )
                     )
                     // Prevent content-type sniffing
@@ -119,7 +121,12 @@ public class SecurityConfig {
                     // HSTS (HTTP Strict Transport Security)
                     .httpStrictTransportSecurity(hsts -> hsts
                         .maxAgeInSeconds(31536000) // 1 year
-                        .preload(false)
+                        .preload(true) // Enable preload for better security
+                        .includeSubDomains(true) // Apply to all subdomains
+                    )
+                    // Cross-Origin-Opener-Policy for origin isolation
+                    .crossOriginOpenerPolicy(coop -> coop
+                        .policy(org.springframework.security.web.header.writers.CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy.SAME_ORIGIN)
                     )
                 )
                 .addFilterBefore(apiKeyAuthFilter, UsernamePasswordAuthenticationFilter.class)

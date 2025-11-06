@@ -121,6 +121,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                path.equals("/health.html") ||
                path.equals("/login-success.html") ||
                path.equals("/login-success") ||
+               path.equals("/v1/auth/login-success") ||
                path.equals("/privacy-policy") ||
                path.equals("/privacy-policy.html") ||
                path.equals("/terms-of-service") ||
@@ -131,7 +132,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/actuator") ||
                path.startsWith("/oauth2") ||
-               path.startsWith("/api/debug") ||
+               path.equals("/api/debug/rate-limit") ||
+               path.equals("/api/stats") ||
                path.equals("/login") ||
                path.equals("/error");
     }
