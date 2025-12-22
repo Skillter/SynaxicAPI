@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1rem 0;
+            text-align: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .controls {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .info {
+            background: rgba(100, 116, 139, 0.1);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Continuous Animation System Test</h1>
+
+        <div class="info">
+            <strong>Browser Capabilities:</strong> <span id="capabilities"></span><br>
+            <strong>Animation Quality:</strong> <span id="quality"></span><br>
+            <strong>Target Frame Rate:</strong> <span id="framerate"></span><br>
+            <strong>Animation Method:</strong> <span id="method"></span>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="testAnimation(100, 500)">Test 100→500</button>
+            <button class="btn" onclick="testAnimation(500, 1200)">Test 500→1200</button>
+            <button class="btn" onclick="testAnimation(1000, 2500)">Test 1000→2500</button>
+            <button class="btn" onclick="testAnimation(5000, 15000)">Test 5000→15000</button>
+            <button class="btn" onclick="testAnimation(15000, 5000)">Test 15000→5000 (decrease)</button>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value" id="test-counter">0</div>
+            <div class="stat-label">Test Counter</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value" id="test-counter-full">0</div>
+            <div class="stat-label">Full Format Counter</div>
+        </div>
+
+        <div class="info">
+            <strong>Instructions:</strong><br>
+            1. Click the test buttons to see different animation speeds and step sizes<br>
+            2. The animation should smoothly transition over 5 seconds<br>
+            3. Try switching tabs, scrolling, or touching on mobile to test adaptive performance<br>
+            4. Check browser console for capability detection output<br>
+            5. Test on different browsers and devices to verify compatibility
+        </div>
+    </div>
+
+    <script>
+        // Include the animation systems (copy-pasted from main.js for testing)
+        const AnimationProfile = {
+            capabilities: null,
+
+            init() {
+                this.capabilities = this.detectCapabilities();
+                console.log('Animation capabilities detected:', this.capabilities);
+                this.displayCapabilities();
+            },
+
+            detectCapabilities() {
+                const features = {
+                    hasRequestAnimationFrame: 'requestAnimationFrame' in window,
+                    hasCSSTransforms: 'transform' in document.documentElement.style,
+                    hasCSSTransforms3d: 'webkitPerspective' in document.documentElement.style || 'perspective' in document.documentElement.style,
+                    hasWillChange: 'willChange' in document.documentElement.style,
+                    isChrome: /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor),
+                    isFirefox: /Firefox/.test(navigator.userAgent),
+                    isSafari: /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor),
+                    isEdge: /Edg/.test(navigator.userAgent),
+                    isIE: /MSIE|Trident/.test(navigator.userAgent),
+                    isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                    isTablet: /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent),
+                    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+                    isLowEnd: this.detectLowEnd(),
+                    deviceMemory: navigator.deviceMemory || 4,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 4,
+                    prefersReducedMotion: this.detectReducedMotion(),
+                    connectionType: this.detectConnectionType(),
+                    isSlowConnection: this.detectSlowConnection()
+                };
+
+                features.targetFrameRate = this.calculateTargetFrameRate(features);
+                features.animationQuality = this.calculateAnimationQuality(features);
+                features.animationMethod = this.selectAnimationMethod(features);
+
+                return features;
+            },
+
+            detectLowEnd() {
+                const indicators = [
+                    navigator.hardwareConcurrency <= 2,
+                    (navigator.deviceMemory || 4) <= 2,
+                    /Android [1-4]/.test(navigator.userAgent),
+                    this.isOldDevice(),
+                    this.detectSlowConnection()
+                ];
+                return indicators.filter(Boolean).length >= 2;
+            },
+
+            isOldDevice() {
+                const oldAndroid = /Android [1-4]/.test(navigator.userAgent);
+                const oldIOS = /OS [7-9]_/.test(navigator.userAgent);
+                const oldChrome = /Chrome\/[0-5][0-9]\./.test(navigator.userAgent);
+                return oldAndroid || oldIOS || oldChrome;
+            },
+
+            detectReducedMotion() {
+                if (window.matchMedia) {
+                    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                }
+                return false;
+            },
+
+            detectConnectionType() {
+                if ('connection' in navigator) {
+                    return navigator.connection.effectiveType || 'unknown';
+                }
+                return 'unknown';
+            },
+
+            detectSlowConnection() {
+                if ('connection' in navigator) {
+                    const connection = navigator.connection;
+                    return connection.effectiveType === 'slow-2g' ||
+                           connection.effectiveType === '2g' ||
+                           connection.saveData === true;
+                }
+                return false;
+            },
+
+            calculateTargetFrameRate(features) {
+                if (features.prefersReducedMotion) return 15;
+                if (features.isLowEnd || features.isSlowConnection) return 30;
+                if (features.isMobile && !features.isTablet) return 45;
+                return 60;
+            },
+
+            calculateAnimationQuality(features) {
+                if (features.prefersReducedMotion) return 'minimal';
+                if (features.isLowEnd || features.isSlowConnection) return 'basic';
+                if (features.isMobile) return 'standard';
+                return 'enhanced';
+            },
+
+            selectAnimationMethod(features) {
+                if (features.isIE || !features.hasRequestAnimationFrame) return 'fallback';
+                if (features.isLowEnd || features.prefersReducedMotion) return 'simple';
+                if (features.hasCSSTransforms3d && !features.isMobile) return 'hardware';
+                return 'standard';
+            },
+
+            displayCapabilities() {
+                if (document.getElementById('capabilities')) {
+                    document.getElementById('capabilities').textContent =
+                        `${AnimationProfile.capabilities.isMobile ? 'Mobile' : 'Desktop'} | ` +
+                        `${AnimationProfile.capabilities.isChrome ? 'Chrome' :
+                          AnimationProfile.capabilities.isFirefox ? 'Firefox' :
+                          AnimationProfile.capabilities.isSafari ? 'Safari' :
+                          AnimationProfile.capabilities.isEdge ? 'Edge' : 'Other'}`;
+                }
+
+                if (document.getElementById('quality')) {
+                    document.getElementById('quality').textContent = AnimationProfile.capabilities.animationQuality;
+                }
+
+                if (document.getElementById('framerate')) {
+                    document.getElementById('framerate').textContent = AnimationProfile.capabilities.targetFrameRate + ' fps';
+                }
+
+                if (document.getElementById('method')) {
+                    document.getElementById('method').textContent = AnimationProfile.capabilities.animationMethod;
+                }
+            }
+        };
+
+        const AdaptivePerformance = {
+            activeAnimations: new Map(),
+            isPaused: false,
+            batteryLevel: null,
+            visibilityState: 'visible',
+
+            init() {
+                this.setupEventListeners();
+            },
+
+            setupEventListeners() {
+                if ('visibilityState' in document) {
+                    document.addEventListener('visibilitychange', () => {
+                        this.visibilityState = document.visibilityState;
+                        this.adjustAnimationBasedOnVisibility();
+                    });
+                }
+
+                if ('getBattery' in navigator) {
+                    navigator.getBattery().then(battery => {
+                        this.batteryLevel = battery.level;
+                        battery.addEventListener('levelchange', () => {
+                            this.batteryLevel = battery.level;
+                            this.adjustAnimationBasedOnBattery();
+                        });
+                    });
+                }
+
+                if (AnimationProfile.capabilities.isMobile) {
+                    this.setupMobileEventListeners();
+                }
+            },
+
+            setupMobileEventListeners() {
+                let touchTimeout;
+                document.addEventListener('touchstart', () => {
+                    this.pauseAnimations();
+                    clearTimeout(touchTimeout);
+                });
+
+                document.addEventListener('touchend', () => {
+                    touchTimeout = setTimeout(() => {
+                        this.resumeAnimations();
+                    }, 1000);
+                });
+
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    this.pauseAnimations();
+                    clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        this.resumeAnimations();
+                    }, 150);
+                });
+            },
+
+            registerAnimation(id, animation) {
+                this.activeAnimations.set(id, {
+                    ...animation,
+                    startTime: performance.now(),
+                    quality: AnimationProfile.capabilities.animationQuality,
+                    frameRate: AnimationProfile.capabilities.targetFrameRate
+                });
+            },
+
+            unregisterAnimation(id) {
+                this.activeAnimations.delete(id);
+            },
+
+            pauseAnimations() {
+                this.isPaused = true;
+                this.activeAnimations.forEach(animation => {
+                    if (animation.pause) animation.pause();
+                });
+            },
+
+            resumeAnimations() {
+                if (this.visibilityState === 'visible') {
+                    this.isPaused = false;
+                    this.activeAnimations.forEach(animation => {
+                        if (animation.resume) animation.resume();
+                    });
+                }
+            },
+
+            adjustAnimationBasedOnVisibility() {
+                if (this.visibilityState === 'hidden') {
+                    this.pauseAnimations();
+                } else {
+                    this.resumeAnimations();
+                }
+            },
+
+            adjustAnimationBasedOnBattery() {
+                if (this.batteryLevel !== null && this.batteryLevel < 0.2) {
+                    this.activeAnimations.forEach(animation => {
+                        if (animation.adjustQuality) {
+                            animation.adjustQuality('basic');
+                        }
+                    });
+                }
+            },
+
+            getOptimalFrameRate() {
+                if (this.isPaused || this.visibilityState === 'hidden') return 15;
+                if (this.batteryLevel !== null && this.batteryLevel < 0.2) return 30;
+                return AnimationProfile.capabilities.targetFrameRate;
+            }
+        };
+
+        // Test animation functions
+        let currentValue = 0;
+        let currentFullValue = 0;
+
+        function testAnimation(start, end) {
+            const counter = document.getElementById('test-counter');
+            const fullCounter = document.getElementById('test-counter-full');
+
+            animateNumber(counter, start, end, false);
+            animateNumber(fullCounter, start, end, true);
+        }
+
+        function animateNumber(element, startValue, endValue, useFullFormat = false) {
+            if (AnimationProfile.capabilities.animationMethod === 'fallback' ||
+                AnimationProfile.capabilities.prefersReducedMotion ||
+                Math.abs(endValue - startValue) === 0) {
+                animateNumberFallback(element, startValue, endValue, useFullFormat);
+                return;
+            }
+
+            const animationId = `test-animation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            if (element.animationId) {
+                AdaptivePerformance.unregisterAnimation(element.animationId);
+            }
+            element.animationId = animationId;
+
+            AdaptivePerformance.registerAnimation(animationId, {
+                element: element,
+                startValue: startValue,
+                endValue: endValue,
+                useFullFormat: useFullFormat,
+                startTime: performance.now(),
+                duration: 5000,
+                pause: () => pauseAnimation(animationId),
+                resume: () => resumeAnimation(animationId),
+                cleanup: () => cleanupAnimation(animationId),
+                adjustQuality: (quality) => adjustAnimationQuality(animationId, quality)
+            });
+
+            startContinuousAnimation(animationId, element, startValue, endValue, useFullFormat);
+        }
+
+        function startContinuousAnimation(animationId, element, startValue, endValue, useFullFormat) {
+            const formatFunc = useFullFormat ? formatFullNumber : formatNumber;
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+
+            if (!animation) return;
+
+            const duration = animation.duration;
+            const capabilities = AnimationProfile.capabilities;
+
+            // Calculate intermediate values for rolling animation
+            const valueDiff = endValue - startValue;
+            const absDiff = Math.abs(valueDiff);
+
+            // Determine number of rolling steps based on difference and performance
+            let numSteps;
+            if (absDiff <= 10) {
+                numSteps = absDiff; // Each number change is a step
+            } else if (absDiff <= 100) {
+                numSteps = Math.min(20, absDiff); // Up to 20 steps
+            } else if (absDiff <= 1000) {
+                numSteps = Math.min(25, Math.ceil(absDiff / 10)); // Every 10th number
+            } else if (absDiff <= 10000) {
+                numSteps = Math.min(30, Math.ceil(absDiff / 100)); // Every 100th number
+            } else {
+                numSteps = Math.min(35, Math.ceil(absDiff / 500)); // Every 500th number
+            }
+
+            // Adjust steps based on performance
+            if (capabilities.animationQuality === 'basic') {
+                numSteps = Math.max(5, Math.floor(numSteps * 0.6));
+            } else if (capabilities.animationQuality === 'minimal') {
+                numSteps = Math.max(3, Math.floor(numSteps * 0.3));
+            }
+
+            // Calculate step values
+            const steps = [];
+            for (let i = 0; i <= numSteps; i++) {
+                const progress = i / numSteps;
+                // Apply easing to the step timing
+                const easedProgress = easeInOutCubic(progress);
+                const stepValue = startValue + (valueDiff * easedProgress);
+                steps.push(Math.round(stepValue));
+            }
+
+            // Ensure we have the final value
+            if (steps[steps.length - 1] !== endValue) {
+                steps.push(endValue);
+            }
+
+            // Store animation state
+            animation.state = {
+                steps: steps,
+                currentStepIndex: 0,
+                isPaused: false,
+                stepStartTime: performance.now(),
+                stepDuration: duration / steps.length
+            };
+
+            // Start the rolling animation sequence
+            executeRollingStep(animationId, element, steps, 0, formatFunc);
+        }
+
+        function executeRollingStep(animationId, element, steps, stepIndex, formatFunc) {
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+            if (!animation || animation.state.isPaused || stepIndex >= steps.length) {
+                // Animation complete
+                if (animation && stepIndex >= steps.length) {
+                    element.textContent = formatFunc.call(null, steps[steps.length - 1]);
+                    AdaptivePerformance.unregisterAnimation(animationId);
+                    if (element.animationId === animationId) {
+                        element.animationId = null;
+                    }
+                }
+                return;
+            }
+
+            // Update current step index
+            animation.state.currentStepIndex = stepIndex;
+
+            const currentValue = steps[stepIndex];
+            const previousValue = stepIndex > 0 ? steps[stepIndex - 1] : currentValue;
+
+            // Create rolling animation for this step
+            createRollingDigitAnimation(element, previousValue, currentValue, formatFunc, () => {
+                // Schedule next step only if not paused
+                if (!animation.state.isPaused) {
+                    animation.state.stepTimeoutId = setTimeout(() => {
+                        executeRollingStep(animationId, element, steps, stepIndex + 1, formatFunc);
+                    }, animation.state.stepDuration);
+                }
+            });
+        }
+
+        function createRollingDigitAnimation(element, oldValue, newValue, formatFunc, onComplete) {
+            const oldText = formatFunc.call(null, oldValue);
+            const newText = formatFunc.call(null, newValue);
+            const direction = newValue > oldValue ? 'up' : 'down';
+
+            // Pad shorter string with spaces to align digits
+            const maxLen = Math.max(oldText.length, newText.length);
+            const oldPadded = oldText.padStart(maxLen, ' ');
+            const newPadded = newText.padStart(maxLen, ' ');
+
+            // Create container for all digits
+            const container = document.createElement('span');
+            container.className = 'odometer-container';
+            container.style.display = 'inline-flex';
+            container.style.alignItems = 'center';
+
+            // Process each character position
+            for (let i = 0; i < maxLen; i++) {
+                const oldChar = oldPadded[i];
+                const newChar = newPadded[i];
+
+                const digitWrapper = document.createElement('span');
+                digitWrapper.className = 'odometer-digit-wrapper';
+                digitWrapper.style.display = 'inline-block';
+                digitWrapper.style.position = 'relative';
+                digitWrapper.style.overflow = 'hidden';
+                digitWrapper.style.height = '1.2em';
+                digitWrapper.style.lineHeight = '1.2em';
+                digitWrapper.style.verticalAlign = 'baseline';
+
+                if (oldChar === ' ' && newChar === ' ') {
+                    digitWrapper.style.minWidth = '0';
+                } else if (oldChar === ' ' || newChar === ' ') {
+                    digitWrapper.style.minWidth = '0.3em';
+                } else {
+                    digitWrapper.style.minWidth = '0.6em';
+                }
+
+                if (oldChar === newChar) {
+                    // No change - display static character
+                    const staticChar = document.createElement('span');
+                    staticChar.textContent = oldChar;
+                    staticChar.style.display = 'inline-block';
+                    staticChar.style.height = '100%';
+                    staticChar.style.lineHeight = '1.2em';
+                    digitWrapper.appendChild(staticChar);
+                } else {
+                    // Character changed - animate it with rolling effect
+                    const roller = document.createElement('span');
+                    roller.className = 'odometer-roller';
+                    roller.style.display = 'block';
+                    roller.style.position = 'relative';
+
+                    // Apply hardware acceleration for better performance
+                    if (AnimationProfile.capabilities.hasCSSTransforms3d) {
+                        roller.style.transform = 'translateZ(0)';
+                        roller.style.willChange = 'transform';
+                    }
+
+                    // Adjust animation duration based on performance
+                    const animationDuration = AnimationProfile.capabilities.animationQuality === 'enhanced' ? '0.4s' :
+                                             AnimationProfile.capabilities.animationQuality === 'standard' ? '0.3s' :
+                                             AnimationProfile.capabilities.animationQuality === 'basic' ? '0.2s' : '0.15s';
+
+                    roller.style.transition = `transform ${animationDuration} cubic-bezier(0.34, 1.56, 0.64, 1)`;
+
+                    // Old character
+                    const oldCharSpan = document.createElement('span');
+                    oldCharSpan.textContent = oldChar;
+                    oldCharSpan.style.display = 'block';
+                    oldCharSpan.style.height = '1.2em';
+                    oldCharSpan.style.lineHeight = '1.2em';
+                    oldCharSpan.style.textAlign = 'center';
+
+                    // New character
+                    const newCharSpan = document.createElement('span');
+                    newCharSpan.textContent = newChar;
+                    newCharSpan.style.display = 'block';
+                    newCharSpan.style.height = '1.2em';
+                    newCharSpan.style.lineHeight = '1.2em';
+                    newCharSpan.style.textAlign = 'center';
+
+                    // Append in correct order based on direction
+                    // When increasing (up): new digit comes from bottom, old goes up
+                    // When decreasing (down): new digit comes from top, old goes down
+                    if (direction === 'up') {
+                        roller.appendChild(newCharSpan); // New digit (starts below)
+                        roller.appendChild(oldCharSpan); // Old digit (starts above)
+                    } else {
+                        roller.appendChild(oldCharSpan); // Old digit (starts below)
+                        roller.appendChild(newCharSpan); // New digit (starts above)
+                    }
+
+                    digitWrapper.appendChild(roller);
+
+                    // Set initial transform before animation
+                    roller.style.transform = direction === 'up'
+                        ? 'translateY(-1.2em)' // Start with old digit visible
+                        : 'translateY(0)';      // Start with old digit visible
+
+                    // Trigger animation on next frame
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            roller.style.transform = direction === 'up'
+                                ? 'translateY(0)'      // Move new digit up into view
+                                : 'translateY(-1.2em)'; // Move new digit down into view
+                        });
+                    });
+                }
+
+                container.appendChild(digitWrapper);
+            }
+
+            // Replace element content
+            element.textContent = '';
+            element.appendChild(container);
+
+            // Clean up after animation
+            const cleanupDelay = AnimationProfile.capabilities.animationQuality === 'enhanced' ? 450 :
+                                AnimationProfile.capabilities.animationQuality === 'standard' ? 350 :
+                                AnimationProfile.capabilities.animationQuality === 'basic' ? 250 : 200;
+
+            setTimeout(() => {
+                element.textContent = newText;
+                if (onComplete) onComplete();
+            }, cleanupDelay);
+        }
+
+        function pauseAnimation(animationId) {
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+            if (animation && animation.state) {
+                animation.state.isPaused = true;
+                if (animation.frameId) {
+                    cancelAnimationFrame(animation.frameId);
+                }
+            }
+        }
+
+        function resumeAnimation(animationId) {
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+            if (animation && animation.state) {
+                animation.state.isPaused = false;
+                const pausedDuration = performance.now() - animation.pauseTime;
+                animation.startTime += pausedDuration;
+                startContinuousAnimation(
+                    animationId,
+                    animation.element,
+                    animation.startValue,
+                    animation.endValue,
+                    animation.useFullFormat
+                );
+            }
+        }
+
+        function cleanupAnimation(animationId) {
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+            if (animation) {
+                if (animation.frameId) {
+                    cancelAnimationFrame(animation.frameId);
+                }
+                if (animation.element && animation.element.animationId === animationId) {
+                    element.animationId = null;
+                }
+            }
+        }
+
+        function adjustAnimationQuality(animationId, quality) {
+            const animation = AdaptivePerformance.activeAnimations.get(animationId);
+            if (animation && animation.state) {
+                const baseStepSize = Math.abs(animation.endValue - animation.startValue) / 100;
+                switch (quality) {
+                    case 'minimal':
+                        animation.state.stepSize = baseStepSize * 5;
+                        break;
+                    case 'basic':
+                        animation.state.stepSize = baseStepSize * 2;
+                        break;
+                    case 'standard':
+                        animation.state.stepSize = baseStepSize;
+                        break;
+                    case 'enhanced':
+                        animation.state.stepSize = Math.max(1, baseStepSize / 2);
+                        break;
+                }
+            }
+        }
+
+        function animateNumberFallback(element, startValue, endValue, useFullFormat) {
+            const formatFunc = useFullFormat ? formatFullNumber : formatNumber;
+            element.style.opacity = '0';
+            element.style.transition = 'opacity 0.3s ease-in-out';
+
+            setTimeout(() => {
+                element.textContent = formatFunc.call(null, endValue);
+                element.style.opacity = '1';
+            }, 150);
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        function formatFullNumber(num) {
+            return num.toLocaleString();
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            AnimationProfile.init();
+            AdaptivePerformance.init();
+
+            // Set initial values
+            document.getElementById('test-counter').textContent = '0';
+            document.getElementById('test-counter-full').textContent = '0';
+        });
+    </script>
+</body>
+</html>

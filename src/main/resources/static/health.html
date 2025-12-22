@@ -67,34 +67,348 @@ n    <!-- Preconnect to external domains -->
         "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
     }
     </script>
-    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
+    <!-- Critical CSS for preventing layout shift and above-the-fold content -->
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-primary: #0f172a;
+            --text-primary: #f1f5f9;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border-radius: 12px;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #6366f1;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
+            font-display: swap;
+            padding-top: 50px; /* Match main.css body padding */
         }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Critical Navigation Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+            height: 70px; /* Explicit height to prevent layout shift */
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            height: 100%; /* Ensure full height usage */
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .logo:hover {
+            opacity: 0.8;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-light);
+            text-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+        }
+
+        /* Cookie banner with stable positioning to prevent layout shift */
+        .cookie-consent {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            left: auto;
+            max-width: 380px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            z-index: 9999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transform: translateY(0);
+            opacity: 1;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        .cookie-consent.hidden {
+            transform: translateY(120%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cookie-content p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+    .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .health-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 80px 0 40px;
+        }
+
+        .health-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .health-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .status-overview {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 18px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .component-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        }
+
+        .component-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .component-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .component-status {
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .component-status.up {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .component-status.down {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .component-status.degraded {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .component-details {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .detail-value {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .health-title {
+                font-size: 2rem;
+            }
+
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cookie-consent {
+                bottom: 8px;
+                right: 8px;
+                left: 8px;
+                max-width: none;
+            }
+        }
+
+        /* Prevent health hero flash - hide until critical CSS loads */
+        .health .hero {
+            visibility: hidden;
+        }
+
+        .health .hero-content {
+            visibility: hidden;
+        }
+
+        /* Critical fade-in animations for health content */
+        .health-card,
+        .health-grid,
+        .components-grid,
+        .health-section,
+        .status-indicator,
+        .metric-card {
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, transform;
+        }
+
+        /* Show health hero once everything is ready */
+        .health-ready .hero,
+        .health-ready .hero-content {
+            visibility: visible;
+        }
+
+        /* Fade in health elements when ready */
+        .health-ready .health-card,
+        .health-ready .health-grid,
+        .health-ready .components-grid,
+        .health-ready .health-section,
+        .health-ready .status-indicator,
+        .health-ready .metric-card {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+    </style>
+
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
 
         .container {
             max-width: 1000px;
@@ -427,247 +741,6 @@ n    <!-- Preconnect to external domains -->
     </div>
 
     <script src="/js/main.js" defer></script>
-    <script data-cfasync="false">
-        async function loadHealth() {
-            try {
-                const response = await fetch('/actuator/health');
-
-                if (!response.ok) {
-                    console.error('Failed to fetch health data:', response.status);
-                    document.getElementById('overall-status').className = 'status-badge down';
-                    document.getElementById('overall-status').innerHTML = '<span class="status-indicator"></span><span>System Status: Error</span>';
-                    return;
-                }
-
-                const data = await response.json();
-
-                const overallStatus = document.getElementById('overall-status');
-                const contentDiv = document.getElementById('content');
-
-                // Update overall status
-                const isUp = data.status === 'UP';
-                overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
-                overallStatus.innerHTML = `
-                    <span class="status-indicator ${isUp ? 'up' : 'down'}"></span>
-                    <span>System Status: ${data.status}</span>
-                `;
-
-                // Build components grid
-                if (data.components) {
-                    const componentsHtml = Object.entries(data.components)
-                        .map(([name, component]) => renderComponent(name, component))
-                        .join('');
-                    contentDiv.innerHTML = `<div class="components">${componentsHtml}</div>`;
-                } else {
-                    contentDiv.innerHTML = '<div class="components"></div>';
-                }
-
-                updateTimestamp();
-                // Refresh every 30 seconds
-                setTimeout(loadHealth, 30000);
-            } catch (error) {
-                document.getElementById('content').innerHTML = `
-                    <div class="error">
-                        <strong>Failed to load health status</strong>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        function renderComponent(name, component) {
-            const isUp = component.status === 'UP';
-            const displayName = formatComponentName(name);
-
-            let detailsHtml = '';
-            if (component.details) {
-                detailsHtml = Object.entries(component.details)
-                    .filter(([key]) => key !== 'path') // Skip path
-                    .map(([key, value]) => {
-                        const displayValue = formatValue(value);
-                        return `
-                            <div class="detail-item">
-                                <span class="detail-label">${formatKey(key)}</span>
-                                <span class="detail-value ${isBytes(key) ? 'bytes' : ''}">${displayValue}</span>
-                            </div>
-                        `;
-                    })
-                    .join('');
-            }
-
-            return `
-                <div class="component-card">
-                    <div class="component-header">
-                        <span class="component-name">${displayName}</span>
-                        <span class="component-status ${isUp ? 'up' : 'down'}">${component.status}</span>
-                    </div>
-                    ${detailsHtml ? `<div class="component-details">${detailsHtml}</div>` : ''}
-                </div>
-            `;
-        }
-
-        function formatComponentName(name) {
-            const names = {
-                'db': 'Database',
-                'diskSpace': 'Disk Space',
-                'ping': 'Ping',
-                'redis': 'Redis Cache',
-                'ssl': 'SSL Certificates'
-            };
-            return names[name] || name.charAt(0).toUpperCase() + name.slice(1);
-        }
-
-        function formatKey(key) {
-            return key.replace(/([A-Z])/g, ' $1').trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        }
-
-        function formatValue(value) {
-            if (typeof value === 'number') {
-                if (value > 1000000000) {
-                    return `${(value / 1000000000).toFixed(2)} GB`;
-                } else if (value > 1000000) {
-                    return `${(value / 1000000).toFixed(2)} MB`;
-                } else if (value > 1000) {
-                    return `${(value / 1000).toFixed(2)} KB`;
-                }
-                return value.toString();
-            }
-            if (Array.isArray(value)) {
-                return value.length === 0 ? 'None' : value.join(', ');
-            }
-            return value.toString();
-        }
-
-        function isBytes(key) {
-            return key.includes('total') || key.includes('free') || key.includes('threshold');
-        }
-
-        function updateTimestamp() {
-            const now = new Date();
-            document.getElementById('last-updated').textContent = now.toLocaleTimeString();
-        }
-
-        async function loadMetrics() {
-            try {
-                // Load public stats
-                const statsResponse = await fetch('/api/stats');
-                const statsData = await statsResponse.json();
-                document.getElementById('total-requests-metric').textContent = statsData.totalRequests.toLocaleString();
-                document.getElementById('users-metric').textContent = statsData.totalUsers.toLocaleString();
-            } catch (error) {
-                console.error('Error fetching stats:', error);
-            }
-
-            try {
-                // Load detailed admin stats
-                const adminResponse = await fetch('/v1/admin/stats');
-                if (!adminResponse.ok) return;
-
-                const adminData = await adminResponse.json();
-
-                // Update request metrics
-                if (adminData.latency?.p50_ms) {
-                    document.getElementById('avg-response-metric').textContent = adminData.latency.p50_ms.toFixed(0) + ' ms';
-                }
-
-                if (adminData.requests?.total > 0) {
-                    const totalErrors = (adminData.requests?.clientErrorCount || 0) + (adminData.requests?.serverErrorCount || 0);
-                    const successRate = (((adminData.requests.total - totalErrors) / adminData.requests.total) * 100).toFixed(1);
-                    document.getElementById('success-rate-metric').textContent = successRate + '%';
-                }
-
-                // Update uptime
-                if (adminData.uptime) {
-                    document.getElementById('uptime-metric').textContent = adminData.uptime;
-                }
-
-                // Update latency percentiles
-                if (adminData.latency?.p50_ms) {
-                    document.getElementById('latency-p50-metric').textContent = adminData.latency.p50_ms.toFixed(0);
-                }
-                if (adminData.latency?.p95_ms) {
-                    document.getElementById('latency-p95-metric').textContent = adminData.latency.p95_ms.toFixed(0);
-                }
-                if (adminData.latency?.p99_ms) {
-                    document.getElementById('latency-p99-metric').textContent = adminData.latency.p99_ms.toFixed(0);
-                }
-
-                // Active sessions placeholder (would need backend support)
-                document.getElementById('sessions-metric').textContent = 'N/A';
-            } catch (error) {
-                console.error('Error fetching admin stats:', error);
-            }
-
-            // Load memory usage from actuator/metrics
-            try {
-                const metricsResponse = await fetch('/actuator/metrics/jvm.memory.used');
-                if (metricsResponse.ok) {
-                    const metricsData = await metricsResponse.json();
-                    const memoryUsed = metricsData.measurements?.[0]?.value || 0;
-                    document.getElementById('memory-usage').textContent = formatBytes(memoryUsed);
-                } else {
-                    document.getElementById('memory-usage').textContent = 'N/A';
-                }
-            } catch (error) {
-                console.error('Error fetching memory metrics:', error);
-                document.getElementById('memory-usage').textContent = 'N/A';
-            }
-
-            // Load cache metrics if available
-            try {
-                const cacheResponse = await fetch('/actuator/metrics/cache.gets');
-                if (cacheResponse.ok) {
-                    const cacheData = await cacheResponse.json();
-                    const hits = cacheData.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
-                    document.getElementById('cache-hit-rate').textContent = hits > 0 ? hits.toFixed(0) + ' hits' : 'No data';
-                } else {
-                    document.getElementById('cache-hit-rate').textContent = 'N/A';
-                }
-            } catch (error) {
-                console.error('Error fetching cache metrics:', error);
-                document.getElementById('cache-hit-rate').textContent = 'N/A';
-            }
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Load on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadHealth();
-            loadMetrics();
-            // Refresh both every 30 seconds
-            setInterval(loadHealth, 30000);
-            setInterval(loadMetrics, 30000);
-        });
-    </script>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <a href="/" class="logo">
-                        <span class="logo-icon">⚡</span>
-                        <span class="logo-text">Synaxic API</span>
-                    </a>
-                    <p>Enterprise-grade developer utilities</p>
-                </div>
-                <div class="footer-copyright">
-                    <p>&copy; 2025 Skillter. All rights reserved.</p>
-                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 14px;">
-                        <a href="/privacy-policy" style="color: var(--primary-light);">Privacy Policy</a>
-                        <a href="/terms-of-service" style="color: var(--primary-light);">Terms of Service</a>
-                        <a href="/fair-use-policy" style="color: var(--primary-light);">Fair Use</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <script src="/js/health.js" defer></script>
 </body>
 </html>

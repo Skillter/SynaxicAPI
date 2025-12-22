@@ -17,19 +17,36 @@ public class UserService {
 
     @Transactional
     public User processOAuth2User(OAuth2User oAuth2User) {
+        log.info("Processing OAuth2 user with attributes: {}", oAuth2User.getAttributes());
         String googleSub = oAuth2User.getAttribute("sub");
         String email = oAuth2User.getAttribute("email");
+        String name = oAuth2User.getAttribute("name");
 
-        return userRepository.findByGoogleSub(googleSub)
-                .orElseGet(() -> createNewUser(googleSub, email));
+        log.info("Extracted values - sub: {}, email: {}, name: {}", googleSub, email, name);
+
+        if (googleSub == null) {
+            log.error("No 'sub' attribute found in OAuth2User");
+            throw new RuntimeException("Missing 'sub' attribute in OAuth2User");
+        }
+
+        if (email == null) {
+            log.error("No 'email' attribute found in OAuth2User");
+            throw new RuntimeException("Missing 'email' attribute in OAuth2User");
+        }
+
+        User user = userRepository.findByGoogleSub(googleSub)
+                .orElseGet(() -> createNewUser(googleSub, email, name));
+
+        log.info("User processed successfully: {}", user.getId());
+        return user;
     }
 
-    private User createNewUser(String googleSub, String email) {
+    private User createNewUser(String googleSub, String email, String name) {
         User newUser = User.builder()
                 .googleSub(googleSub)
                 .email(email)
                 .build();
-        log.info("Creating new user for email: {}", email);
+        log.info("Creating new user for email: {}, name: {}", email, name);
         return userRepository.save(newUser);
     }
 

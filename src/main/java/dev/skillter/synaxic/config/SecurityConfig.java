@@ -91,23 +91,23 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(CSRF_EXCLUDED_ENDPOINTS)
                 )
                 .headers(headers -> headers
-                    // Content Security Policy to prevent XSS - hardened without unsafe-inline
+                    // Content Security Policy to prevent XSS - allows external scripts and minimal inline scripts
                     .contentSecurityPolicy(csp -> csp
                         .policyDirectives(
                             "default-src 'self'; " +
-                            "script-src 'self' https://static.cloudflareinsights.com; " +
-                            "style-src 'self' https://fonts.googleapis.com; " +
+                            "script-src 'self' https://static.cloudflareinsights.com 'unsafe-inline'; " +
+                            "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; " +
                             "style-src-attr 'unsafe-inline'; " +
+                            "script-src-attr 'unsafe-inline'; " +
                             "font-src 'self' https://fonts.gstatic.com; " +
                             "img-src 'self' data: https:; " +
-                            "connect-src 'self'; " +
+                            "connect-src 'self' https://accounts.google.com https://www.googleapis.com; " +
                             "frame-src 'none'; " +
                             "object-src 'none'; " +
                             "base-uri 'self'; " +
                             "form-action 'self'; " +
                             "frame-ancestors 'none'; " +
-                            "upgrade-insecure-requests; " +
-                            "require-trusted-types-for 'script'"
+                            "upgrade-insecure-requests"
                         )
                     )
                     // Prevent content-type sniffing

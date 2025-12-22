@@ -3,6 +3,7 @@ package dev.skillter.synaxic.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.skillter.synaxic.model.entity.User;
 import dev.skillter.synaxic.service.AccountUsageService;
+import dev.skillter.synaxic.service.DailyRequestTrackerService;
 import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.util.IpExtractor;
 import io.github.bucket4j.Bucket;
@@ -33,6 +34,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
     private final AccountUsageService accountUsageService;
+    private final DailyRequestTrackerService dailyRequestTrackerService;
     private final IpExtractor ipExtractor;
     private final ObjectMapper objectMapper;
 
@@ -55,8 +57,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String apiKeyPrefix = null;
         Long apiKeyId = null;
 
-        // Determine rate limit tier for API endpoints
-        if (isStaticResource(path)) {
+        // Determine rate limit tier
+        if (isStaticResource(path) || shouldSkipRateLimit(path)) {
+            // Static resources, pages, docs, and debug endpoints use static tier for DDoS protection
             tier = RateLimitService.RateLimitTier.STATIC;
             key = ipExtractor.extractClientIp(request);
         } else {
@@ -93,6 +96,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (probe.isConsumed()) {
             response.addHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
+
+            // Increment daily requests counter for actual API requests only (not static resources or pages)
+            if (!isStaticResource(path) && !shouldSkipRateLimit(path)) {
+                try {
+                    dailyRequestTrackerService.incrementDailyRequests();
+                } catch (Exception e) {
+                    log.warn("Failed to increment daily requests counter: {}", e.getMessage());
+                }
+            }
 
             // Record API key usage for account-level tracking
             if (apiKeyId != null && apiKeyPrefix != null) {

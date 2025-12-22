@@ -2,6 +2,7 @@ package dev.skillter.synaxic.controller.v1;
 
 import dev.skillter.synaxic.model.dto.StatsResponse;
 import dev.skillter.synaxic.repository.UserRepository;
+import dev.skillter.synaxic.service.DailyRequestTrackerService;
 import dev.skillter.synaxic.service.MetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,11 +20,12 @@ public class StatsController {
 
     private final MetricsService metricsService;
     private final UserRepository userRepository;
+    private final DailyRequestTrackerService dailyRequestTrackerService;
 
     @GetMapping("/stats")
     @Operation(
             summary = "Get public statistics",
-            description = "Returns total API requests (persistent) and registered users count"
+            description = "Returns total API requests (persistent), registered users count, and today's requests"
     )
     public ResponseEntity<StatsResponse> getStats() {
         // Get total requests from Redis (persists across restarts)
@@ -32,9 +34,17 @@ public class StatsController {
         // Get total users from database
         long totalUsers = userRepository.count();
 
+        // Get today's requests count
+        long requestsToday = dailyRequestTrackerService.getTodayRequests();
+
+        // Get current UTC date for frontend timezone calculations
+        String currentUTCDate = dailyRequestTrackerService.getCurrentUTCDate();
+
         StatsResponse stats = StatsResponse.builder()
                 .totalRequests(totalRequests)
                 .totalUsers(totalUsers)
+                .requestsToday(requestsToday)
+                .currentUTCDate(currentUTCDate)
                 .build();
 
         return ResponseEntity.ok(stats);

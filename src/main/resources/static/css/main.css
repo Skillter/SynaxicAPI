@@ -123,6 +123,9 @@ body {
     padding: 6px 12px;
     font-size: 12px;
     border-radius: 6px;
+    line-height: 1.2;
+    min-height: auto;
+    height: auto;
 }
 
 /* Navigation */
@@ -179,6 +182,7 @@ body {
 
 .nav-links a:hover {
     color: var(--primary-light);
+    text-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
 }
 
 .nav-links a::after {
@@ -189,7 +193,8 @@ body {
     width: 0;
     height: 2px;
     background: var(--gradient-1);
-    transition: width 0.3s ease;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width;
 }
 
 .nav-links a:hover::after {
@@ -234,7 +239,7 @@ body {
     min-height: 100vh;
     display: flex;
     align-items: center;
-    padding-top: 80px;
+    padding-top: 50px;
     overflow: hidden;
 }
 
@@ -312,8 +317,98 @@ body {
     min-width: 80px;
     text-align: center;
     display: block;
+    line-height: 1.2em;
+    height: 1.2em;
+    vertical-align: baseline;
+    /* Consistent font rendering for both static and animated states */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-smooth: always;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.02em; /* Slight tracking improvement */
+}
+
+/* Odometer animation container - matches static positioning */
+.odometer-container {
+    line-height: 1.2em;
+    height: 1.2em;
+    vertical-align: baseline;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Safari-specific fixes */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    /* Enable hardware acceleration */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Improve rendering in Safari */
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure consistent positioning during animations */
+.stat-value .odometer-container {
+    font-size: inherit;
+    font-weight: inherit;
+    background: inherit;
+    -webkit-background-clip: inherit;
+    -webkit-text-fill-color: inherit;
+    background-clip: inherit;
     min-height: 1.2em;
     line-height: 1.2em;
+}
+
+/* Digit wrapper styling for consistent character width */
+.odometer-digit-wrapper {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: inherit;
+    /* Safari-specific overflow handling */
+    overflow: hidden;
+    /* Ensure proper positioning in Safari */
+    position: relative;
+    /* Improve rendering in Safari */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* Roller elements should inherit font weight from parent */
+.odometer-roller {
+    font-weight: inherit;
+    /* Safari-specific transform improvements */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    /* Enable hardware acceleration for smoother animation */
+    will-change: transform;
+    /* Improve rendering in Safari */
+    -webkit-font-smoothing: antialiased;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.odometer-roller span {
+    font-weight: inherit;
+    /* Ensure proper block display in Safari */
+    display: block;
+    /* Fix Safari text rendering during animation */
+    -webkit-font-smoothing: antialiased;
+    /* Prevent text shifting in Safari */
+    position: relative;
+    /* Enable hardware acceleration */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* Sign wrapper for negative numbers */
+.odometer-sign-wrapper {
+    font-weight: inherit;
+    /* Ensure consistent spacing */
+    display: inline-block;
+    text-align: center;
+    /* Prevent sign from jumping during animation */
+    min-width: 0.6em;
+    /* Safari compatibility */
+    -webkit-font-smoothing: antialiased;
 }
 
 .stat-label {
@@ -362,9 +457,16 @@ body {
     background: var(--gradient-1);
     color: white;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, box-shadow;
 }
 
 .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:active {
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
@@ -378,6 +480,10 @@ body {
 .btn-secondary:hover {
     background: var(--bg-secondary);
     border-color: var(--primary);
+}
+
+.btn-secondary:active {
+    transform: translateY(0px);
 }
 
 .btn-text {
@@ -978,6 +1084,8 @@ section {
 
     .cookie-buttons .btn {
         width: 100%;
+        padding: 6px 12px; /* Slightly larger on mobile for touch */
+        font-size: 12px;
     }
 }
 
@@ -1534,5 +1642,31 @@ section {
 
     .steps-list li:hover {
         transform: translateX(0);
+    }
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .btn-primary,
+    .btn-secondary,
+    .nav-links a,
+    .nav-links a::after {
+        transition: none !important;
+        animation: none !important;
+        will-change: auto;
+    }
+
+    .btn:hover,
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .btn:active,
+    .btn-primary:active,
+    .btn-secondary:active {
+        transform: none;
+    }
+
+    .nav-links a:hover {
+        text-shadow: none;
     }
 }

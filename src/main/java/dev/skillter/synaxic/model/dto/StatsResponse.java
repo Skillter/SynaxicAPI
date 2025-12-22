@@ -12,4 +12,6 @@ import lombok.NoArgsConstructor;
 public class StatsResponse {
     private long totalRequests;
     private long totalUsers;
+    private long requestsToday;
+    private String currentUTCDate;
 }

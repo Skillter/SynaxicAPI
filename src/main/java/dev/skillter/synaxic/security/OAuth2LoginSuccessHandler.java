@@ -30,8 +30,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oauth2User = null;
         try {
+            log.info("OAuth2 login success handler called");
             oauth2User = (OAuth2User) authentication.getPrincipal();
+            log.info("OAuth2 user attributes: {}", oauth2User.getAttributes());
             User user = userService.processOAuth2User(oauth2User);
+            log.info("User processed successfully: {}", user.getId());
 
             if (apiKeyService.findByUserId(user.getId()).isEmpty()) {
                 apiKeyService.generateAndSaveKey(user);
