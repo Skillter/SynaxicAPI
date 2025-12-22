@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class GeoIpServiceTest {
@@ -49,8 +50,9 @@ class GeoIpServiceTest {
 
     @Test
     void getCountry_shouldReturnEmptyForIpNotFound() throws Exception {
-        String ip = "127.0.0.1";
-        when(databaseReader.country(any(InetAddress.class))).thenThrow(new AddressNotFoundException("Address not found"));
+        String ip = "8.8.4.4"; // Use a public IP that we'll simulate as not found
+        // Use lenient() to prevent UnnecessaryStubbingException if the implementation checks private IP first
+        lenient().when(databaseReader.country(any(InetAddress.class))).thenThrow(new AddressNotFoundException("Address not found"));
 
         Optional<String> country = geoIpService.getCountry(ip);
 
@@ -64,3 +66,4 @@ class GeoIpServiceTest {
         assertThat(country).isEmpty();
     }
 }
+

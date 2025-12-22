@@ -11,7 +11,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.Optional;
@@ -29,19 +28,28 @@ public class GeoIpService {
 
     @PostConstruct
     public void init() {
-        try {
-            Resource resource = resourceLoader.getResource("file:/app/geodb/GeoLite2-City.mmdb");
-            if (!resource.exists()) {
-                log.warn("GeoLite2-City.mmdb database not found at /app/geodb/GeoLite2-City.mmdb. Geolocation features will be disabled.");
-                return;
+        String[] locations = {
+            "file:/app/geodb/GeoLite2-City.mmdb",
+            "classpath:GeoLite2-City.mmdb",
+            "file:./GeoLite2-City.mmdb"
+        };
+
+        for (String location : locations) {
+            try {
+                Resource resource = resourceLoader.getResource(location);
+                if (resource.exists()) {
+                    try (InputStream dbStream = resource.getInputStream()) {
+                        databaseReader = new DatabaseReader.Builder(dbStream).build();
+                        log.info("GeoIP database loaded successfully from {}", location);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("Failed to load GeoIP from {}: {}", location, e.getMessage());
             }
-            try (InputStream dbStream = resource.getInputStream()) {
-                databaseReader = new DatabaseReader.Builder(dbStream).build();
-                log.info("GeoIP database loaded successfully.");
-            }
-        } catch (IOException e) {
-            log.error("Failed to load GeoIP database", e);
         }
+        
+        log.warn("GeoLite2-City.mmdb database not found. Geolocation features will be disabled.");
     }
 
     @Cacheable(value = CacheConfig.CACHE_GEO_IP, key = "#ipAddress", unless = "#result == null || !#result.isPresent()")
@@ -50,16 +58,29 @@ public class GeoIpService {
             return Optional.empty();
         }
 
+        if (isPrivateIp(ipAddress)) {
+            return Optional.empty();
+        }
+
         try {
             InetAddress ip = InetAddress.getByName(ipAddress);
             CountryResponse response = databaseReader.country(ip);
             return Optional.ofNullable(response.getCountry().getIsoCode());
         } catch (AddressNotFoundException e) {
-            log.trace("IP address not found in GeoIP database: {}", ipAddress);
             return Optional.empty();
         } catch (Exception e) {
             log.warn("Error during GeoIP lookup for address {}: {}", ipAddress, e.getMessage());
             return Optional.empty();
         }
     }
+
+    private boolean isPrivateIp(String ip) {
+        return ip.startsWith("127.") || 
+               ip.startsWith("10.") || 
+               ip.startsWith("192.168.") || 
+               ip.startsWith("172.16.") ||
+               ip.equals("::1") ||
+               ip.equals("0:0:0:0:0:0:0:1");
+    }
 }
+

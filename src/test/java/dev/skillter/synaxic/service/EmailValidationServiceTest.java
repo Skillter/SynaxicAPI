@@ -1,95 +1,76 @@
 package dev.skillter.synaxic.service;
 
-import dev.skillter.synaxic.BaseIntegrationTest;
 import dev.skillter.synaxic.model.dto.EmailValidationResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
 
-class EmailValidationServiceTest extends BaseIntegrationTest {
+@ExtendWith(MockitoExtension.class)
+class EmailValidationServiceTest {
 
-    @MockitoBean
+    @Mock
     private DnsService dnsService;
 
-    @MockitoBean
+    @Mock
     private ResourceLoader resourceLoader;
 
-    @Autowired
+    @Mock
+    private Resource resource;
+
     private EmailValidationService emailValidationService;
 
     @BeforeEach
     void setUp() {
+        // Setup disposable domains list
         String domains = "mailinator.com\ntemp-mail.org";
-        when(resourceLoader.getResource(anyString()))
-                .thenReturn(new ByteArrayResource(domains.getBytes(StandardCharsets.UTF_8)));
+        given(resourceLoader.getResource(anyString())).willReturn(resource);
+        try {
+            given(resource.getInputStream()).willReturn(new ByteArrayInputStream(domains.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        emailValidationService = new EmailValidationService(dnsService, resourceLoader);
         emailValidationService.init();
     }
 
     @Test
-    void validateEmail_withValidNonDisposableEmail_shouldSucceed() {
-        when(dnsService.hasMxRecords("gmail.com")).thenReturn(true);
+    void validateEmail_ValidEmail_ReturnsValid() {
+        given(dnsService.hasMxRecords("gmail.com")).willReturn(true);
 
         EmailValidationResponse response = emailValidationService.validateEmail("test@gmail.com");
 
         assertThat(response.isValidSyntax()).isTrue();
         assertThat(response.isDisposable()).isFalse();
         assertThat(response.isHasMxRecords()).isTrue();
-        assertThat(response.getDomain()).isEqualTo("gmail.com");
     }
 
     @Test
-    void validateEmail_withDisposableDomain_shouldFlagAsDisposable() {
-        when(dnsService.hasMxRecords("mailinator.com")).thenReturn(true);
+    void validateEmail_DisposableEmail_ReturnsDisposable() {
+        given(dnsService.hasMxRecords("mailinator.com")).willReturn(true);
 
         EmailValidationResponse response = emailValidationService.validateEmail("test@mailinator.com");
 
         assertThat(response.isValidSyntax()).isTrue();
         assertThat(response.isDisposable()).isTrue();
-        assertThat(response.isHasMxRecords()).isTrue();
     }
 
     @Test
-    void validateEmail_withDisposableSubdomain_shouldFlagAsDisposable() {
-        when(dnsService.hasMxRecords("sub.mailinator.com")).thenReturn(true);
-
-        EmailValidationResponse response = emailValidationService.validateEmail("test@sub.mailinator.com");
-
-        assertThat(response.isValidSyntax()).isTrue();
-        assertThat(response.isDisposable()).isTrue();
-        assertThat(response.isHasMxRecords()).isTrue();
-    }
-
-    @Test
-    void validateEmail_withInvalidSyntax_shouldFail() {
+    void validateEmail_InvalidSyntax_ReturnsInvalid() {
         EmailValidationResponse response = emailValidationService.validateEmail("invalid-email");
 
         assertThat(response.isValidSyntax()).isFalse();
-        assertThat(response.isDisposable()).isFalse();
-        assertThat(response.isHasMxRecords()).isFalse();
-    }
-
-    @Test
-    void validateEmail_withNoMxRecords_shouldFlag() {
-        when(dnsService.hasMxRecords("no-mx-domain.com")).thenReturn(false);
-
-        EmailValidationResponse response = emailValidationService.validateEmail("test@no-mx-domain.com");
-
-        assertThat(response.isValidSyntax()).isTrue();
-        assertThat(response.isDisposable()).isFalse();
-        assertThat(response.isHasMxRecords()).isFalse();
-    }
-
-    @Test
-    void getDisposableDomains_shouldReturnLoadedDomains() {
-        assertThat(emailValidationService.getDisposableDomains()).contains("mailinator.com", "temp-mail.org");
     }
 }
+

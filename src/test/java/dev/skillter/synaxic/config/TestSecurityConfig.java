@@ -1,6 +1,7 @@
 package dev.skillter.synaxic.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.skillter.synaxic.security.ApiKeyAuthFilter;
 import dev.skillter.synaxic.security.OAuth2LoginSuccessHandler;
 import dev.skillter.synaxic.security.RateLimitFilter;
@@ -8,14 +9,13 @@ import dev.skillter.synaxic.service.UserService;
 import dev.skillter.synaxic.util.RequestLoggingInterceptor;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 
 import static org.mockito.Mockito.mock;
 
@@ -74,7 +74,10 @@ public class TestSecurityConfig {
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
-        return mock(ObjectMapper.class);
+        // Use a real ObjectMapper instead of a mock to prevent NPEs in JSON providers
+        return Jackson2ObjectMapperBuilder.json()
+                .modules(new JavaTimeModule())
+                .build();
     }
 
     @Bean
@@ -82,4 +85,11 @@ public class TestSecurityConfig {
     public UserService userService() {
         return mock(UserService.class);
     }
+
+    @Bean(name = "tieredCacheManager")
+    @Primary
+    public CacheManager tieredCacheManager() {
+        return mock(CacheManager.class);
+    }
 }
+

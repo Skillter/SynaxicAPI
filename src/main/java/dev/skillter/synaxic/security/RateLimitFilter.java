@@ -45,8 +45,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Skip rate limiting for pages and documentation
-        // Only rate limit actual API endpoints
         if (shouldSkipRateLimit(path)) {
             filterChain.doFilter(request, response);
             return;
@@ -57,25 +55,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String apiKeyPrefix = null;
         Long apiKeyId = null;
 
-        // Determine rate limit tier
-        if (isStaticResource(path) || shouldSkipRateLimit(path)) {
-            // Static resources, pages, docs, and debug endpoints use static tier for DDoS protection
+        if (isStaticResource(path)) {
             tier = RateLimitService.RateLimitTier.STATIC;
             key = ipExtractor.extractClientIp(request);
         } else {
-            // Only API endpoints reach here (/v1/*, /api/*)
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication != null && authentication.isAuthenticated()) {
                 if (authentication instanceof ApiKeyAuthentication apiKeyAuth) {
-                    // API key authentication - use account-level rate limiting
                     User user = apiKeyAuth.getApiKey().getUser();
                     key = "account:" + user.getId();
                     tier = RateLimitService.RateLimitTier.ACCOUNT;
                     apiKeyPrefix = apiKeyAuth.getApiKey().getPrefix();
                     apiKeyId = apiKeyAuth.getApiKey().getId();
                 } else if (authentication.getPrincipal() instanceof User user) {
-                    // OAuth2 authentication - use account-level rate limiting
                     key = "account:" + user.getId();
                     tier = RateLimitService.RateLimitTier.ACCOUNT;
                 } else {
@@ -97,21 +90,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (probe.isConsumed()) {
             response.addHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
 
-            // Increment daily requests counter for actual API requests only (not static resources or pages)
-            if (!isStaticResource(path) && !shouldSkipRateLimit(path)) {
+            if (!isStaticResource(path)) {
                 try {
                     dailyRequestTrackerService.incrementDailyRequests();
                 } catch (Exception e) {
-                    log.warn("Failed to increment daily requests counter: {}", e.getMessage());
+                    // Ignore errors
                 }
-            }
 
-            // Record API key usage for account-level tracking
-            if (apiKeyId != null && apiKeyPrefix != null) {
-                try {
+                if (apiKeyId != null && apiKeyPrefix != null) {
                     accountUsageService.recordApiKeyUsage(apiKeyId, apiKeyPrefix);
-                } catch (Exception e) {
-                    log.warn("Failed to record API key usage for key {}: {}", apiKeyPrefix, e.getMessage());
                 }
             }
 
@@ -122,45 +109,22 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldSkipRateLimit(String path) {
-        // Skip rate limiting for pages, documentation, and non-API endpoints
         return path.equals("/") ||
-               path.equals("/index.html") ||
-               path.equals("/analytics") ||
-               path.equals("/analytics.html") ||
-               path.equals("/dashboard") ||
-               path.equals("/dashboard.html") ||
                path.equals("/health") ||
-               path.equals("/health.html") ||
-               path.equals("/login-success.html") ||
-               path.equals("/login-success") ||
-               path.equals("/v1/auth/login-success") ||
-               path.equals("/privacy-policy") ||
-               path.equals("/privacy-policy.html") ||
-               path.equals("/terms-of-service") ||
-               path.equals("/terms-of-service.html") ||
-               path.equals("/fair-use-policy") ||
-               path.equals("/fair-use-policy.html") ||
-               path.startsWith("/swagger-ui") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/actuator") ||
-               path.startsWith("/oauth2") ||
-               path.equals("/api/debug/rate-limit") ||
-               path.equals("/api/stats") ||
-               path.equals("/login") ||
-               path.equals("/error");
+               path.startsWith("/actuator/") ||
+               path.startsWith("/error");
     }
 
     private boolean isStaticResource(String path) {
-        // Only truly static files: actual asset files with extensions
-        // Do NOT include dynamic pages like /, /dashboard, /health, /swagger-ui, /actuator, /v3/api-docs
-        // Those should use ANONYMOUS or API_KEY tiers instead
-        return path.startsWith("/css/") || path.startsWith("/js/") ||
-               path.startsWith("/images/") || path.startsWith("/assets/") ||
-               path.endsWith(".css") || path.endsWith(".js") ||
-               path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-               path.endsWith(".gif") || path.endsWith(".svg") || path.endsWith(".ico") ||
-               path.endsWith(".woff") || path.endsWith(".woff2") || path.endsWith(".ttf") ||
-               path.endsWith(".eot");
+        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/assets/")) return true;
+        
+        int dotIndex = path.lastIndexOf('.');
+        if (dotIndex == -1) return false;
+        
+        String ext = path.substring(dotIndex);
+        return ext.equals(".css") || ext.equals(".js") || ext.equals(".png") || 
+               ext.equals(".jpg") || ext.equals(".ico") || ext.equals(".svg") || 
+               ext.equals(".woff2") || ext.equals(".html");
     }
 
     private void handleRateLimitExceeded(HttpServletRequest request, HttpServletResponse response, ConsumptionProbe probe) throws IOException {
@@ -183,12 +147,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         problemDetail.setProperty("retryAfterSeconds", retryAfterSeconds);
 
         response.getWriter().write(objectMapper.writeValueAsString(problemDetail));
-        log.warn("Rate limit exceeded for key associated with path: {}", request.getRequestURI());
-    }
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/error");
     }
 }
+

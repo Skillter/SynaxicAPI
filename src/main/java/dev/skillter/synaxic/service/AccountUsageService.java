@@ -7,10 +7,11 @@ import dev.skillter.synaxic.model.entity.User;
 import dev.skillter.synaxic.repository.ApiKeyRepository;
 import dev.skillter.synaxic.repository.ApiKeyUsageRepository;
 import dev.skillter.synaxic.repository.UserRepository;
-import dev.skillter.synaxic.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -30,81 +31,78 @@ public class AccountUsageService {
     private final ApiKeyRepository apiKeyRepository;
     private final RateLimitService rateLimitService;
 
-    // Color palette for key visualization
     private static final List<String> KEY_COLORS = Arrays.asList(
         "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
         "#6C5CE7", "#00B894", "#FDCB6E", "#E17055", "#74B9FF"
     );
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AccountUsageDto getAccountUsage(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
 
-        // Get real-time rate limit status using the same system as API headers
         String accountKey = "account:" + userId;
         var rateLimitStatus = rateLimitService.getStatus(accountKey, RateLimitService.RateLimitTier.ACCOUNT);
 
         long accountLimit = rateLimitStatus.getLimit();
         long availableTokens = rateLimitStatus.getRemainingTokens();
-        long usedRequests = accountLimit - availableTokens;
+        long usedRequests = Math.max(0, accountLimit - availableTokens);
 
-        // Get total requests from database for historical tracking (used in key breakdown)
-        Long totalRequests = apiKeyUsageRepository.getTotalRequestsForUserInCurrentHour(userId, currentHour);
+        Double usagePercentage = accountLimit > 0 ? ((double) usedRequests / accountLimit) * 100 : 0.0;
 
-        // Calculate usage percentage based on real-time data
-        Double usagePercentage = ((usedRequests) / (double) accountLimit) * 100;
-
-        // Get key usage breakdown (still use database data for breakdown)
         List<AccountUsageDto.KeyUsageBreakdown> keyBreakdown = getKeyUsageBreakdown(userId, currentHour);
 
         return AccountUsageDto.builder()
                 .accountId(userId)
                 .accountRateLimit(accountLimit)
-                .accountRequestsUsed(usedRequests) // Real-time used requests
-                .remainingRequests(availableTokens) // Real-time available tokens
+                .accountRequestsUsed(usedRequests)
+                .remainingRequests(availableTokens)
                 .usagePercentage(Math.min(100.0, usagePercentage))
                 .rateLimitResetTime(user.getRateLimitResetTime())
                 .keyUsageBreakdown(keyBreakdown)
                 .build();
     }
 
-    @Transactional
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordApiKeyUsage(Long apiKeyId, String keyPrefix) {
-        Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        try {
+            Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
 
-        ApiKeyUsage usage = apiKeyUsageRepository.findCurrentHourUsage(apiKeyId, currentHour)
-                .orElse(ApiKeyUsage.builder()
-                        .apiKey(apiKeyRepository.findById(apiKeyId).orElse(null))
-                        .periodStart(currentHour)
-                        .periodType("hourly")
-                        .requestCount(0L)
-                        .build());
+            ApiKeyUsage usage = apiKeyUsageRepository.findCurrentHourUsage(apiKeyId, currentHour)
+                    .orElseGet(() -> {
+                        Optional<ApiKey> keyOpt = apiKeyRepository.findById(apiKeyId);
+                        if (keyOpt.isEmpty()) return null;
+                        
+                        return ApiKeyUsage.builder()
+                                .apiKey(keyOpt.get())
+                                .periodStart(currentHour)
+                                .periodType("hourly")
+                                .requestCount(0L)
+                                .build();
+                    });
 
-        usage.setRequestCount(usage.getRequestCount() + 1);
-        usage.setLastUpdated(Instant.now());
+            if (usage != null) {
+                usage.setRequestCount(usage.getRequestCount() + 1);
+                usage.setLastUpdated(Instant.now());
+                apiKeyUsageRepository.save(usage);
 
-        // Also update the API key's lastUsedAt timestamp
-        Optional<ApiKey> apiKeyOpt = apiKeyRepository.findById(apiKeyId);
-        if (apiKeyOpt.isPresent()) {
-            ApiKey apiKey = apiKeyOpt.get();
-            apiKey.setLastUsedAt(Instant.now());
-            apiKeyRepository.save(apiKey);
+                apiKeyRepository.findById(apiKeyId).ifPresent(key -> {
+                    key.setLastUsedAt(Instant.now());
+                    apiKeyRepository.save(key);
+                });
+            }
+        } catch (Exception e) {
+            log.error("Failed to record usage for API key {}: {}", keyPrefix, e.getMessage());
         }
-
-        apiKeyUsageRepository.save(usage);
-
-        log.debug("Recorded usage for API key {}: {} requests in current hour, updated lastUsedAt", keyPrefix, usage.getRequestCount());
     }
 
     private List<AccountUsageDto.KeyUsageBreakdown> getKeyUsageBreakdown(Long userId, Instant currentHour) {
-        // Get all API keys for the user
         List<ApiKey> userKeys = apiKeyRepository.findAllByUser_Id(userId);
         List<AccountUsageDto.KeyUsageBreakdown> breakdown = new ArrayList<>();
 
-        // Get total requests for percentage calculation
         Long totalRequests = apiKeyUsageRepository.getTotalRequestsForUserInCurrentHour(userId, currentHour);
 
         for (int i = 0; i < userKeys.size(); i++) {
@@ -112,7 +110,9 @@ public class AccountUsageService {
             Optional<ApiKeyUsage> usage = apiKeyUsageRepository.findCurrentHourUsage(key.getId(), currentHour);
             Long requestCount = usage.map(ApiKeyUsage::getRequestCount).orElse(0L);
 
-            Double percentage = totalRequests > 0 ? (requestCount.doubleValue() / totalRequests) * 100 : 0.0;
+            Double percentage = (totalRequests != null && totalRequests > 0) 
+                    ? (requestCount.doubleValue() / totalRequests) * 100 
+                    : 0.0;
 
             AccountUsageDto.KeyUsageBreakdown keyBreakdown = AccountUsageDto.KeyUsageBreakdown.builder()
                     .keyId(key.getId())
@@ -133,21 +133,11 @@ public class AccountUsageService {
     @Transactional
     public void resetAccountUsage(Long userId) {
         Instant nextReset = Instant.now().plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setAccountRequestsUsed(0L);
-        user.setRateLimitResetTime(nextReset);
-
-        userRepository.save(user);
-
-        log.info("Reset usage for user {}. Next reset at {}", userId, nextReset);
-    }
-
-    public boolean isAccountRateLimitExceeded(Long userId) {
-        AccountUsageDto usage = getAccountUsage(userId);
-        return usage.getAccountRequestsUsed() >= usage.getAccountRateLimit();
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setAccountRequestsUsed(0L);
+            user.setRateLimitResetTime(nextReset);
+            userRepository.save(user);
+        });
     }
 
     @Transactional(readOnly = true)
@@ -161,3 +151,4 @@ public class AccountUsageService {
         return apiKeyUsageRepository.getTodayRequestsForUser(userId, todayStart);
     }
 }
+
