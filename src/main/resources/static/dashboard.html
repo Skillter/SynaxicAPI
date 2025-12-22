@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="User Dashboard - Synaxic API - Manage your API keys and account with enterprise-grade developer utilities">
+    <meta name="description" content="User Dashboard - Synaxic API - Manage your API keys and account">
     <title>Dashboard - Synaxic API</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/main.css?v=9">
+    <link rel="stylesheet" href="/css/dashboard.css?v=6">
 </head>
 <body>
     <!-- Navigation -->
@@ -22,6 +22,8 @@
             <div class="nav-links">
                 <a href="/#features">Features</a>
                 <a href="/#demo">Demo</a>
+                <a href="/#stack">Tech Stack</a>
+                <a href="/#contact">Contact</a>
                 <a href="/analytics">Analytics & Health</a>
                 <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
                 <button id="logout-btn" class="btn btn-secondary" onclick="logout()">Logout</button>
@@ -62,7 +64,11 @@
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">
-                    <span class="section-icon chart-icon"></span>
+                    <!-- SVG Icon for reliability -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="section-icon" style="margin-right: 8px;">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
                     Account Usage
                 </h2>
             </div>
@@ -109,11 +115,11 @@
             </div>
             <div class="stat-card-mini">
                 <div class="label">Total Requests</div>
-                <div class="value" id="total-requests">0</div>
+                <div class="value" id="user-total-requests">0</div>
             </div>
             <div class="stat-card-mini">
                 <div class="label">Requests Today</div>
-                <div class="value" id="requests-today">0</div>
+                <div class="value" id="user-requests-today">0</div>
             </div>
         </div>
 
@@ -164,7 +170,7 @@
     </div>
 
     <!-- Modals -->
-    <div id="create-key-modal" class="modal">
+    <div id="create-key-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Create New API Key</h3>
@@ -181,7 +187,7 @@
         </div>
     </div>
 
-    <div id="show-key-modal" class="modal">
+    <div id="show-key-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">🎉 API Key Created!</h3>
@@ -202,13 +208,13 @@
         </div>
     </div>
 
-    <div id="delete-key-modal" class="modal">
+    <div id="delete-key-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">⚠️ Delete API Key</h3>
                 <button class="modal-close" onclick="closeModal('delete-key-modal')">&times;</button>
             </div>
-            <p style="margin-bottom: 24px;">Are you sure you want to delete this API key? This action cannot be undone.</p>
+            <p style="margin-bottom: 24px; color: var(--text-secondary);">Are you sure you want to delete this API key? This action cannot be undone.</p>
             <div class="form-actions">
                 <button class="btn btn-secondary" onclick="closeModal('delete-key-modal')">Cancel</button>
                 <button class="btn btn-danger" onclick="confirmDeleteKey()">Delete Key</button>
@@ -216,7 +222,7 @@
         </div>
     </div>
 
-    <div id="delete-account-modal" class="modal">
+    <div id="delete-account-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">⚠️ Delete Account</h3>
@@ -234,10 +240,23 @@
         </div>
     </div>
 
+    <!-- Updated Footer with Links -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <span class="logo-icon">⚡</span>
+                        <span class="logo-text">Synaxic API</span>
+                    </a>
+                    <p>Enterprise-grade developer utilities</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/privacy-policy">Privacy Policy</a>
+                    <a href="/terms-of-service">Terms of Service</a>
+                    <a href="/fair-use-policy">Fair Use Policy</a>
+                </div>
+                <div class="footer-copyright">
                     <p>&copy; 2025 Skillter. All rights reserved.</p>
                 </div>
             </div>

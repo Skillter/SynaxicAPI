@@ -2,7 +2,6 @@ package dev.skillter.synaxic.controller.v1;
 
 import dev.skillter.synaxic.model.dto.AccountUsageDto;
 import dev.skillter.synaxic.model.dto.GeneratedApiKey;
-import dev.skillter.synaxic.model.dto.RateLimitStatus;
 import dev.skillter.synaxic.model.dto.UserDto;
 import dev.skillter.synaxic.model.entity.ApiKey;
 import dev.skillter.synaxic.model.entity.User;
@@ -10,11 +9,9 @@ import dev.skillter.synaxic.repository.ApiKeyUsageRepository;
 import dev.skillter.synaxic.security.ApiKeyAuthentication;
 import dev.skillter.synaxic.service.AccountUsageService;
 import dev.skillter.synaxic.service.ApiKeyService;
-import dev.skillter.synaxic.service.RateLimitService;
 import dev.skillter.synaxic.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -48,19 +45,27 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final ApiKeyService apiKeyService;
-    private final dev.skillter.synaxic.service.UserService userService;
+    private final UserService userService;
     private final AccountUsageService accountUsageService;
     private final ApiKeyUsageRepository apiKeyUsageRepository;
-    private final RateLimitService rateLimitService;
+
+    private User resolveUser(Object principal) {
+        if (principal instanceof User) {
+            return (User) principal;
+        } else if (principal instanceof ApiKeyAuthentication apiKeyAuth) {
+            return apiKeyAuth.getApiKey().getUser();
+        } else if (principal instanceof OAuth2User oauth2User) {
+            String email = oauth2User.getAttribute("email");
+            return userService.findByEmail(email).orElse(null);
+        }
+        return null;
+    }
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get Current User Info",
-            description = "Returns information about the user associated with the provided API key. This is useful for verifying your key and checking its status.")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved user information.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = UserDto.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User user) {
+    @Operation(summary = "Get Current User Info", description = "Returns information about the user associated with the provided API key or Session.")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal Object principal) {
+        User user = resolveUser(principal);
+
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -84,14 +89,9 @@ public class AuthController {
     }
 
     @PostMapping(value = "/api-key", produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Generate or Regenerate an API Key",
-            description = "Generates a new API key for the authenticated user. **Warning:** Any existing key will be immediately invalidated. The new key is returned only once upon creation, so be sure to store it securely.")
-    @ApiResponse(responseCode = "200", description = "Successfully generated a new API key.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    examples = @ExampleObject(value = "{\"apiKey\": \"syn_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456\"}")))
-    @ApiResponse(responseCode = "401", description = "Unauthorized - A valid API key is required to perform this action.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
-    public ResponseEntity<Map<String, String>> regenerateApiKey(@AuthenticationPrincipal User user) {
+    @Operation(summary = "Generate or Regenerate an API Key", description = "Generates a new API key for the authenticated user.")
+    public ResponseEntity<Map<String, String>> regenerateApiKey(@AuthenticationPrincipal Object principal) {
+        User user = resolveUser(principal);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -99,85 +99,56 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("apiKey", generatedKey.fullKey()));
     }
 
-    // OAuth2 Session Endpoints (for dashboard)
-
     @GetMapping("/session")
-    @Operation(summary = "Get Current OAuth2 Session", description = "Returns the currently authenticated OAuth2 user information")
-    public ResponseEntity<Map<String, Object>> getCurrentSession(
+    public ResponseEntity<?> getCurrentSession(
             @AuthenticationPrincipal OAuth2User oauth2User,
             jakarta.servlet.http.HttpServletRequest request) {
 
-        // Debug logging
         jakarta.servlet.http.HttpSession session = request.getSession(false);
-        log.debug("Session check - Session exists: {}, OAuth2User: {}",
-                 session != null, oauth2User != null);
+        boolean isAuthenticated = session != null && Boolean.TRUE.equals(session.getAttribute("authenticated"));
 
-        if (session != null) {
-            log.debug("Session ID: {}, Authenticated: {}, User ID: {}",
-                     session.getId(),
-                     session.getAttribute("authenticated"),
-                     session.getAttribute("user_id"));
-        }
-
-        // Check if user is authenticated via session attribute first
-        boolean isAuthenticated = false;
-        if (session != null) {
-            Boolean authStatus = (Boolean) session.getAttribute("authenticated");
-            isAuthenticated = Boolean.TRUE.equals(authStatus);
-            log.debug("Session authentication status: {}", isAuthenticated);
-        }
-
-        // First try to get OAuth2User from authentication principal
         if (oauth2User != null) {
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("name", oauth2User.getAttribute("name"));
             userInfo.put("email", oauth2User.getAttribute("email"));
             userInfo.put("picture", oauth2User.getAttribute("picture"));
-            log.info("Found OAuth2User in principal: {}", (Object) oauth2User.getAttribute("email"));
+            
+            // Try to fetch DB user details if possible
+            if (oauth2User.getAttribute("email") != null) {
+                User dbUser = userService.findByEmail(oauth2User.getAttribute("email")).orElse(null);
+                if (dbUser != null) {
+                    userInfo.put("id", dbUser.getId());
+                    userInfo.put("memberSince", dbUser.getCreatedAt());
+                }
+            }
             return ResponseEntity.ok(userInfo);
         }
 
-        // Fallback: check session attributes (these are persisted by OAuth2LoginSuccessHandler)
-        if (session != null && isAuthenticated) {
+        if (isAuthenticated) {
             @SuppressWarnings("unchecked")
             Map<String, Object> sessionUserInfo = (Map<String, Object>) session.getAttribute("oauth2_user");
-            if (sessionUserInfo != null && !sessionUserInfo.isEmpty()) {
-                log.info("Found user info in session: {}", sessionUserInfo.get("email"));
+            if (sessionUserInfo != null) {
+                Long userId = (Long) session.getAttribute("user_id");
+                if (userId != null) {
+                    sessionUserInfo.put("id", userId);
+                }
                 return ResponseEntity.ok(sessionUserInfo);
-            }
-
-            // Even if oauth2_user is missing, if we have authenticated=true, construct basic user info
-            Long userId = (Long) session.getAttribute("user_id");
-            if (userId != null) {
-                Map<String, Object> basicUserInfo = new HashMap<>();
-                basicUserInfo.put("email", "user@" + userId + ".example.com");
-                basicUserInfo.put("name", "Authenticated User");
-                log.info("Created basic user info from session attributes for user: {}", userId);
-                return ResponseEntity.ok(basicUserInfo);
             }
         }
 
-        // No OAuth2 session found
-        log.warn("No OAuth2 session found - Session: {}, Authenticated: {}, Principal: {}",
-                session != null ? session.getId() : "none", isAuthenticated, oauth2User);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        // Return 204 No Content if not logged in
+        return ResponseEntity.noContent().build();
     }
 
+    // ... (rest of the controller methods remain unchanged) ...
     @GetMapping("/api-keys")
-    @Operation(summary = "Get All API Keys", description = "Returns all API keys for the authenticated user")
-    public ResponseEntity<List<Map<String, Object>>> getApiKeys(@AuthenticationPrincipal OAuth2User oauth2User) {
-        if (oauth2User == null) {
+    public ResponseEntity<List<Map<String, Object>>> getApiKeys(@AuthenticationPrincipal Object principal) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.ok(List.of());
-        }
-
-        List<ApiKey> keys = apiKeyService.findAllByUserId(userOpt.get().getId());
+        List<ApiKey> keys = apiKeyService.findAllByUserId(user.getId());
 
         List<Map<String, Object>> result = keys.stream().map(key -> {
             Map<String, Object> keyMap = new HashMap<>();
@@ -188,7 +159,6 @@ public class AuthController {
             keyMap.put("createdAt", key.getCreatedAt());
             keyMap.put("lastUsedAt", key.getLastUsedAt());
 
-            // Add usage statistics
             Map<String, Object> usageStats = new HashMap<>();
             Instant todayStart = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
             Long todayRequests = apiKeyUsageRepository.getTodayRequestsForApiKey(key.getId(), todayStart);
@@ -205,117 +175,99 @@ public class AuthController {
     }
 
     @PostMapping("/api-key/create")
-    @Operation(summary = "Create New API Key", description = "Creates a new API key for the authenticated OAuth2 user. Maximum 2 keys per account.")
-    @ApiResponse(responseCode = "200", description = "Successfully created a new API key.")
-    @ApiResponse(responseCode = "400", description = "Maximum API key limit reached (2 keys per account).",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized - A valid session is required.")
-    public ResponseEntity<Map<String, String>> createApiKey(@AuthenticationPrincipal OAuth2User oauth2User,
+    public ResponseEntity<Map<String, String>> createApiKey(@AuthenticationPrincipal Object principal,
                                                              @RequestBody(required = false) Map<String, String> body) {
-        if (oauth2User == null) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        User user = userOpt.get();
-
-        // Check if user already has 2 API keys (maximum limit)
         List<ApiKey> existingKeys = apiKeyService.findAllByUserId(user.getId());
         if (existingKeys.size() >= 2) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Maximum API key limit reached. You can have up to 2 API keys per account. Please delete an existing key before creating a new one."));
+                    .body(Map.of("error", "Maximum API key limit reached. You can have up to 2 API keys per account."));
         }
 
         GeneratedApiKey generatedKey = apiKeyService.generateAndSaveKey(user);
+        
+        if (body != null && body.containsKey("name")) {
+            String name = body.get("name");
+            if (name != null && !name.isBlank()) {
+                ApiKey key = generatedKey.apiKey();
+                key.setKeyName(name.trim());
+                apiKeyService.save(key);
+            }
+        }
 
         return ResponseEntity.ok(Map.of("key", generatedKey.fullKey()));
     }
 
     @DeleteMapping("/api-key/{keyId}")
-    @Operation(summary = "Delete API Key", description = "Deletes the specified API key")
-    public ResponseEntity<Void> deleteApiKey(@AuthenticationPrincipal OAuth2User oauth2User,
+    public ResponseEntity<Void> deleteApiKey(@AuthenticationPrincipal Object principal,
                                               @PathVariable String keyId) {
-        if (oauth2User == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
-        if (userOpt.isEmpty()) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
             Long id = Long.parseLong(keyId);
-            apiKeyService.deleteById(id);
-            return ResponseEntity.ok().build();
+            List<ApiKey> userKeys = apiKeyService.findAllByUserId(user.getId());
+            boolean ownsKey = userKeys.stream().anyMatch(k -> k.getId().equals(id));
+            
+            if (ownsKey) {
+                apiKeyService.deleteById(id);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error deleting API key", e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Get User Statistics", description = "Returns usage statistics for the authenticated user")
-    public ResponseEntity<Map<String, Object>> getUserStats(@AuthenticationPrincipal OAuth2User oauth2User) {
-        if (oauth2User == null) {
+    public ResponseEntity<Map<String, Object>> getUserStats(@AuthenticationPrincipal Object principal) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
-        if (userOpt.isEmpty()) {
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("totalRequests", 0);
-            stats.put("requestsToday", 0);
-            return ResponseEntity.ok(stats);
-        }
-
-        // Get actual statistics from AccountUsageService
-        Long totalRequests = accountUsageService.getTotalRequestsForUser(userOpt.get().getId());
-        Long todayRequests = accountUsageService.getTodayRequestsForUser(userOpt.get().getId());
+        Long totalRequests = accountUsageService.getTotalRequestsForUser(user.getId());
+        Long todayRequests = accountUsageService.getTodayRequestsForUser(user.getId());
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalRequests", totalRequests);
         stats.put("requestsToday", todayRequests);
+        stats.put("totalApiKeys", apiKeyService.findAllByUserId(user.getId()).size());
 
         return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/export-data")
-    @Operation(summary = "Export User Data", description = "Exports all user data in JSON format (GDPR compliance)")
-    public ResponseEntity<Map<String, Object>> exportData(@AuthenticationPrincipal OAuth2User oauth2User) {
-        if (oauth2User == null) {
+    public ResponseEntity<Map<String, Object>> exportData(@AuthenticationPrincipal Object principal) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
         Map<String, Object> data = new HashMap<>();
         data.put("user", Map.of(
-                "name", oauth2User.getAttribute("name"),
-                "email", email
+                "email", user.getEmail(),
+                "memberSince", user.getCreatedAt().toString()
         ));
 
-        if (userOpt.isPresent()) {
-            List<ApiKey> keys = apiKeyService.findAllByUserId(userOpt.get().getId());
-            List<Map<String, Object>> keyData = keys.stream().map(key -> Map.of(
-                "prefix", (Object) key.getPrefix(),
-                "createdAt", key.getCreatedAt().toString(),
-                "lastUsedAt", key.getLastUsedAt() != null ? key.getLastUsedAt().toString() : "Never"
-            )).collect(Collectors.toList());
-            data.put("apiKeys", keyData);
-        } else {
-            data.put("apiKeys", List.of());
-        }
+        List<ApiKey> keys = apiKeyService.findAllByUserId(user.getId());
+        List<Map<String, Object>> keyData = keys.stream().map(key -> Map.of(
+            "prefix", (Object) key.getPrefix(),
+            "name", key.getKeyName() != null ? key.getKeyName() : "API Key",
+            "createdAt", key.getCreatedAt().toString(),
+            "lastUsedAt", key.getLastUsedAt() != null ? key.getLastUsedAt().toString() : "Never"
+        )).collect(Collectors.toList());
+        data.put("apiKeys", keyData);
 
         data.put("exportDate", java.time.Instant.now().toString());
 
@@ -323,66 +275,27 @@ public class AuthController {
     }
 
     @DeleteMapping("/delete-account")
-    @Operation(summary = "Delete Account", description = "Permanently deletes the user account and all associated data")
-    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal OAuth2User oauth2User,
+    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal Object principal,
                                                jakarta.servlet.http.HttpServletRequest request) {
-        if (oauth2User == null) {
+        User user = resolveUser(principal);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = oauth2User.getAttribute("email");
-        Optional<User> userOpt = userService.findByEmail(email);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            // Delete all API keys first
-            apiKeyService.deleteAllByUserId(user.getId());
-            // Delete the user
-            userService.deleteUser(user.getId());
-            // Invalidate the session
-            jakarta.servlet.http.HttpSession session = request.getSession(false);
-            if (session != null) {
-                session.invalidate();
-            }
+        apiKeyService.deleteAllByUserId(user.getId());
+        userService.deleteUser(user.getId());
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
         }
 
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/account-usage")
-    @Operation(summary = "Get Account Usage", description = "Returns detailed account-level usage statistics with breakdown by API key")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved account usage statistics.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AccountUsageDto.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<AccountUsageDto> getAccountUsage(@AuthenticationPrincipal Object principal) {
-        User user = null;
-
-        // Handle OAuth2 authentication
-        if (principal instanceof OAuth2User oauth2User) {
-            String email = oauth2User.getAttribute("email");
-            Optional<User> userOpt = userService.findByEmail(email);
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-                log.debug("Found user via OAuth2: {}", email);
-            } else {
-                log.warn("OAuth2 user not found in database: {}", email);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-        }
-        // Handle API key authentication
-        else if (principal instanceof User) {
-            user = (User) principal;
-            log.debug("Found user via API key: {}", user.getId());
-        }
-        // Handle API key authentication via ApiKeyAuthentication
-        else if (principal instanceof ApiKeyAuthentication apiKeyAuth) {
-            user = apiKeyAuth.getApiKey().getUser();
-            log.debug("Found user via ApiKeyAuthentication: {}", user.getId());
-        }
-
+        User user = resolveUser(principal);
         if (user == null) {
-            log.warn("No authenticated user found for account usage request");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -390,78 +303,20 @@ public class AuthController {
         return ResponseEntity.ok(accountUsage);
     }
 
-    @GetMapping("/key-usage-breakdown")
-    @Operation(summary = "Get Key Usage Breakdown", description = "Returns usage breakdown for all API keys belonging to the account")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved key usage breakdown.")
-    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.")
-    public ResponseEntity<List<AccountUsageDto.KeyUsageBreakdown>> getKeyUsageBreakdown(@AuthenticationPrincipal User user) {
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        AccountUsageDto accountUsage = accountUsageService.getAccountUsage(user.getId());
-        return ResponseEntity.ok(accountUsage.getKeyUsageBreakdown());
-    }
-
-    @GetMapping("/rate-limit-status")
-    @Operation(summary = "Get Real-time Rate Limit Status", description = "Returns the current real-time rate limit status that matches API headers")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved rate limit status.",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = RateLimitStatus.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthorized - API key is missing or invalid.")
-    public ResponseEntity<RateLimitStatus> getRateLimitStatus(@AuthenticationPrincipal Object principal) {
-        User user = null;
-
-        // Handle OAuth2 authentication
-        if (principal instanceof OAuth2User oauth2User) {
-            String email = oauth2User.getAttribute("email");
-            Optional<User> userOpt = userService.findByEmail(email);
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-        }
-        // Handle API key authentication
-        else if (principal instanceof User) {
-            user = (User) principal;
-        }
-        // Handle API key authentication via ApiKeyAuthentication
-        else if (principal instanceof ApiKeyAuthentication apiKeyAuth) {
-            user = apiKeyAuth.getApiKey().getUser();
-        }
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // Get real-time rate limit status using the same system as API headers
-        String accountKey = "account:" + user.getId();
-        RateLimitStatus status = rateLimitService.getStatus(accountKey, RateLimitService.RateLimitTier.ACCOUNT);
-
-        return ResponseEntity.ok(status);
-    }
-
     @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Logs out the current OAuth2 user and invalidates the session")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        // Invalidate the HTTP session
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
-
-        // Clear security context
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        // Clear session cookie
         jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("SYNAXIC_SESSION", "");
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setMaxAge(0);
-        // Note: SameSite attribute is handled by the CookieSerializer configuration
         response.addCookie(cookie);
-
         return ResponseEntity.ok().build();
     }
 }
+

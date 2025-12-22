@@ -17,19 +17,19 @@ public class RateLimitService {
 
     private final ProxyManager<String> proxyManager;
 
-    @Value("${synaxic.rate-limit.anonymous.capacity:100}")
+    @Value("${synaxic.rate-limit.anonymous.capacity:1000}")
     private long anonymousCapacity;
 
     @Value("${synaxic.rate-limit.anonymous.refill-minutes:60}")
     private long anonymousRefillMinutes;
 
-    @Value("${synaxic.rate-limit.api-key.capacity:1000}")
+    @Value("${synaxic.rate-limit.api-key.capacity:10000}")
     private long apiKeyCapacity;
 
     @Value("${synaxic.rate-limit.api-key.refill-minutes:60}")
     private long apiKeyRefillMinutes;
 
-    @Value("${synaxic.rate-limit.static.capacity:50000}")
+    @Value("${synaxic.rate-limit.static.capacity:5000000}")
     private long staticCapacity;
 
     @Value("${synaxic.rate-limit.static.refill-minutes:60}")
@@ -41,11 +41,21 @@ public class RateLimitService {
     @Value("${synaxic.rate-limit.account.refill-minutes:60}")
     private long accountRefillMinutes;
 
+    @Value("${synaxic.rate-limit.frontend.capacity:50000}")
+    private long frontendCapacity;
+
+    @Value("${synaxic.rate-limit.frontend.refill-minutes:60}")
+    private long frontendRefillMinutes;
+
     public Bucket resolveBucket(String key, RateLimitTier tier) {
         BucketConfiguration configuration = BucketConfiguration.builder()
                 .addLimit(getBandwidthForTier(tier))
                 .build();
         return proxyManager.builder().build(key, () -> configuration);
+    }
+
+    public void resetBucket(String key) {
+        proxyManager.removeProxy(key);
     }
 
     public long getLimit(RateLimitTier tier) {
@@ -54,12 +64,12 @@ public class RateLimitService {
             case STATIC -> staticCapacity;
             case ANONYMOUS -> anonymousCapacity;
             case ACCOUNT -> accountCapacity;
+            case FRONTEND -> frontendCapacity;
         };
     }
 
     public RateLimitStatus getStatus(String key, RateLimitTier tier) {
         Bucket bucket = resolveBucket(key, tier);
-        // Get available tokens without consuming any
         long availableTokens = bucket.getAvailableTokens();
 
         return RateLimitStatus.builder()
@@ -67,7 +77,7 @@ public class RateLimitService {
                 .tier(tier)
                 .limit(getLimit(tier))
                 .remainingTokens(availableTokens)
-                .isConsumed(true) // Status check doesn't consume tokens
+                .isConsumed(true)
                 .build();
     }
 
@@ -77,11 +87,12 @@ public class RateLimitService {
             case STATIC -> Bandwidth.simple(staticCapacity, Duration.ofMinutes(staticRefillMinutes));
             case ANONYMOUS -> Bandwidth.simple(anonymousCapacity, Duration.ofMinutes(anonymousRefillMinutes));
             case ACCOUNT -> Bandwidth.simple(accountCapacity, Duration.ofMinutes(accountRefillMinutes));
+            case FRONTEND -> Bandwidth.simple(frontendCapacity, Duration.ofMinutes(frontendRefillMinutes));
         };
     }
 
     public enum RateLimitTier {
-        ANONYMOUS, API_KEY, STATIC, ACCOUNT
+        ANONYMOUS, API_KEY, STATIC, ACCOUNT, FRONTEND
     }
 }
 

@@ -1,8 +1,9 @@
+// ... (Keep existing imports/variables) ...
 const API_BASE = window.location.origin;
 let currentUser = null;
 let keyToDelete = null;
 
-// Color palette for API keys (consistent coloring)
+// ... (Keep color palette logic) ...
 const colorPalette = [
     '#6366f1', '#8b5cf6', '#06b6d4', '#10b981', 
     '#f59e0b', '#ef4444', '#ec4899', '#84cc16'
@@ -18,58 +19,48 @@ function getKeyColor(keyId) {
     return colorPalette[index];
 }
 
-// === AUTHENTICATION LOGIC ===
-
-/**
- * Specialized fetch for Dashboard operations.
- * STRICTLY uses Session Cookies (credentials: 'include') and DOES NOT send API Key headers.
- * This prevents the backend from seeing an API Key and ignoring the Session User.
- */
+// ... (Keep sessionFetch and RealTimeUsagePredictor) ...
 async function sessionFetch(url, options = {}) {
     const defaultOptions = {
-        credentials: 'include', // Send cookies
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
     };
 
-    // Merge options
     const finalOptions = { ...defaultOptions, ...options };
-    
-    // Ensure we DO NOT send Authorization header from localStorage
     if (finalOptions.headers['Authorization']) {
-        console.warn('Removing Authorization header from session fetch to prevent auth conflict');
         delete finalOptions.headers['Authorization'];
     }
 
-    const response = await fetch(url, finalOptions);
+    try {
+        const response = await fetch(url, finalOptions);
 
-    // Handle 401/403 (Session Expired) globally
-    if (response.status === 401 || response.status === 403) {
-        console.log('Session expired or invalid, redirecting to login...');
-        window.location.href = '/'; 
-        throw new Error('Session expired');
+        if (response.status === 401 || response.status === 403) {
+            console.log('Session expired, redirecting...');
+            window.location.href = '/'; 
+            return new Promise(() => {});
+        }
+
+        const limit = response.headers.get('X-RateLimit-Limit');
+        const remaining = response.headers.get('X-RateLimit-Remaining');
+        if (limit && remaining && usagePredictor) {
+            usagePredictor.updateFromRateLimitHeaders(parseInt(limit), parseInt(remaining));
+        }
+
+        return response;
+    } catch (error) {
+        console.error("Fetch error:", error);
+        throw error;
     }
-
-    // Capture rate limit headers for real-time updates (if present)
-    const limit = response.headers.get('X-RateLimit-Limit');
-    const remaining = response.headers.get('X-RateLimit-Remaining');
-    if (limit && remaining && usagePredictor) {
-        usagePredictor.updateFromRateLimitHeaders(parseInt(limit), parseInt(remaining));
-    }
-
-    return response;
 }
-
-// === REAL-TIME USAGE PREDICTOR ===
 
 class RealTimeUsagePredictor {
     constructor() {
         this.limit = 10000;
         this.used = 0;
         this.remaining = 10000;
-        this.interval = null;
         this.lastUpdate = Date.now();
     }
 
@@ -82,15 +73,8 @@ class RealTimeUsagePredictor {
     }
 
     updateFromRateLimitHeaders(limit, remaining) {
-        // Filter out static resource limits (usually 50,000)
-        // We only want to track the Account Limit (usually 10,000)
-        if (limit > 20000) { 
-            return; // Ignore static asset limits
-        }
-
+        if (limit > 20000) return; 
         const used = Math.max(0, limit - remaining);
-        
-        // Only update if it makes sense (e.g., usage increased)
         if (used >= this.used) {
             this.limit = limit;
             this.remaining = remaining;
@@ -101,7 +85,6 @@ class RealTimeUsagePredictor {
     }
 
     updateUI() {
-        // Update Text Counters
         const usedEl = document.getElementById('account-used');
         const limitEl = document.getElementById('account-limit');
         const percentEl = document.getElementById('donut-percentage');
@@ -112,7 +95,6 @@ class RealTimeUsagePredictor {
         const percent = this.limit > 0 ? (this.used / this.limit) * 100 : 0;
         if (percentEl) percentEl.textContent = `${percent.toFixed(1)}%`;
 
-        // Update Donut Chart SVG
         this.renderDonut(percent);
     }
 
@@ -120,19 +102,28 @@ class RealTimeUsagePredictor {
         const svg = document.getElementById('donut-chart');
         if (!svg) return;
 
-        // Clear existing dynamic elements (keep background circle)
+        if (!svg.querySelector('circle')) {
+             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+             bg.setAttribute('cx', '150');
+             bg.setAttribute('cy', '150');
+             bg.setAttribute('r', '120');
+             bg.setAttribute('fill', 'none');
+             bg.setAttribute('stroke', 'rgba(99, 102, 241, 0.1)');
+             bg.setAttribute('stroke-width', '20');
+             svg.appendChild(bg);
+        }
+
         const existingPath = svg.querySelector('.donut-progress');
         if (existingPath) existingPath.remove();
         const existingDefs = svg.querySelector('defs');
         if (existingDefs) existingDefs.remove();
 
-        // Constants
         const radius = 120;
         const center = 150;
         const circumference = 2 * Math.PI * radius;
-        const offset = circumference - (percentage / 100) * circumference;
+        const validPercentage = Math.min(Math.max(percentage, 0), 100);
+        const offset = circumference - (validPercentage / 100) * circumference;
 
-        // Create Gradient Definition
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         defs.innerHTML = `
             <linearGradient id="donutGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -142,7 +133,6 @@ class RealTimeUsagePredictor {
         `;
         svg.appendChild(defs);
 
-        // Create Progress Path
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('class', 'donut-progress');
         circle.setAttribute('cx', center);
@@ -154,9 +144,7 @@ class RealTimeUsagePredictor {
         circle.setAttribute('stroke-linecap', 'round');
         circle.setAttribute('stroke-dasharray', circumference);
         circle.setAttribute('stroke-dashoffset', offset);
-        circle.setAttribute('transform', `rotate(-90 ${center} ${center})`);
         
-        // Animation style
         circle.style.transition = 'stroke-dashoffset 0.5s ease-out';
 
         svg.appendChild(circle);
@@ -165,43 +153,62 @@ class RealTimeUsagePredictor {
 
 const usagePredictor = new RealTimeUsagePredictor();
 
-// === MAIN FUNCTIONS ===
-
+// ... (checkAuth, displayUserProfile, loadApiKeys remain same) ...
 async function checkAuth() {
+    const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timed out')), 8000)
+    );
+
     try {
-        // Use sessionFetch to ensure we send cookies and ignore API keys
-        const response = await sessionFetch(`${API_BASE}/v1/auth/me`);
+        const response = await Promise.race([
+            sessionFetch(`${API_BASE}/v1/auth/session`),
+            timeout
+        ]);
         
+        if (response.status === 204) {
+            window.location.href = '/';
+            return;
+        }
+
         if (response.ok) {
             currentUser = await response.json();
             displayUserProfile(currentUser);
             loadApiKeys();
             loadStats();
-            // Refresh stats periodically
             setInterval(loadStats, 10000); 
         } else {
-            // Should be handled by sessionFetch throw, but just in case
             window.location.href = '/';
         }
     } catch (error) {
         console.error('Auth check failed:', error);
-        // Error is usually handled by redirect in sessionFetch
+        document.getElementById('user-profile').innerHTML = `
+            <div class="alert alert-error">
+                Failed to load profile (${error.message}). <br>
+                <a href="/" style="color: white; text-decoration: underline; margin-top: 8px; display: inline-block;">Return Home</a>
+            </div>
+        `;
     }
 }
 
 function displayUserProfile(user) {
     const profileEl = document.getElementById('user-profile');
-    const initials = user.email.substring(0, 2).toUpperCase();
+    const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'U';
     
-    // Format member since date
-    const memberDate = user.memberSince ? new Date(user.memberSince).toLocaleDateString() : 'Unknown';
+    let memberDate = 'Unknown';
+    if (user.memberSince) {
+        if (Array.isArray(user.memberSince)) {
+             memberDate = new Date(user.memberSince[0], user.memberSince[1]-1, user.memberSince[2]).toLocaleDateString();
+        } else {
+             memberDate = new Date(user.memberSince).toLocaleDateString();
+        }
+    }
 
     profileEl.innerHTML = `
         <div class="user-avatar">${initials}</div>
         <div class="user-details">
-            <h3>${user.email}</h3>
-            <p>Member since ${memberDate}</p>
-            <p style="font-size: 12px; margin-top: 4px; color: var(--text-muted);">ID: ${user.id}</p>
+            <h3>${user.name || user.email}</h3>
+            <p>${user.email}</p>
+            <p style="font-size: 12px; margin-top: 4px; color: var(--text-muted);">Member since: ${memberDate}</p>
         </div>
     `;
 }
@@ -213,20 +220,17 @@ async function loadApiKeys() {
         const response = await sessionFetch(`${API_BASE}/v1/auth/api-keys`);
         const keys = await response.json();
 
-        // Update create button state
         const createBtn = document.getElementById('create-key-btn');
         if (createBtn) {
             if (keys.length >= 2) {
                 createBtn.disabled = true;
                 createBtn.innerHTML = '<span>Limit Reached (2/2)</span>';
-                createBtn.title = "Delete a key to create a new one";
             } else {
                 createBtn.disabled = false;
                 createBtn.innerHTML = '<span>+ Create New Key</span>';
             }
         }
 
-        // Update total keys counter
         document.getElementById('total-keys').textContent = `${keys.length}/2`;
 
         if (keys.length === 0) {
@@ -251,12 +255,10 @@ async function loadApiKeys() {
                             <div class="api-key-name">${key.name || 'API Key'}</div>
                             <div class="api-key-value">
                                 <span>${key.keyPrefix}••••••••</span>
-                                <button class="btn btn-text btn-sm" onclick="copyToClipboard('${key.keyPrefix}')" title="Copy Prefix">Copy</button>
+                                <button class="btn btn-text btn-sm" onclick="copyToClipboard('${key.keyPrefix}')">Copy</button>
                             </div>
                         </div>
-                        <div class="api-key-actions">
-                            <button class="btn btn-danger btn-sm" onclick="openDeleteKeyModal('${key.id}')">Delete</button>
-                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="openDeleteKeyModal('${key.id}')">Delete</button>
                     </div>
                     <div class="api-key-stats">
                         <div class="api-key-stat">
@@ -286,9 +288,9 @@ async function loadApiKeys() {
     }
 }
 
+// === UPDATED LOAD STATS ===
 async function loadStats() {
     try {
-        // 1. Get detailed account usage
         const usageRes = await sessionFetch(`${API_BASE}/v1/auth/account-usage`);
         if (usageRes.ok) {
             const usageData = await usageRes.json();
@@ -299,26 +301,45 @@ async function loadStats() {
             );
         }
 
-        // 2. Get general user stats (total requests, etc.)
         const statsRes = await sessionFetch(`${API_BASE}/v1/auth/stats`);
         if (statsRes.ok) {
             const stats = await statsRes.json();
-            document.getElementById('total-requests').textContent = (stats.totalRequests || 0).toLocaleString();
-            document.getElementById('requests-today').textContent = (stats.requestsToday || 0).toLocaleString();
+            // Updated IDs to match dashboard.html and avoid collision with main.js
+            document.getElementById('user-total-requests').textContent = (stats.totalRequests || 0).toLocaleString();
+            document.getElementById('user-requests-today').textContent = (stats.requestsToday || 0).toLocaleString();
         }
     } catch (error) {
         console.error('Stats update failed:', error);
     }
 }
 
-// === ACTION FUNCTIONS ===
+// ... (Rest of modal/action functions remain same) ...
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+}
+
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+}
+
+function openCreateKeyModal() {
+    openModal('create-key-modal');
+}
 
 async function createApiKey() {
     const nameInput = document.getElementById('key-name');
-    const name = nameInput.value.trim();
     const btn = document.querySelector('#create-key-modal .btn-primary');
     
-    // Loading state
+    if (!btn) return;
+    
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Creating...';
@@ -326,26 +347,23 @@ async function createApiKey() {
     try {
         const response = await sessionFetch(`${API_BASE}/v1/auth/api-key/create`, {
             method: 'POST',
-            body: JSON.stringify({ name: name })
+            body: JSON.stringify({ name: nameInput.value.trim() })
         });
 
         if (response.ok) {
             const data = await response.json();
-            
             closeModal('create-key-modal');
             nameInput.value = '';
-            
-            // Show success modal with full key
             document.getElementById('new-key-value').value = data.key;
             openModal('show-key-modal');
-            
-            loadApiKeys(); // Refresh list
+            showToast('success', 'Success', 'API key created successfully');
+            loadApiKeys();
         } else {
             const err = await response.json();
-            alert(err.detail || 'Failed to create key');
+            showToast('error', 'Error', err.error || err.detail || 'Failed to create key');
         }
     } catch (error) {
-        alert('Error creating key: ' + error.message);
+        showToast('error', 'Error', 'Connection failed');
     } finally {
         btn.disabled = false;
         btn.textContent = originalText;
@@ -361,6 +379,9 @@ async function confirmDeleteKey() {
     if (!keyToDelete) return;
     
     const btn = document.querySelector('#delete-key-modal .btn-danger');
+    if (!btn) return;
+
+    const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Deleting...';
 
@@ -371,16 +392,24 @@ async function confirmDeleteKey() {
 
         if (response.ok) {
             closeModal('delete-key-modal');
+            showToast('success', 'Deleted', 'API key deleted successfully');
             loadApiKeys();
             loadStats();
         } else {
-            alert('Failed to delete key');
+            let errMsg = 'Failed to delete key';
+            try {
+                const errData = await response.json();
+                if (errData.detail) errMsg = errData.detail;
+            } catch (e) {}
+            
+            showToast('error', 'Error', errMsg);
         }
     } catch (error) {
-        alert('Error deleting key');
+        console.error("Delete error:", error);
+        showToast('error', 'Error', 'Failed to delete key. Check connection.');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Delete Key';
+        btn.textContent = originalText;
         keyToDelete = null;
     }
 }
@@ -398,11 +427,12 @@ async function requestDataExport() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
+            showToast('success', 'Export', 'Data export downloaded');
         } else {
-            alert('Export failed');
+            showToast('error', 'Error', 'Export failed');
         }
     } catch (e) {
-        alert('Export error: ' + e.message);
+        showToast('error', 'Error', 'Export connection failed');
     }
 }
 
@@ -414,7 +444,7 @@ function openDeleteAccountModal() {
 async function confirmDeleteAccount() {
     const confirmInput = document.getElementById('delete-confirm');
     if (confirmInput.value !== 'DELETE') {
-        alert('Please type DELETE to confirm.');
+        showToast('warning', 'Confirm', 'Please type DELETE to confirm.');
         return;
     }
 
@@ -426,10 +456,10 @@ async function confirmDeleteAccount() {
         if (response.ok) {
             window.location.href = '/';
         } else {
-            alert('Failed to delete account');
+            showToast('error', 'Error', 'Failed to delete account');
         }
     } catch (e) {
-        alert('Error: ' + e.message);
+        showToast('error', 'Error', 'Delete connection failed');
     }
 }
 
@@ -443,41 +473,59 @@ async function logout() {
     }
 }
 
-// === UTILS ===
-
-function openModal(id) {
-    document.getElementById(id).classList.add('active');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-}
-
 function copyNewKey() {
     const input = document.getElementById('new-key-value');
     input.select();
     navigator.clipboard.writeText(input.value);
-    
     const btn = event.target;
-    const original = btn.textContent;
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = original, 1500);
+    setTimeout(() => btn.textContent = 'Copy', 1500);
 }
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
-    // Could show a toast here
+    showToast('success', 'Copied', 'Copied to clipboard');
 }
 
-// === INITIALIZATION ===
+function showToast(type, title, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     
-    // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.classList.remove('active');
+            if (e.target === modal) closeModal(modal.id);
         });
     });
 });

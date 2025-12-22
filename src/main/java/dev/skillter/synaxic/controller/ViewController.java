@@ -3,6 +3,7 @@ package dev.skillter.synaxic.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class ViewController {
@@ -46,4 +47,11 @@ public class ViewController {
     public String fairUsePolicy(HttpServletRequest request) {
         return "forward:/fair-use-policy.html";
     }
+
+    @GetMapping("favicon.ico")
+    @ResponseBody
+    void returnNoFavicon() {
+        // Suppress favicon 404 logs
+    }
 }
+

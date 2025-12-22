@@ -8,8 +8,8 @@ import dev.skillter.synaxic.repository.ApiKeyRepository;
 import dev.skillter.synaxic.util.KeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -39,14 +39,16 @@ public class ApiKeyService {
 
     @Transactional
     public GeneratedApiKey regenerateKeyForUser(User user) {
-        apiKeyRepository.findByUser_Id(user.getId()).ifPresent(this::evictAndRevokeKey);
+        apiKeyRepository.findByUser_Id(user.getId()).ifPresent(key -> deleteById(key.getId()));
         return generateAndSaveKey(user);
     }
 
-    @CacheEvict(value = CacheConfig.CACHE_API_KEY_BY_PREFIX, key = "#oldKey.prefix")
-    public void evictAndRevokeKey(ApiKey oldKey) {
-        log.info("Revoking API key with prefix {} for user {}", oldKey.getPrefix(), oldKey.getUser().getId());
-        apiKeyRepository.delete(oldKey);
+    /**
+     * Saves an API key entity. Useful for updating metadata like key names.
+     */
+    @Transactional
+    public void save(ApiKey apiKey) {
+        apiKeyRepository.save(apiKey);
     }
 
     @Transactional(readOnly = true)
@@ -99,11 +101,45 @@ public class ApiKeyService {
 
     @Transactional
     public void deleteById(Long id) {
-        apiKeyRepository.findById(id).ifPresent(this::evictAndRevokeKey);
+        Optional<ApiKey> keyOpt = apiKeyRepository.findById(id);
+        if (keyOpt.isPresent()) {
+            ApiKey key = keyOpt.get();
+            String prefix = key.getPrefix();
+            Long userId = key.getUser().getId();
+
+            // Manually evict from cache to avoid internal proxy call issues
+            try {
+                Cache cache = cacheManager.getCache(CacheConfig.CACHE_API_KEY_BY_PREFIX);
+                if (cache != null) {
+                    cache.evict(prefix);
+                    log.debug("Evicted API key {} from cache", prefix);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to evict key from cache during deletion: {}", e.getMessage());
+                // Continue with deletion even if cache eviction fails
+            }
+
+            apiKeyRepository.delete(key);
+            log.info("Deleted API key {} for user {}", prefix, userId);
+        } else {
+            log.warn("Attempted to delete non-existent API key ID: {}", id);
+        }
     }
 
     @Transactional
     public void deleteAllByUserId(Long userId) {
+        // Find all keys first to evict them
+        java.util.List<ApiKey> keys = apiKeyRepository.findAllByUser_Id(userId);
+        Cache cache = cacheManager.getCache(CacheConfig.CACHE_API_KEY_BY_PREFIX);
+        
+        for (ApiKey key : keys) {
+            if (cache != null) {
+                cache.evict(key.getPrefix());
+            }
+        }
+        
         apiKeyRepository.deleteAllByUser_Id(userId);
+        log.info("Deleted all API keys for user {}", userId);
     }
 }
+

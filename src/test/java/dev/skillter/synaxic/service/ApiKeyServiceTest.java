@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import java.time.Instant;
@@ -33,6 +34,9 @@ class ApiKeyServiceTest {
 
     @Mock
     private CacheManager cacheManager;
+
+    @Mock
+    private Cache cache;
 
     @InjectMocks
     private ApiKeyService apiKeyService;
@@ -77,14 +81,23 @@ class ApiKeyServiceTest {
 
     @Test
     void regenerateKeyForUser_WhenOldKeyExists_ShouldRevokeAndGenerateNew() {
+        // Mock finding the old key by user ID
         when(apiKeyRepository.findByUser_Id(1L)).thenReturn(Optional.of(testApiKey));
+        
+        // Mock finding the key by ID (required by deleteById)
+        when(apiKeyRepository.findById(1L)).thenReturn(Optional.of(testApiKey));
+        
+        // Mock generation of new key
         when(keyGenerator.generate(testUser)).thenReturn(generatedApiKey);
         when(apiKeyRepository.save(any(ApiKey.class))).thenReturn(testApiKey);
 
         GeneratedApiKey result = apiKeyService.regenerateKeyForUser(testUser);
 
         assertThat(result).isNotNull();
+        
+        // Verify flow
         verify(apiKeyRepository).findByUser_Id(1L);
+        verify(apiKeyRepository).findById(1L); // Verified call inside deleteById
         verify(apiKeyRepository).delete(testApiKey);
         verify(apiKeyRepository).save(any(ApiKey.class));
     }
@@ -204,3 +217,4 @@ class ApiKeyServiceTest {
         verify(apiKeyRepository).deleteAllByUser_Id(1L);
     }
 }
+

@@ -3,527 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Synaxic API - Professional developer utilities hub providing IP inspection, email validation, unit conversions, and more. Built with enterprise-grade infrastructure for reliability and performance.">
-    <meta name="keywords" content="API, developer tools, IP lookup, email validation, unit converter, color converter, REST API, developer utilities">
-    <meta name="author" content="Skillter">
-    <meta name="robots" content="index, follow">
-
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://synaxic.skillter.dev/">
-    <meta property="og:title" content="Synaxic API - Enterprise Developer Utilities Hub">
-    <meta property="og:description" content="Professional API hub with IP inspection, email validation, and conversion tools. Built on distributed infrastructure with Redis and PostgreSQL replication.">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://synaxic.skillter.dev/">
-    <meta property="twitter:title" content="Synaxic API - Enterprise Developer Utilities Hub">
-    <meta property="twitter:description" content="Professional API hub with IP inspection, email validation, and conversion tools.">
-
+    <meta name="description" content="Synaxic API - Enterprise Developer Utilities Hub">
     <title>Synaxic API - Enterprise Developer Utilities Hub</title>
-
-    <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 
-    <!-- Critical CSS for preventing layout shift and above-the-fold content -->
+    <!-- Critical CSS for Layout Stability -->
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
-            --secondary: #8b5cf6;
-            --accent: #ec4899;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
             --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --bg-card: rgba(30, 41, 59, 0.8);
             --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-            --gradient-2: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-            --gradient-3: radial-gradient(circle at top right, rgba(99, 102, 241, 0.3), transparent 50%),
-                           radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.3), transparent 50%);
-            --border-radius: 12px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            padding-top: 50px; /* Match main.css body padding */
+            margin: 0;
+            padding-top: 70px; /* Match navbar height */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        /* Critical Navigation Styles */
+        /* Navbar Stability */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
+            height: 70px;
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(12px);
             z-index: 1000;
             border-bottom: 1px solid rgba(100, 116, 139, 0.2);
-            height: 70px; /* Explicit height to prevent layout shift */
+            display: flex;
+            align-items: center;
         }
-
         .nav-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
-            height: 100%; /* Ensure full height usage */
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .logo:hover {
-            opacity: 0.8;
-        }
-
-        .logo-icon {
-            font-size: 32px;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 32px;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-light);
-            text-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--gradient-1);
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: width;
-        }
-
-        .nav-links a:hover::after {
             width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 100%;
+            gap: 32px; /* Consistent Gap */
         }
-
-        .external-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+        .logo {
+            margin-right: 32px; /* Consistent Margin */
         }
-
-        /* Critical Hero Section Styles */
-        .hero {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding-top: 50px; /* Match main.css hero padding */
-            overflow: hidden;
-        }
-
-        .hero-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--gradient-3);
-            opacity: 0.5;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-        }
-
-        .hero-title {
-            font-size: clamp(36px, 6vw, 72px);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 24px;
-        }
-
-        .gradient-text {
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(18px, 2vw, 24px);
-            color: var(--text-secondary);
-            max-width: 800px;
-            margin: 0 auto 48px;
-        }
-
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 32px;
-            margin-bottom: 48px;
-        }
-
-        .stat-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: var(--border-radius);
-            padding: 24px;
-            min-width: 150px;
-            backdrop-filter: blur(8px);
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .hero-cta {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-    /* Critical Button Styles */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: var(--transition);
-            min-height: 48px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary {
-            background: var(--gradient-1);
-            color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
-            filter: brightness(1.1);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 2px solid var(--bg-tertiary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-secondary);
-            border-color: var(--primary);
-        }
-
-        /* Cookie banner with stable positioning to prevent layout shift */
+        /* Cookie Banner Stability */
         .cookie-consent {
             position: fixed;
             bottom: 16px;
             right: 16px;
             left: auto;
             max-width: 380px;
+            opacity: 0;
+            transform: translateY(120%);
+            z-index: 9999;
             background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(8px);
             border: 1px solid rgba(100, 116, 139, 0.2);
             border-radius: 8px;
             padding: 12px 16px;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateY(120%);
-            opacity: 0;
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
         }
-
-        .cookie-consent.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .cookie-consent.hidden {
-            transform: translateY(120%);
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .cookie-content {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .cookie-content p {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.5;
-            color: var(--text-secondary);
-        }
-
-        .cookie-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .cookie-buttons .btn {
-            padding: 6px 12px;
-            font-size: 12px;
-            min-height: 32px;
-        }
-
-        .btn-text {
-            background: transparent;
-            color: var(--text-muted);
-            padding: 8px 16px;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
             border: none;
-            font-size: 14px;
-        }
-
-        .btn-text:hover {
-            background: rgba(100, 116, 139, 0.1);
-            color: var(--text-secondary);
-        }
-
-        /* Mobile responsive critical styles */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .mobile-menu-btn {
-                display: flex;
-            }
-
-            .hero-stats {
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .hero-cta {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .cookie-consent {
-                bottom: 8px;
-                right: 8px;
-                left: 8px;
-                max-width: none;
-            }
-
-            .container {
-                padding: 0 16px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stat-card {
-                min-width: auto;
-                width: 100%;
-            }
-
-            .hero {
-                padding-top: 100px;
-            }
-        }
-
-        /* Prevent hero section flash - hide until critical CSS loads */
-        .hero {
-            visibility: hidden;
-        }
-
-        .hero-content {
-            visibility: hidden;
-        }
-
-        /* Critical fade-in animations for other content */
-        .feature-card,
-        .stack-card,
-        .contact-card,
-        .demo-container,
-        .next-steps,
-        .steps-list li,
-        .success-info,
-        .success-actions,
-        .success-icon {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-            will-change: opacity, transform;
-        }
-
-        /* Show hero once everything is ready */
-        .hero-ready .hero,
-        .hero-ready .hero-content {
-            visibility: visible;
-        }
-
-        /* Remove JavaScript-dependent fade-in for cards - they should be visible immediately */
-        .hero-ready .next-steps,
-        .hero-ready .steps-list li,
-        .hero-ready .success-info,
-        .hero-ready .success-actions,
-        .hero-ready .success-icon {
-            animation: fadeInUp 0.6s ease-out forwards;
-        }
-
-        /* Optimize sections below fold */
-        .features, .demo, .tech-stack, .contact {
-            content-visibility: auto;
-            contain-intrinsic-size: 500px;
-        }
-
-        /* Add missing card hover effects for critical CSS */
-        .feature-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--primary);
-            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.3);
-        }
-
-        .stack-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-            transform: translateY(-4px);
-        }
-
-        .contact-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
-        }
-
-        .demo-container:hover {
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-            transform: translateY(-4px);
+            cursor: pointer;
         }
     </style>
 
-    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
-    <link rel="canonical" href="https://synaxic.skillter.dev/">
-
-    <!-- Structured Data for SEO -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Synaxic API",
-        "description": "Enterprise-grade developer utilities API hub providing IP inspection, email validation, unit conversions, and color tools with distributed infrastructure for high reliability and performance",
-        "url": "https://synaxic.skillter.dev",
-        "applicationCategory": "DeveloperApplication",
-        "applicationSubCategory": "Developer API",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires JavaScript. Requires HTML5.",
-        "softwareVersion": "1.0.0",
-        "datePublished": "2025-01-01",
-        "dateModified": "2025-01-06",
-        "author": {
-            "@type": "Person",
-            "name": "Skillter",
-            "url": "https://skillter.dev"
-        },
-        "creator": {
-            "@type": "Person",
-            "name": "Skillter",
-            "url": "https://skillter.dev"
-        },
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD",
-            "availability": "https://schema.org/InStock"
-        },
-        "serviceEndpoint": "https://synaxic.skillter.dev",
-        "documentation": "https://synaxic.skillter.dev/swagger-ui.html",
-        "provider": {
-            "@type": "Person",
-            "name": "Skillter",
-            "url": "https://skillter.dev"
-        },
-        "featureList": [
-            "IP inspection and geolocation",
-            "Email validation with disposable domain detection",
-            "Unit conversion with JSR-385 standards",
-            "Byte conversion between SI and IEC units",
-            "Color conversion with WCAG accessibility checking",
-            "OAuth2 authentication and API key management",
-            "Distributed rate limiting",
-            "Two-tier caching system"
-        ],
-        "license": "https://synaxic.skillter.dev/terms-of-service",
-        "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
-    }
-    </script>
+    <link rel="stylesheet" href="/css/main.css?v=5">
 </head>
 <body>
     <!-- Cookie Consent Banner (GDPR Compliant) -->
@@ -870,6 +426,7 @@
         </div>
     </footer>
 
-    <script src="/js/main.js" defer></script>
+    <script src="/js/main.js"></script>
 </body>
 </html>
+
