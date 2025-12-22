@@ -1,3 +1,5 @@
+# copy-codebase-and-change-extension.ps1
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
@@ -27,12 +29,19 @@ param(
 
     [switch]$MergeToSingleFile,
 
+    [switch]$AIFormatting,
+
     [Parameter(Mandatory = $false)]
     [string]$MergedFileName = "merged_codebase.txt"
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "Continue"
+
+# If AIFormatting is selected, we force MergeToSingleFile to be true
+if ($AIFormatting) {
+    $MergeToSingleFile = $true
+}
 
 function Normalize-Ext {
     param([string]$Ext)
@@ -100,6 +109,33 @@ function Get-SafeFileName {
     throw "Unable to find unique filename for $BaseName"
 }
 
+function Remove-ProblematicUnicode {
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $Text
+    }
+
+    # Define replacements for problematic Unicode characters
+    $replacements = @{
+        '' = ''
+        '' = ''
+        '' = ''
+        '' = ''
+        '' = ''
+    }
+
+    $sanitizedText = $Text
+    foreach ($replacement in $replacements.GetEnumerator()) {
+        # Use -replace operator for case-insensitive Unicode replacement
+        $sanitizedText = $sanitizedText -replace [string]$replacement.Key, [string]$replacement.Value
+    }
+
+    return $sanitizedText
+}
+
 function Process-Mapping {
     param(
         [string]$SourceExt,
@@ -155,17 +191,44 @@ function Process-Mapping {
                 $File.BaseName
             }
 
-            $relativePath = $File.FullName.Substring($Root.Length).TrimStart('\', '/')
-            $fileContent = Get-Content -Path $File.FullName -Raw
+            $relativePath = $File.FullName.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
+            $fileContent = Get-Content -Path $File.FullName -Raw -Encoding UTF8
+
+            # Sanitize Unicode characters that break AI file uploads
+            $fileContent = Remove-ProblematicUnicode -Text $fileContent
 
             if ($MergeToSingleFile) {
-                $script:MergedContent += "`n`n"
-                if (-not $NoPath) {
-                    $script:MergedContent += "=" * 80 + "`n"
-                    $script:MergedContent += "FILE PATH: $relativePath`n"
-                    $script:MergedContent += "=" * 80 + "`n"
+                if ($AIFormatting) {
+                    # AI Formatting Mode
+                    if ($script:MergedContent.Length -gt 0) {
+                        $script:MergedContent += "`n`n"
+                    }
+                    
+                    # Use the extension as the language identifier (e.g., ```python)
+                    # Use single quotes for backticks to avoid escaping issues
+                    $script:MergedContent += '```' + $srcExtNoDot + "`n"
+                    
+                    # Add the relative path as a comment on the first line
+                    $script:MergedContent += "# $relativePath`n"
+                    
+                    $script:MergedContent += $fileContent
+                    
+                    # Ensure content ends with newline before closing backticks
+                    if (-not $fileContent.EndsWith("`n")) { 
+                        $script:MergedContent += "`n" 
+                    }
+                    $script:MergedContent += '```'
+                } 
+                else {
+                    # Standard Merge Mode
+                    $script:MergedContent += "`n`n"
+                    if (-not $NoPath) {
+                        $script:MergedContent += "=" * 80 + "`n"
+                        $script:MergedContent += "FILE PATH: $relativePath`n"
+                        $script:MergedContent += "=" * 80 + "`n"
+                    }
+                    $script:MergedContent += $fileContent
                 }
-                $script:MergedContent += $fileContent
             } else {
                 $SafePath = Get-SafeFileName -DestPath $DestDir -BaseName $AugBase -Extension $DestExt
 
@@ -174,7 +237,7 @@ function Process-Mapping {
                     $finalContent += "FILE PATH: $relativePath`n"
                     $finalContent += "=" * 80 + "`n"
                     $finalContent += $fileContent
-                    Set-Content -Path $SafePath -Value $finalContent -Force
+                    Set-Content -Path $SafePath -Value $finalContent -Encoding UTF8 -Force
                 } else {
                     Copy-Item -Path $File.FullName -Destination $SafePath -Force
                 }
@@ -309,7 +372,13 @@ else {
 
 if ($MergeToSingleFile -and $MergedContent) {
     $MergedFilePath = Join-Path $DestDir $MergedFileName
-    Set-Content -Path $MergedFilePath -Value $MergedContent.TrimStart() -Force
+    
+    if ($AIFormatting) {
+        $AIPreamble = "I'm providing the contents of the files with their relative paths. It's extremely important that when you provide files you strictly use the same format as the one here: start the code block with the language identifier (e.g. ```python), and on the very next line, include the relative file path as a comment (e.g. # src/file.py). You must provide the whole files contents when you're answering. The files you're going to provide strictly MUST be full and complete. The files I'm providing:"
+        $MergedContent = $AIPreamble + "`n`n" + $MergedContent
+    }
+
+    Set-Content -Path $MergedFilePath -Value $MergedContent.TrimStart() -Encoding UTF8 -Force
     Write-Host ""
     Write-Host "All files merged into: $MergedFileName" -ForegroundColor Green
 }
