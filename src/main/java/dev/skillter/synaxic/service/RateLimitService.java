@@ -4,7 +4,6 @@ import dev.skillter.synaxic.model.dto.RateLimitStatus;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
-import io.github.bucket4j.Refill;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -85,3 +84,4 @@ public class RateLimitService {
         ANONYMOUS, API_KEY, STATIC, ACCOUNT
     }
 }
+
