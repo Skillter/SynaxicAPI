@@ -3,22 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy Policy - Synaxic API - Learn how we collect, use, and protect your data with enterprise-grade security standards">
+    <meta name="keywords" content="privacy policy, data protection, GDPR compliance, API security, Synaxic API">
+    <meta name="author" content="Skillter">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://synaxic.skillter.dev/privacy-policy">
+    <meta property="og:title" content="Privacy Policy - Synaxic API">
+    <meta property="og:description" content="Learn how we collect, use, and protect your data with enterprise-grade security standards">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://synaxic.skillter.dev/privacy-policy">
+    <meta property="twitter:title" content="Privacy Policy - Synaxic API">
+    <meta property="twitter:description" content="Learn how we collect, use, and protect your data with enterprise-grade security standards">
+
     <title>Privacy Policy - Synaxic API</title>
-    <link rel="stylesheet" href="/css/main.css?v=11">
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <link rel="canonical" href="https://synaxic.skillter.dev/privacy-policy">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Synaxic API Privacy Policy",
+        "description": "Privacy policy for Synaxic API enterprise-grade developer utilities, detailing data collection, usage, and protection practices",
+        "url": "https://synaxic.skillter.dev/privacy-policy",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Legal Document",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "1.0.0",
+        "datePublished": "2025-01-01",
+        "dateModified": "2025-01-06",
+        "author": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "creator": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "provider": {
+            "@type": "Person",
+            "name": "Skillter",
+            "url": "https://skillter.dev"
+        },
+        "isPartOf": {
+            "@type": "WebApplication",
+            "name": "Synaxic API",
+            "url": "https://synaxic.skillter.dev"
+        },
+        "license": "https://synaxic.skillter.dev/terms-of-service",
+        "privacyPolicy": "https://synaxic.skillter.dev/privacy-policy"
+    }
+    </script>
+
+    <!-- Critical CSS for preventing layout shift and above-the-fold content -->
     <style>
-        .legal-section {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 24px;
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-primary: #0f172a;
+            --text-primary: #f1f5f9;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-radius: 12px;
         }
-        .legal-section h2 { color: #818cf8; margin-bottom: 16px; font-size: 24px; }
-        .legal-section p, .legal-section li { color: #cbd5e1; line-height: 1.7; }
-        .legal-section ul { margin-left: 20px; margin-top: 10px; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-display: swap;
+            padding-top: 50px; /* Match main.css body padding */
+        }
+
+    /* Cookie banner with stable positioning to prevent layout shift */
+        .cookie-consent {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            left: auto;
+            max-width: 380px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            z-index: 9999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transform: translateY(0);
+            opacity: 1;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        .cookie-consent.hidden {
+            transform: translateY(120%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cookie-content p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .cookie-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+            background: var(--primary);
+            color: white;
+            transition: all 0.3s ease;
+            min-height: 40px; /* Consistent button height */
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+  
+        .btn-text {
+            background: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+        }
+
+        .btn-text:hover {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .document-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 0 40px;
+        }
+
+        .document-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .document-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .document-content {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            margin-bottom: 60px;
+        }
+
+        .content-section {
+            margin-bottom: 40px;
+        }
+
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-content {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .section-content p {
+            margin-bottom: 16px;
+        }
+
+        .section-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-content ul {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        .section-content li {
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .section-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .document-title {
+                font-size: 2rem;
+            }
+
+            .document-content {
+                padding: 24px 20px;
+            }
+
+            .cookie-consent {
+                bottom: 8px;
+                right: 8px;
+                left: 8px;
+                max-width: none;
+            }
+        }
+
+        /* Critical fade-in animation - immediately visible */
+        .hero-title,
+        .hero-subtitle,
+        .policy-section,
+        .policy-content,
+        .policy-section h2,
+        .policy-section h3,
+        .policy-section h4 {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, transform;
+        }
     </style>
+
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
 </head>
 <body>
+    <!-- Cookie Consent Banner (GDPR Compliant) -->
+    <div id="cookie-consent" class="cookie-consent hidden">
+        <div class="cookie-content">
+            <p><strong>Cookie Notice</strong> - We use essential cookies to provide authentication and session management. We also use analytics cookies to improve our service. You can manage your preferences below.</p>
+            <div class="cookie-buttons">
+                <button id="cookie-accept-all" class="btn btn-primary">Accept All</button>
+                <button id="cookie-essential" class="btn btn-secondary">Essential Only</button>
+                <button id="cookie-decline" class="btn btn-text">Decline All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
     <nav class="navbar">
         <div class="container nav-container">
             <a href="/" class="logo">
@@ -32,21 +331,35 @@
                 <a href="/#contact">Contact</a>
                 <a href="/analytics">Analytics & Health</a>
                 <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
-                <button id="login-btn" class="btn btn-primary"><span>Login with Google</span></button>
+                <button id="login-btn" class="btn btn-primary">
+                    <span>Login with Google</span>
+                </button>
             </div>
-            <button class="mobile-menu-btn" id="mobile-menu-btn"><span></span><span></span><span></span></button>
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle mobile navigation menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </nav>
 
+    <!-- Hero Section -->
     <section class="hero" style="min-height: 40vh; padding-top: 120px; padding-bottom: 60px;">
         <div class="hero-background"></div>
         <div class="container hero-content">
-            <h1 class="hero-title"><span class="gradient-text">Privacy Policy</span></h1>
-            <p class="hero-subtitle" style="max-width: 600px;">Your privacy matters. Learn how we collect, use, and protect your information.</p>
-            <p style="color: var(--text-muted); font-size: 14px; margin-top: 16px;">Last updated: October 29, 2025</p>
+            <h1 class="hero-title" style="font-size: clamp(32px, 5vw, 56px);">
+                <span class="gradient-text">Privacy Policy</span>
+            </h1>
+            <p class="hero-subtitle" style="max-width: 600px;">
+                Your privacy matters. Learn how we collect, use, and protect your information.
+            </p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 16px;">
+                Last updated: October 29, 2025
+            </p>
         </div>
     </section>
 
+    <!-- Content Section -->
     <section style="padding: 80px 0; background: var(--bg-secondary);">
         <div class="container">
             <div class="legal-content" style="max-width: 900px; margin: 0 auto;">
@@ -55,9 +368,10 @@
                     <h2>1. Information We Collect</h2>
                     <p>We collect minimal information necessary to provide our services:</p>
                     <ul>
-                        <li><strong>Account Information:</strong> Name, email address, and profile picture (via Google OAuth).</li>
-                        <li><strong>API Usage Data:</strong> IP addresses and request metadata for analytics and security.</li>
-                        <li><strong>Cookies:</strong> Essential cookies for authentication.</li>
+                        <li><strong>Account Information:</strong> When you sign in with Google OAuth2, we collect your name, email address, and profile picture.</li>
+                        <li><strong>API Usage Data:</strong> IP addresses, request timestamps, endpoints accessed, and response times for analytics and rate limiting.</li>
+                        <li><strong>Technical Data:</strong> Browser type, device information, and operating system for service optimization.</li>
+                        <li><strong>Cookies:</strong> Essential cookies for authentication and session management. Analytics cookies with your consent.</li>
                     </ul>
                 </div>
 
@@ -65,27 +379,83 @@
                     <h2>2. How We Use Your Information</h2>
                     <p>Your data is used exclusively for:</p>
                     <ul>
-                        <li>Service delivery and authentication</li>
-                        <li>Security and abuse prevention</li>
-                        <li>Analytics to improve performance</li>
+                        <li><strong>Service Delivery:</strong> Authenticating users, managing API keys, and enforcing rate limits.</li>
+                        <li><strong>Security:</strong> Detecting abuse, preventing fraud, and protecting our infrastructure.</li>
+                        <li><strong>Analytics:</strong> Understanding usage patterns to improve performance and reliability.</li>
+                        <li><strong>Communication:</strong> Sending essential service updates and security notifications.</li>
                     </ul>
-                    <p>We <strong>never sell</strong> your personal information.</p>
+                    <p>We <strong>never sell or share</strong> your personal information with third parties for marketing purposes.</p>
                 </div>
 
                 <div class="legal-section">
                     <h2>3. Data Storage & Security</h2>
-                    <p>We use industry-standard encryption (TLS 1.3) and secure data centers. We do not store user passwords as we rely on Google OAuth.</p>
+                    <p>We implement industry-standard security measures:</p>
+                    <ul>
+                        <li><strong>Encryption:</strong> All data in transit uses TLS 1.3.</li>
+                        <li><strong>OAuth Authentication:</strong> We use Google OAuth 2.0 for secure authentication. We do not store or manage passwords.</li>
+                        <li><strong>Access Controls:</strong> Strict role-based access to production systems and databases.</li>
+                        <li><strong>Data Minimization:</strong> We only collect and retain data necessary for service operation.</li>
+                        <li><strong>Geographic Storage:</strong> Data is stored on secure servers in geographically distributed data centers.</li>
+                    </ul>
                 </div>
 
                 <div class="legal-section">
-                    <h2>4. Your Rights</h2>
-                    <p>You have the right to access, correct, or delete your data. You can delete your account and all associated data instantly via the Dashboard.</p>
+                    <h2>4. Data Retention</h2>
+                    <ul>
+                        <li><strong>Account Data:</strong> Retained while your account is active.</li>
+                        <li><strong>Cached Data:</strong> Temporary cache entries expire automatically (10 minutes to 24 hours based on data type).</li>
+                    </ul>
                 </div>
+
+                <div class="legal-section">
+                    <h2>5. Your Rights (GDPR/CCPA)</h2>
+                    <p>You have the right to:</p>
+                    <ul>
+                        <li><strong>Access:</strong> Request a copy of all data we hold about you.</li>
+                        <li><strong>Rectification:</strong> Correct inaccurate or incomplete information.</li>
+                        <li><strong>Deletion:</strong> Request deletion of your account and associated data.</li>
+                        <li><strong>Portability:</strong> Export your data in a machine-readable format.</li>
+                        <li><strong>Opt-Out:</strong> Decline analytics cookies (essential cookies are required for service operation).</li>
+                    </ul>
+                    <p>To exercise your rights, email us at <a href="mailto:support@skillter.dev" style="color: var(--primary-light);">support@skillter.dev</a></p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>6. Third-Party Services</h2>
+                    <p>We use the following third-party services:</p>
+                    <ul>
+                        <li><strong>Google OAuth2:</strong> For user authentication (see <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style="color: var(--primary-light);">Google Privacy Policy</a>)</li>
+                        <li><strong>MaxMind GeoIP2:</strong> For IP geolocation (no data sharing, local database)</li>
+                        <li><strong>Cloud Hosting Providers:</strong> Our infrastructure is hosted on secure VPS providers</li>
+                    </ul>
+                </div>
+
+                <div class="legal-section">
+                    <h2>7. Cookies Policy</h2>
+                    <p>We use two types of cookies:</p>
+                    <ul>
+                        <li><strong>Essential Cookies:</strong> Required for authentication and session management. Cannot be disabled.</li>
+                        <li><strong>Analytics Cookies:</strong> Track usage patterns to improve our service. Optional and require your consent.</li>
+                    </ul>
+                    <p>You can manage cookie preferences via our cookie consent banner.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>8. Children's Privacy</h2>
+                    <p>Our services are not intended for users under 13 years of age. We do not knowingly collect personal information from children. If we discover such data, we will delete it immediately.</p>
+                </div>
+
+                <div class="legal-section">
+                    <h2>9. Changes to This Policy</h2>
+                    <p>We may update this Privacy Policy periodically. Changes will be posted on this page with an updated "Last updated" date.</p>
+                </div>
+
 
             </div>
         </div>
     </section>
 
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -96,20 +466,83 @@
                     </a>
                     <p>Enterprise-grade developer utilities</p>
                 </div>
-                <div class="footer-right">
-                    <div class="footer-copyright">
-                        <p>&copy; 2025 Skillter. All rights reserved.</p>
-                    </div>
-                    <div class="footer-links">
-                        <a href="/privacy-policy">Privacy Policy</a>
-                        <a href="/terms-of-service">Terms of Service</a>
-                        <a href="/fair-use-policy">Fair Use Policy</a>
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Skillter. All rights reserved.</p>
+                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 14px;">
+                        <a href="/privacy-policy" style="color: var(--primary-light);">Privacy Policy</a>
+                        <a href="/terms-of-service" style="color: var(--primary-light);">Terms of Service</a>
+                        <a href="/fair-use-policy" style="color: var(--primary-light);">Fair Use</a>
                     </div>
                 </div>
             </div>
         </div>
     </footer>
-    <script src="/js/main.js"></script>
+
+    <style>
+        .legal-content {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .legal-section {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: var(--transition);
+        }
+
+        .legal-section:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .legal-section h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .legal-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .legal-section ul {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-left: 24px;
+            margin-top: 12px;
+        }
+
+        .legal-section li {
+            margin-bottom: 12px;
+        }
+
+        .legal-section strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <script src="/js/main.js" defer></script>
 </body>
 </html>
-
