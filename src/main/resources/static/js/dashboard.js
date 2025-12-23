@@ -147,12 +147,24 @@ class RealTimeUsagePredictor {
 
         // Create Gradient Definition
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        defs.innerHTML = `
-            <linearGradient id="donutGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#6366f1" />
-                <stop offset="100%" stop-color="#ec4899" />
-            </linearGradient>
-        `;
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'donutGradient');
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '100%');
+        gradient.setAttribute('y2', '0%');
+
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#6366f1');
+
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#ec4899');
+
+        gradient.appendChild(stop1);
+        gradient.appendChild(stop2);
+        defs.appendChild(gradient);
         svg.appendChild(defs);
 
         // Create Progress Path
@@ -177,10 +189,17 @@ class RealTimeUsagePredictor {
 }
 
 const usagePredictor = new RealTimeUsagePredictor();
+let statsRefreshInterval = null; // Store interval ID for cleanup
 
 // === MAIN FUNCTIONS ===
 
 async function checkAuth() {
+    // Clear any existing interval to prevent memory leaks
+    if (statsRefreshInterval !== null) {
+        clearInterval(statsRefreshInterval);
+        statsRefreshInterval = null;
+    }
+
     try {
         // Use /v1/auth/session instead of /me to ensure we get session data
         const response = await sessionFetch(`${API_BASE}/v1/auth/session`);
@@ -190,8 +209,8 @@ async function checkAuth() {
             displayUserProfile(currentUser);
             loadApiKeys();
             loadStats();
-            // Refresh stats periodically
-            setInterval(loadStats, 10000);
+            // Refresh stats periodically - store interval ID for cleanup
+            statsRefreshInterval = setInterval(loadStats, 10000);
         } else {
             // Should be handled by sessionFetch throw, but just in case
             window.location.href = '/';
@@ -204,6 +223,8 @@ async function checkAuth() {
 
 function displayUserProfile(user) {
     const profileEl = document.getElementById('user-profile');
+    profileEl.innerHTML = ''; // Clear existing content
+
     const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'U';
 
     // Format member since date
@@ -217,14 +238,36 @@ function displayUserProfile(user) {
         }
     }
 
-    profileEl.innerHTML = `
-        <div class="user-avatar">${initials}</div>
-        <div class="user-details">
-            <h3>${user.name || user.email}</h3>
-            <p>${user.email}</p>
-            <p style="font-size: 12px; margin-top: 4px; color: var(--text-muted);">Member since: ${memberDate}</p>
-        </div>
-    `;
+    // Create avatar
+    const avatar = document.createElement('div');
+    avatar.className = 'user-avatar';
+    avatar.textContent = initials;
+
+    // Create details container
+    const details = document.createElement('div');
+    details.className = 'user-details';
+
+    // Create name element (sanitized)
+    const nameEl = document.createElement('h3');
+    nameEl.textContent = user.name || user.email;
+
+    // Create email element (sanitized)
+    const emailEl = document.createElement('p');
+    emailEl.textContent = user.email;
+
+    // Create member since element
+    const memberEl = document.createElement('p');
+    memberEl.style.fontSize = '12px';
+    memberEl.style.marginTop = '4px';
+    memberEl.style.color = 'var(--text-muted)';
+    memberEl.textContent = 'Member since: ' + memberDate;
+
+    details.appendChild(nameEl);
+    details.appendChild(emailEl);
+    details.appendChild(memberEl);
+
+    profileEl.appendChild(avatar);
+    profileEl.appendChild(details);
 }
 
 async function loadApiKeys() {
@@ -251,59 +294,109 @@ async function loadApiKeys() {
         document.getElementById('total-keys').textContent = `${keys.length}/2`;
 
         if (keys.length === 0) {
-            listEl.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: var(--text-muted);">
-                    No API keys found. Create one to get started!
-                </div>
-            `;
+            listEl.innerHTML = '';
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.textAlign = 'center';
+            emptyDiv.style.padding = '20px';
+            emptyDiv.style.color = 'var(--text-muted)';
+            emptyDiv.textContent = 'No API keys found. Create one to get started!';
+            listEl.appendChild(emptyDiv);
             return;
         }
 
-        listEl.innerHTML = keys.map(key => {
+        listEl.innerHTML = '';
+        keys.forEach(key => {
             const usage = key.usageStats || { totalRequests: 0, requestsToday: 0 };
             const color = getKeyColor(key.id);
             const created = new Date(key.createdAt).toLocaleDateString();
             const lastUsed = key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : 'Never';
 
-            return `
-                <div class="api-key-card" style="border-left: 4px solid ${color}">
-                    <div class="api-key-header">
-                        <div class="api-key-info">
-                            <div class="api-key-name">${key.name || 'API Key'}</div>
-                            <div class="api-key-value">
-                                <span>${key.keyPrefix}••••••••</span>
-                                <button class="btn btn-text btn-sm" onclick="copyToClipboard('${key.keyPrefix}')" title="Copy Prefix">Copy</button>
-                            </div>
-                        </div>
-                        <div class="api-key-actions">
-                            <button class="btn btn-danger btn-sm" onclick="openDeleteKeyModal('${key.id}')">Delete</button>
-                        </div>
-                    </div>
-                    <div class="api-key-stats">
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-label">Total Requests</div>
-                            <div class="api-key-stat-value">${usage.totalRequests.toLocaleString()}</div>
-                        </div>
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-label">Requests Today</div>
-                            <div class="api-key-stat-value">${usage.requestsToday.toLocaleString()}</div>
-                        </div>
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-label">Created</div>
-                            <div class="api-key-stat-value" style="font-size: 13px">${created}</div>
-                        </div>
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-label">Last Used</div>
-                            <div class="api-key-stat-value" style="font-size: 13px">${lastUsed}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+            // Create card
+            const card = document.createElement('div');
+            card.className = 'api-key-card';
+            card.style.borderLeft = `4px solid ${color}`;
+
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'api-key-header';
+
+            // Create info section
+            const info = document.createElement('div');
+            info.className = 'api-key-info';
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'api-key-name';
+            nameDiv.textContent = key.name || 'API Key';
+
+            const valueDiv = document.createElement('div');
+            valueDiv.className = 'api-key-value';
+
+            const prefixSpan = document.createElement('span');
+            prefixSpan.textContent = key.keyPrefix + '••••••••';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn btn-text btn-sm';
+            copyBtn.textContent = 'Copy';
+            copyBtn.title = 'Copy Prefix';
+            copyBtn.onclick = () => copyToClipboard(key.keyPrefix);
+
+            valueDiv.appendChild(prefixSpan);
+            valueDiv.appendChild(copyBtn);
+            info.appendChild(nameDiv);
+            info.appendChild(valueDiv);
+
+            // Create actions section
+            const actions = document.createElement('div');
+            actions.className = 'api-key-actions';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-danger btn-sm';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.onclick = () => openDeleteKeyModal(key.id);
+
+            actions.appendChild(deleteBtn);
+            header.appendChild(info);
+            header.appendChild(actions);
+
+            // Create stats section
+            const stats = document.createElement('div');
+            stats.className = 'api-key-stats';
+
+            const createStatItem = (label, value, style = '') => {
+                const statDiv = document.createElement('div');
+                statDiv.className = 'api-key-stat';
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'api-key-stat-label';
+                labelDiv.textContent = label;
+
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'api-key-stat-value';
+                valueDiv.textContent = value;
+                if (style) valueDiv.style.cssText = style;
+
+                statDiv.appendChild(labelDiv);
+                statDiv.appendChild(valueDiv);
+                return statDiv;
+            };
+
+            stats.appendChild(createStatItem('Total Requests', usage.totalRequests.toLocaleString()));
+            stats.appendChild(createStatItem('Requests Today', usage.requestsToday.toLocaleString()));
+            stats.appendChild(createStatItem('Created', created, 'font-size: 13px'));
+            stats.appendChild(createStatItem('Last Used', lastUsed, 'font-size: 13px'));
+
+            card.appendChild(header);
+            card.appendChild(stats);
+            listEl.appendChild(card);
+        });
 
     } catch (error) {
         console.error('Failed to load keys:', error);
-        listEl.innerHTML = `<div class="alert alert-error">Failed to load API keys.</div>`;
+        listEl.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-error';
+        errorDiv.textContent = 'Failed to load API keys.';
+        listEl.appendChild(errorDiv);
     }
 }
 

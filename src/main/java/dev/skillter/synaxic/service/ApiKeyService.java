@@ -14,6 +14,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -107,16 +109,19 @@ public class ApiKeyService {
             String prefix = key.getPrefix();
             Long userId = key.getUser().getId();
 
-            // Manually evict from cache to avoid internal proxy call issues
-            try {
-                Cache cache = cacheManager.getCache(CacheConfig.CACHE_API_KEY_BY_PREFIX);
-                if (cache != null) {
-                    cache.evict(prefix);
-                    log.debug("Evicted API key {} from cache", prefix);
-                }
-            } catch (Exception e) {
-                log.warn("Failed to evict key from cache during deletion: {}", e.getMessage());
-                // Continue with deletion even if cache eviction fails
+            // Register cache eviction to run AFTER transaction commits
+            // This prevents race conditions where cache is evicted before DB commit
+            // If no transaction is active (e.g., in tests), evict immediately
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        evictFromCache(prefix);
+                    }
+                });
+            } else {
+                // No active transaction, evict immediately (safe for tests and fallback in production)
+                evictFromCache(prefix);
             }
 
             apiKeyRepository.delete(key);
@@ -126,18 +131,43 @@ public class ApiKeyService {
         }
     }
 
+    private void evictFromCache(String prefix) {
+        try {
+            Cache cache = cacheManager.getCache(CacheConfig.CACHE_API_KEY_BY_PREFIX);
+            if (cache != null) {
+                cache.evict(prefix);
+                log.debug("Evicted API key {} from cache", prefix);
+            }
+        } catch (Exception e) {
+            log.error("Failed to evict key from cache: {}", e.getMessage(), e);
+        }
+    }
+
     @Transactional
     public void deleteAllByUserId(Long userId) {
-        // Find all keys first to evict them
+        // Find all keys first to evict them after transaction commit
         java.util.List<ApiKey> keys = apiKeyRepository.findAllByUser_Id(userId);
-        Cache cache = cacheManager.getCache(CacheConfig.CACHE_API_KEY_BY_PREFIX);
-        
-        for (ApiKey key : keys) {
-            if (cache != null) {
-                cache.evict(key.getPrefix());
+        java.util.List<String> prefixes = keys.stream().map(ApiKey::getPrefix).toList();
+
+        // Register cache eviction to run AFTER transaction commits
+        // If no transaction is active (e.g., in tests), evict immediately
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    for (String prefix : prefixes) {
+                        evictFromCache(prefix);
+                    }
+                    log.debug("Evicted {} API keys from cache after transaction commit", prefixes.size());
+                }
+            });
+        } else {
+            // No active transaction, evict immediately (safe for tests and fallback in production)
+            for (String prefix : prefixes) {
+                evictFromCache(prefix);
             }
         }
-        
+
         apiKeyRepository.deleteAllByUser_Id(userId);
         log.info("Deleted all API keys for user {}", userId);
     }

@@ -211,17 +211,31 @@ async function fetchSystemHealth() {
         const isUp = data.status === 'UP';
         const overallStatus = document.getElementById('overall-status');
         overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
-        overallStatus.innerHTML = `
-            <span class="status-indicator"></span>
-            <span>System Status: ${data.status}</span>
-        `;
+        overallStatus.innerHTML = '';
+        const indicator = document.createElement('span');
+        indicator.className = 'status-indicator';
+        const statusText = document.createElement('span');
+        statusText.textContent = 'System Status: ' + data.status;
+        overallStatus.appendChild(indicator);
+        overallStatus.appendChild(statusText);
 
         // Build components for health tab
         if (data.components) {
-            const componentsHtml = Object.entries(data.components)
-                .map(([name, component]) => renderComponent(name, component))
-                .join('');
-            document.getElementById('health-components').innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 48px;">${componentsHtml}</div>`;
+            const healthComponents = document.getElementById('health-components');
+            healthComponents.innerHTML = '';
+
+            const gridDiv = document.createElement('div');
+            gridDiv.style.display = 'grid';
+            gridDiv.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
+            gridDiv.style.gap = '24px';
+            gridDiv.style.marginBottom = '48px';
+
+            Object.entries(data.components).forEach(([name, component]) => {
+                const componentElement = renderComponent(name, component);
+                gridDiv.appendChild(componentElement);
+            });
+
+            healthComponents.appendChild(gridDiv);
         }
 
         // Additional health data processing can be added here if needed
@@ -235,31 +249,58 @@ function renderComponent(name, component) {
     const isUp = component.status === 'UP';
     const displayName = formatComponentName(name);
 
-    let detailsHtml = '';
+    // Create card element
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'component-card';
+
+    // Create header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'component-header';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'component-name';
+    nameSpan.textContent = displayName;
+
+    const statusSpan = document.createElement('span');
+    statusSpan.className = 'component-status ' + (isUp ? 'up' : 'down');
+    statusSpan.textContent = component.status;
+
+    headerDiv.appendChild(nameSpan);
+    headerDiv.appendChild(statusSpan);
+    cardDiv.appendChild(headerDiv);
+
+    // Create details if present
     if (component.details) {
-        detailsHtml = Object.entries(component.details)
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'component-details';
+
+        Object.entries(component.details)
             .filter(([key]) => key !== 'path')
-            .map(([key, value]) => {
+            .forEach(([key, value]) => {
                 const displayValue = formatValue(value);
-                return `
-                    <div class="detail-item">
-                        <span class="detail-label">${formatKey(key)}</span>
-                        <span class="detail-value">${displayValue}</span>
-                    </div>
-                `;
-            })
-            .join('');
+
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'detail-label';
+                labelSpan.textContent = formatKey(key);
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'detail-value';
+                valueSpan.textContent = displayValue;
+
+                detailItem.appendChild(labelSpan);
+                detailItem.appendChild(valueSpan);
+                detailsDiv.appendChild(detailItem);
+            });
+
+        if (detailsDiv.children.length > 0) {
+            cardDiv.appendChild(detailsDiv);
+        }
     }
 
-    return `
-        <div class="component-card">
-            <div class="component-header">
-                <span class="component-name">${displayName}</span>
-                <span class="component-status ${isUp ? 'up' : 'down'}">${component.status}</span>
-            </div>
-            ${detailsHtml ? `<div class="component-details">${detailsHtml}</div>` : ''}
-        </div>
-    `;
+    return cardDiv;
 }
 
 function formatComponentName(name) {
@@ -305,23 +346,48 @@ function formatBytes(bytes) {
 function renderBreakdown(containerId, data) {
     const container = document.getElementById(containerId);
     if (!data || data.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No data available</p>';
+        container.innerHTML = '';
+        const emptyP = document.createElement('p');
+        emptyP.style.color = 'var(--text-muted)';
+        emptyP.style.textAlign = 'center';
+        emptyP.textContent = 'No data available';
+        container.appendChild(emptyP);
         return;
     }
 
     const maxCount = Math.max(...data.map(item => item.count));
+    container.innerHTML = '';
 
-    container.innerHTML = data.map(item => `
-        <div class="breakdown-item">
-            <div style="flex: 1;">
-                <div class="breakdown-label">${item.item}</div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-bar-fill" style="width: ${(item.count / maxCount * 100).toFixed(1)}%"></div>
-                </div>
-            </div>
-            <div class="breakdown-value">${item.count.toLocaleString()}</div>
-        </div>
-    `).join('');
+    data.forEach(item => {
+        const breakdownItem = document.createElement('div');
+        breakdownItem.className = 'breakdown-item';
+
+        const flexDiv = document.createElement('div');
+        flexDiv.style.flex = '1';
+
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'breakdown-label';
+        labelDiv.textContent = item.item; // Sanitized
+
+        const barDiv = document.createElement('div');
+        barDiv.className = 'breakdown-bar';
+
+        const barFill = document.createElement('div');
+        barFill.className = 'breakdown-bar-fill';
+        barFill.style.width = ((item.count / maxCount * 100).toFixed(1)) + '%';
+
+        barDiv.appendChild(barFill);
+        flexDiv.appendChild(labelDiv);
+        flexDiv.appendChild(barDiv);
+
+        const valueDiv = document.createElement('div');
+        valueDiv.className = 'breakdown-value';
+        valueDiv.textContent = item.count.toLocaleString();
+
+        breakdownItem.appendChild(flexDiv);
+        breakdownItem.appendChild(valueDiv);
+        container.appendChild(breakdownItem);
+    });
 }
 
 // Fetch memory metrics

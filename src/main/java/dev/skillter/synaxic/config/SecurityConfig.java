@@ -101,8 +101,8 @@ public class SecurityConfig {
                 .addFilterAfter(rateLimitFilter, ApiKeyAuthFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/dashboard").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/dashboard", "/v1/admin/**").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)

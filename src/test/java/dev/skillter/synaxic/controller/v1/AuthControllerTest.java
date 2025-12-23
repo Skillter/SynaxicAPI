@@ -19,7 +19,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,9 +81,13 @@ class AuthControllerTest {
     void getApiKeys_WithValidUser_ShouldReturnKeys() {
         when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
         when(apiKeyService.findAllByUserId(1L)).thenReturn(Arrays.asList(testApiKey));
-        // Mock usage repository calls to avoid NPE
-        when(apiKeyUsageRepository.getTodayRequestsForApiKey(anyLong(), any())).thenReturn(10L);
-        when(apiKeyUsageRepository.getTotalRequestsForApiKey(anyLong())).thenReturn(100L);
+        // Mock batch query methods to avoid NPE
+        Object[] todayRow = new Object[]{1L, 10L};
+        Object[] totalRow = new Object[]{1L, 100L};
+        List<Object[]> todayResult = Collections.singletonList(todayRow);
+        List<Object[]> totalResult = Collections.singletonList(totalRow);
+        when(apiKeyUsageRepository.getTodayRequestsForApiKeys(anyList(), any())).thenReturn(todayResult);
+        when(apiKeyUsageRepository.getTotalRequestsForApiKeys(anyList())).thenReturn(totalResult);
 
         ResponseEntity<List<Map<String, Object>>> response = authController.getApiKeys(oauth2User);
 

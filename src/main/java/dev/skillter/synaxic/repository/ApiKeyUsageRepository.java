@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -46,4 +47,15 @@ public interface ApiKeyUsageRepository extends JpaRepository<ApiKeyUsage, Long> 
     @Query("SELECT COALESCE(SUM(a.requestCount), 0) FROM ApiKeyUsage a WHERE a.apiKey.id = :keyId " +
            "AND a.periodType = 'hourly'")
     Long getTotalRequestsForApiKey(@Param("keyId") Long keyId);
+
+    // Batch query methods to fix N+1 query problem
+    @Query("SELECT a.apiKey.id as keyId, COALESCE(SUM(a.requestCount), 0) as requestCount " +
+           "FROM ApiKeyUsage a WHERE a.apiKey.id IN :keyIds AND a.periodType = 'hourly' AND a.periodStart >= :todayStart " +
+           "GROUP BY a.apiKey.id")
+    List<Object[]> getTodayRequestsForApiKeys(@Param("keyIds") List<Long> keyIds, @Param("todayStart") Instant todayStart);
+
+    @Query("SELECT a.apiKey.id as keyId, COALESCE(SUM(a.requestCount), 0) as requestCount " +
+           "FROM ApiKeyUsage a WHERE a.apiKey.id IN :keyIds AND a.periodType = 'hourly' " +
+           "GROUP BY a.apiKey.id")
+    List<Object[]> getTotalRequestsForApiKeys(@Param("keyIds") List<Long> keyIds);
 }

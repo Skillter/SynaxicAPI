@@ -661,11 +661,38 @@ const Stats = {
                value >= 0; // Stats counters should be non-negative
     },
 
+    // Measure exact pixel width of a digit ('0') for this specific element
+    // This prevents "breathing" caused by 1ch rounding differences during animation
+    measureDigitWidth(element) {
+        const testSpan = document.createElement('span');
+        testSpan.textContent = '0';
+        testSpan.style.visibility = 'hidden';
+        testSpan.style.position = 'absolute';
+        testSpan.style.whiteSpace = 'nowrap';
+        // Copy relevant font styles from the element
+        const computed = window.getComputedStyle(element);
+        testSpan.style.fontFamily = computed.fontFamily;
+        testSpan.style.fontSize = computed.fontSize;
+        testSpan.style.fontWeight = computed.fontWeight;
+        testSpan.style.fontVariantNumeric = computed.fontVariantNumeric;
+
+        document.body.appendChild(testSpan);
+        const width = testSpan.getBoundingClientRect().width;
+        document.body.removeChild(testSpan);
+
+        // Add a tiny buffer (0.5px) to prevent clipping due to sub-pixel rendering
+        return Math.ceil(width) + 'px';
+    },
+
     startContinuousRollingAnimation(animationId, element, startValue, endValue, useFullFormat) {
         const formatFunc = useFullFormat ? this.formatFullNumber : this.formatNumber;
         const animation = AdaptivePerformance.activeAnimations.get(animationId);
 
         if (!animation) return;
+
+        // Measure the exact pixel width of a digit ('0') for this specific element
+        // This prevents "breathing" caused by 1ch rounding differences during animation
+        const digitWidth = this.measureDigitWidth(element);
 
         const duration = animation.duration;
         const capabilities = AnimationProfile.capabilities;
@@ -744,7 +771,8 @@ const Stats = {
             currentStepIndex: 0,
             isPaused: false,
             stepStartTime: performance.now(),
-            stepDuration: duration / steps.length
+            stepDuration: duration / steps.length,
+            fixedDigitWidth: digitWidth // Store the measured width
         };
 
         // Start the rolling animation sequence
@@ -771,8 +799,11 @@ const Stats = {
         const currentValue = steps[stepIndex];
         const previousValue = stepIndex > 0 ? steps[stepIndex - 1] : currentValue;
 
+        // Pass the fixed digit width
+        const digitWidth = animation.state.fixedDigitWidth;
+
         // Create rolling animation for this step
-        this.createRollingDigitAnimation(element, previousValue, currentValue, formatFunc, () => {
+        this.createRollingDigitAnimation(element, previousValue, currentValue, formatFunc, digitWidth, () => {
             // Schedule next step only if not paused
             if (!animation.state.isPaused) {
                 animation.state.stepTimeoutId = setTimeout(() => {
@@ -782,7 +813,7 @@ const Stats = {
         });
     },
 
-    createRollingDigitAnimation(element, oldValue, newValue, formatFunc, onComplete) {
+    createRollingDigitAnimation(element, oldValue, newValue, formatFunc, digitWidth, onComplete) {
         const oldText = formatFunc.call(this, oldValue);
         const newText = formatFunc.call(this, newValue);
         const direction = newValue > oldValue ? 'up' : 'down';
@@ -853,8 +884,8 @@ const Stats = {
             digitWrapper.style.padding = '0';
             digitWrapper.style.fontWeight = 'inherit'; // Inherit from parent
 
-            // Use monospace-like width consistency
-            const charWidth = this.getCharacterWidth(oldChar, newChar);
+            // Use the fixed pixel width for consistent digit rendering
+            const charWidth = this.getCharacterWidth(oldChar, newChar, digitWidth);
             digitWrapper.style.width = charWidth;
             digitWrapper.style.minWidth = charWidth;
             digitWrapper.style.maxWidth = charWidth;
@@ -1101,17 +1132,20 @@ const Stats = {
     },
 
     // Helper function to get consistent character width
-    getCharacterWidth(oldChar, newChar) {
-        // Match the font's natural rendered width to prevent jumps
+    getCharacterWidth(oldChar, newChar, fixedDigitWidth) {
+        // 1. Double spaces: Collapse to 0
         if (oldChar === ' ' && newChar === ' ') {
-            return '0';
-        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
-            // Digits use 1ch to match tabular-nums CSS
-            return '1ch';
-        } else {
-            // Everything else (commas, dots, K, M) uses natural width
-            return 'auto';
+            return '0px';
         }
+
+        // 2. Digits: Use the measured fixed pixel width to prevent breathing
+        if (/\d/.test(oldChar) || /\d/.test(newChar)) {
+            return fixedDigitWidth || '1ch';
+        }
+
+        // 3. Punctuation & Letters: Use auto to let them take natural width
+        // This prevents shifting when the font is inherited
+        return 'auto';
     },
 
     showPlaceholder() {
@@ -1231,6 +1265,8 @@ const Auth = {
                 loginBtn.innerHTML = '<span>Dashboard</span>';
             }
             loginBtn.classList.add('logged-in');
+            // Add href for middle-click support
+            loginBtn.setAttribute('href', '/dashboard');
         }
     },
 
@@ -1242,6 +1278,8 @@ const Auth = {
                 loginBtn.innerHTML = '<span>Login with Google</span>';
             }
             loginBtn.classList.remove('logged-in');
+            // Remove href when logged out
+            loginBtn.removeAttribute('href');
         }
     },
 
@@ -1748,20 +1786,6 @@ const AnimationUtils = {
             element.style.webkitTransform = '';
             element.style.webkitBackfaceVisibility = '';
             element.style.backfaceVisibility = '';
-        }
-    },
-
-    // Get cached character width with fallback
-    getCharacterWidth(oldChar, newChar) {
-        // Match the font's natural rendered width to prevent jumps
-        if (oldChar === ' ' && newChar === ' ') {
-            return '0';
-        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
-            // Digits use 1ch to match tabular-nums CSS
-            return '1ch';
-        } else {
-            // Everything else (commas, dots, K, M) uses natural width
-            return 'auto';
         }
     },
 

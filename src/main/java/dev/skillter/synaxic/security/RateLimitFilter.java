@@ -134,7 +134,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 try {
                     dailyRequestTrackerService.incrementDailyRequests();
                 } catch (Exception e) {
-                    // Ignore errors
+                    log.error("Failed to increment daily request counter", e);
+                    // Continue processing - rate limiting still works
                 }
 
                 // Record detailed usage ONLY for actual API Keys

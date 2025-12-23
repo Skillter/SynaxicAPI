@@ -150,6 +150,26 @@ public class AuthController {
 
         List<ApiKey> keys = apiKeyService.findAllByUserId(user.getId());
 
+        // Fix N+1 query problem: Fetch all usage stats in batch queries
+        List<Long> keyIds = keys.stream().map(ApiKey::getId).toList();
+        Instant todayStart = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+
+        // Batch fetch today's requests for all keys
+        List<Object[]> todayRequestsList = apiKeyUsageRepository.getTodayRequestsForApiKeys(keyIds, todayStart);
+        Map<Long, Long> todayRequestsMap = todayRequestsList.stream()
+            .collect(Collectors.toMap(
+                row -> (Long) row[0],
+                row -> (Long) row[1]
+            ));
+
+        // Batch fetch total requests for all keys
+        List<Object[]> totalRequestsList = apiKeyUsageRepository.getTotalRequestsForApiKeys(keyIds);
+        Map<Long, Long> totalRequestsMap = totalRequestsList.stream()
+            .collect(Collectors.toMap(
+                row -> (Long) row[0],
+                row -> (Long) row[1]
+            ));
+
         List<Map<String, Object>> result = keys.stream().map(key -> {
             Map<String, Object> keyMap = new HashMap<>();
             keyMap.put("id", key.getId().toString());
@@ -160,12 +180,8 @@ public class AuthController {
             keyMap.put("lastUsedAt", key.getLastUsedAt());
 
             Map<String, Object> usageStats = new HashMap<>();
-            Instant todayStart = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.DAYS);
-            Long todayRequests = apiKeyUsageRepository.getTodayRequestsForApiKey(key.getId(), todayStart);
-            Long totalRequests = apiKeyUsageRepository.getTotalRequestsForApiKey(key.getId());
-
-            usageStats.put("requestsToday", todayRequests != null ? todayRequests : 0L);
-            usageStats.put("totalRequests", totalRequests != null ? totalRequests : 0L);
+            usageStats.put("requestsToday", todayRequestsMap.getOrDefault(key.getId(), 0L));
+            usageStats.put("totalRequests", totalRequestsMap.getOrDefault(key.getId(), 0L));
             keyMap.put("usageStats", usageStats);
 
             return keyMap;

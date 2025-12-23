@@ -370,7 +370,7 @@ body {
 
 /* Digit wrapper styling for consistent character width */
 .odometer-digit-wrapper {
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-family: inherit; /* Inherit the parent font to prevent font switching */
     font-variant-numeric: tabular-nums;
     font-weight: inherit;
     /* Safari-specific overflow handling */
@@ -625,6 +625,7 @@ section {
     border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: var(--border-radius);
     padding: 40px;
+    transition: var(--transition);
 }
 
 .demo-selector {

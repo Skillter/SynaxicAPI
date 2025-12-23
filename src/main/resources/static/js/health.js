@@ -4,8 +4,15 @@ async function loadHealth() {
 
         if (!response.ok) {
             console.error('Failed to fetch health data:', response.status);
-            document.getElementById('overall-status').className = 'status-badge down';
-            document.getElementById('overall-status').innerHTML = '<span class="status-indicator"></span><span>System Status: Error</span>';
+            const overallStatus = document.getElementById('overall-status');
+            overallStatus.className = 'status-badge down';
+            overallStatus.innerHTML = '';
+            const indicator = document.createElement('span');
+            indicator.className = 'status-indicator';
+            const statusText = document.createElement('span');
+            statusText.textContent = 'System Status: Error';
+            overallStatus.appendChild(indicator);
+            overallStatus.appendChild(statusText);
             return;
         }
 
@@ -17,31 +24,45 @@ async function loadHealth() {
         // Update overall status
         const isUp = data.status === 'UP';
         overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
-        overallStatus.innerHTML = `
-            <span class="status-indicator ${isUp ? 'up' : 'down'}"></span>
-            <span>System Status: ${data.status}</span>
-        `;
+        overallStatus.innerHTML = '';
+        const indicator = document.createElement('span');
+        indicator.className = 'status-indicator ' + (isUp ? 'up' : 'down');
+        const statusText = document.createElement('span');
+        statusText.textContent = 'System Status: ' + data.status;
+        overallStatus.appendChild(indicator);
+        overallStatus.appendChild(statusText);
 
         // Build components grid
+        contentDiv.innerHTML = '';
+        const componentsDiv = document.createElement('div');
+        componentsDiv.className = 'components';
+
         if (data.components) {
-            const componentsHtml = Object.entries(data.components)
-                .map(([name, component]) => renderComponent(name, component))
-                .join('');
-            contentDiv.innerHTML = `<div class="components">${componentsHtml}</div>`;
-        } else {
-            contentDiv.innerHTML = '<div class="components"></div>';
+            Object.entries(data.components).forEach(([name, component]) => {
+                const componentElement = renderComponent(name, component);
+                componentsDiv.appendChild(componentElement);
+            });
         }
+        contentDiv.appendChild(componentsDiv);
 
         updateTimestamp();
         // Refresh every 30 seconds
         setTimeout(loadHealth, 30000);
     } catch (error) {
-        document.getElementById('content').innerHTML = `
-            <div class="error">
-                <strong>Failed to load health status</strong>
-                <p>${error.message}</p>
-            </div>
-        `;
+        const contentDiv = document.getElementById('content');
+        contentDiv.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+
+        const strong = document.createElement('strong');
+        strong.textContent = 'Failed to load health status';
+
+        const p = document.createElement('p');
+        p.textContent = error.message;
+
+        errorDiv.appendChild(strong);
+        errorDiv.appendChild(p);
+        contentDiv.appendChild(errorDiv);
     }
 }
 
@@ -49,31 +70,58 @@ function renderComponent(name, component) {
     const isUp = component.status === 'UP';
     const displayName = formatComponentName(name);
 
-    let detailsHtml = '';
+    // Create card element
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'component-card';
+
+    // Create header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'component-header';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'component-name';
+    nameSpan.textContent = displayName;
+
+    const statusSpan = document.createElement('span');
+    statusSpan.className = 'component-status ' + (isUp ? 'up' : 'down');
+    statusSpan.textContent = component.status;
+
+    headerDiv.appendChild(nameSpan);
+    headerDiv.appendChild(statusSpan);
+    cardDiv.appendChild(headerDiv);
+
+    // Create details if present
     if (component.details) {
-        detailsHtml = Object.entries(component.details)
-            .filter(([key]) => key !== 'path') // Skip path
-            .map(([key, value]) => {
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'component-details';
+
+        Object.entries(component.details)
+            .filter(([key]) => key !== 'path')
+            .forEach(([key, value]) => {
                 const displayValue = formatValue(value);
-                return `
-                    <div class="detail-item">
-                        <span class="detail-label">${formatKey(key)}</span>
-                        <span class="detail-value ${isBytes(key) ? 'bytes' : ''}">${displayValue}</span>
-                    </div>
-                `;
-            })
-            .join('');
+
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'detail-label';
+                labelSpan.textContent = formatKey(key);
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'detail-value' + (isBytes(key) ? ' bytes' : '');
+                valueSpan.textContent = displayValue;
+
+                detailItem.appendChild(labelSpan);
+                detailItem.appendChild(valueSpan);
+                detailsDiv.appendChild(detailItem);
+            });
+
+        if (detailsDiv.children.length > 0) {
+            cardDiv.appendChild(detailsDiv);
+        }
     }
 
-    return `
-        <div class="component-card">
-            <div class="component-header">
-                <span class="component-name">${displayName}</span>
-                <span class="component-status ${isUp ? 'up' : 'down'}">${component.status}</span>
-            </div>
-            ${detailsHtml ? `<div class="component-details">${detailsHtml}</div>` : ''}
-        </div>
-    `;
+    return cardDiv;
 }
 
 function formatComponentName(name) {
