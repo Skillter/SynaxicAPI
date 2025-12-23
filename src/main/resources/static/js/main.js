@@ -1102,13 +1102,15 @@ const Stats = {
 
     // Helper function to get consistent character width
     getCharacterWidth(oldChar, newChar) {
-        // Use 'ch' unit (character width) instead of 'em' (font height) for precise alignment
+        // Match the font's natural rendered width to prevent jumps
         if (oldChar === ' ' && newChar === ' ') {
             return '0';
-        } else if (/[\.,]/.test(oldChar) || /[\.,]/.test(newChar)) {
-            return '0.5ch'; // Keep punctuation tight
+        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
+            // Digits use 1ch to match tabular-nums CSS
+            return '1ch';
         } else {
-            return '1ch'; // Digits and Letters: Use exactly 1 character width
+            // Everything else (commas, dots, K, M) uses natural width
+            return 'auto';
         }
     },
 
@@ -1751,13 +1753,15 @@ const AnimationUtils = {
 
     // Get cached character width with fallback
     getCharacterWidth(oldChar, newChar) {
-        // Use 'ch' unit (character width) instead of 'em' (font height) for precise alignment
+        // Match the font's natural rendered width to prevent jumps
         if (oldChar === ' ' && newChar === ' ') {
             return '0';
-        } else if (/[\.,]/.test(oldChar) || /[\.,]/.test(newChar)) {
-            return '0.5ch'; // Keep punctuation tight
+        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
+            // Digits use 1ch to match tabular-nums CSS
+            return '1ch';
         } else {
-            return '1ch'; // Digits and Letters: Use exactly 1 character width
+            // Everything else (commas, dots, K, M) uses natural width
+            return 'auto';
         }
     },
 

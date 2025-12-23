@@ -330,8 +330,6 @@ body {
     /* Use tabular numbers for consistent width - prevents shifting during animation */
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum' 1;
-    /* Match the inner wrapper monospace font to prevent layout jumps */
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
 
 /* Odometer animation container - matches static positioning */
@@ -362,6 +360,12 @@ body {
     background-clip: inherit;
     min-height: 1.2em;
     line-height: 1.2em;
+    /* Use fit-content so container matches natural width of animated digits */
+    width: fit-content;
+    margin: 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Digit wrapper styling for consistent character width */
