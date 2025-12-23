@@ -343,6 +343,9 @@ n    <!-- Preconnect to external domains -->
             color: var(--text-secondary);
             font-weight: 600;
             font-size: 14px;
+            /* Use tabular numbers for consistent width - prevents shifting */
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
         }
 
         @media (max-width: 768px) {
@@ -556,6 +559,9 @@ n    <!-- Preconnect to external domains -->
             font-size: 14px;
             font-weight: 600;
             text-align: right;
+            /* Use tabular numbers for consistent width - prevents shifting */
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
         }
 
         .detail-value.bytes {

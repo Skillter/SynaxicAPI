@@ -1102,36 +1102,14 @@ const Stats = {
 
     // Helper function to get consistent character width
     getCharacterWidth(oldChar, newChar) {
-        // Create a cache key for character pairs
-        const cacheKey = `${oldChar}-${newChar}`;
-
-        // Initialize cache if needed
-        if (!this._charWidthCache) {
-            this._charWidthCache = new Map();
-        }
-
-        // Return cached value if available
-        if (this._charWidthCache.has(cacheKey)) {
-            return this._charWidthCache.get(cacheKey);
-        }
-        // Use consistent widths for different character types
+        // Use 'ch' unit (character width) instead of 'em' (font height) for precise alignment
         if (oldChar === ' ' && newChar === ' ') {
-            width = '0'; // No space needed
-        } else if (oldChar === ' ' || newChar === ' ') {
-            width = '0.6em'; // Space characters
-        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
-            width = '0.6em'; // Digits
+            return '0';
         } else if (/[\.,]/.test(oldChar) || /[\.,]/.test(newChar)) {
-            width = '0.4em'; // Punctuation
-        } else if (/[KM]/.test(oldChar) || /[KM]/.test(newChar)) {
-            width = '0.8em'; // Suffixes
+            return '0.5ch'; // Keep punctuation tight
         } else {
-            width = '0.6em'; // Default
+            return '1ch'; // Digits and Letters: Use exactly 1 character width
         }
-
-        // Cache the result
-        this._charWidthCache.set(cacheKey, width);
-        return width;
     },
 
     showPlaceholder() {
@@ -1266,6 +1244,8 @@ const Auth = {
     },
 
     handleClick(e) {
+        // Allow middle-click (button 1) to open in new tab
+        if (e.button === 1) return;
         e.preventDefault();
         if (this.isLoggedIn) {
             window.location.href = '/dashboard';
@@ -1771,32 +1751,14 @@ const AnimationUtils = {
 
     // Get cached character width with fallback
     getCharacterWidth(oldChar, newChar) {
-        const cacheKey = `${oldChar}-${newChar}`;
-
-        // Return cached value if available
-        if (this._charWidthCache.has(cacheKey)) {
-            return this._charWidthCache.get(cacheKey);
-        }
-
-        // Calculate width
-        let width;
+        // Use 'ch' unit (character width) instead of 'em' (font height) for precise alignment
         if (oldChar === ' ' && newChar === ' ') {
-            width = '0';
-        } else if (oldChar === ' ' || newChar === ' ') {
-            width = '0.6em';
-        } else if (/\d/.test(oldChar) || /\d/.test(newChar)) {
-            width = '0.6em';
+            return '0';
         } else if (/[\.,]/.test(oldChar) || /[\.,]/.test(newChar)) {
-            width = '0.4em';
-        } else if (/[KM]/.test(oldChar) || /[KM]/.test(newChar)) {
-            width = '0.8em';
+            return '0.5ch'; // Keep punctuation tight
         } else {
-            width = '0.6em';
+            return '1ch'; // Digits and Letters: Use exactly 1 character width
         }
-
-        // Cache the result
-        this._charWidthCache.set(cacheKey, width);
-        return width;
     },
 
     // Create animation timeout with automatic cleanup

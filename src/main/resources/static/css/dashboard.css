@@ -573,6 +573,9 @@
     line-height: 1;
     min-width: 60px;
     display: block;
+    /* Use tabular numbers for consistent width - prevents shifting */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
 }
 
 .usage-stat-label {

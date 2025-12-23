@@ -427,6 +427,9 @@
             font-weight: 800;
             color: var(--primary);
             min-width: 80px;
+            /* Use tabular numbers for consistent width - prevents shifting */
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
         }
 
         /* Button Styles */

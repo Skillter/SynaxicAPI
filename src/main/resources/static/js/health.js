@@ -183,20 +183,7 @@ async function loadMetrics() {
         document.getElementById('memory-usage').textContent = 'N/A';
     }
 
-    // Load cache metrics if available
-    try {
-        const cacheResponse = await fetch('/actuator/metrics/cache.gets');
-        if (cacheResponse.ok) {
-            const cacheData = await cacheResponse.json();
-            const hits = cacheData.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
-            document.getElementById('cache-hit-rate').textContent = hits > 0 ? hits.toFixed(0) + ' hits' : 'No data';
-        } else {
-            document.getElementById('cache-hit-rate').textContent = 'N/A';
-        }
-    } catch (error) {
-        console.error('Error fetching cache metrics:', error);
-        document.getElementById('cache-hit-rate').textContent = 'N/A';
-    }
+    // Cache metrics are provided by /v1/admin/stats if available
 }
 
 function formatBytes(bytes) {

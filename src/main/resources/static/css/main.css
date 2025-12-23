@@ -325,7 +325,13 @@ body {
     -moz-osx-font-smoothing: grayscale;
     font-smooth: always;
     text-rendering: optimizeLegibility;
-    letter-spacing: -0.02em; /* Slight tracking improvement */
+    /* Removed negative letter-spacing to prevent squeezing mismatch with animation */
+    /* letter-spacing: -0.02em; */
+    /* Use tabular numbers for consistent width - prevents shifting during animation */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    /* Match the inner wrapper monospace font to prevent layout jumps */
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
 
 /* Odometer animation container - matches static positioning */

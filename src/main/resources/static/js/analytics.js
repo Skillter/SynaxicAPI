@@ -139,8 +139,9 @@ async function fetchDetailedAnalytics() {
 
         // For health tab metrics
         if (data.rates && document.getElementById('avg-response-metric')) {
+            const hasResponseData = data.responseTime?.count > 0;
             document.getElementById('avg-response-metric').textContent =
-                data.responseTime?.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+                hasResponseData ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
             document.getElementById('success-rate-metric').textContent =
                 data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A';
         }
