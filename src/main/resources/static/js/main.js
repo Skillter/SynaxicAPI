@@ -1222,6 +1222,13 @@ const Auth = {
                 return;
             }
 
+            // Handle 204 No Content (not authenticated)
+            if (response.status === 204) {
+                this.isLoggedIn = false;
+                this.updateButtonForLoggedOut();
+                return;
+            }
+
             if (response.ok) {
                 const user = await response.json();
                 this.isLoggedIn = true;

@@ -93,35 +93,41 @@ async function fetchDetailedAnalytics() {
 
         // Response time statistics
         if (data.responseTime) {
+            const hasData = data.responseTime.count > 0;
+
             document.getElementById('response-min').textContent =
-                data.responseTime.minMs ? `${data.responseTime.minMs.toFixed(1)} ms` : 'N/A';
+                hasData ? `${data.responseTime.minMs.toFixed(1)} ms` : 'N/A';
             document.getElementById('response-avg').textContent =
-                data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+                hasData ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
             document.getElementById('response-max').textContent =
-                data.responseTime.maxMs ? `${data.responseTime.maxMs.toFixed(1)} ms` : 'N/A';
+                hasData ? `${data.responseTime.maxMs.toFixed(1)} ms` : 'N/A';
         }
 
         // Latency percentiles
         if (data.latency) {
+            const p50 = data.latency.p50_ms;
+            const p95 = data.latency.p95_ms;
+            const p99 = data.latency.p99_ms;
+
             document.getElementById('latency-p50').textContent =
-                data.latency.p50_ms ? `${data.latency.p50_ms.toFixed(0)} ms` : 'N/A';
+                (p50 !== null && p50 !== undefined && p50 > 0) ? `${p50.toFixed(0)} ms` : 'N/A';
             document.getElementById('latency-p95').textContent =
-                data.latency.p95_ms ? `${data.latency.p95_ms.toFixed(0)} ms` : 'N/A';
+                (p95 !== null && p95 !== undefined && p95 > 0) ? `${p95.toFixed(0)} ms` : 'N/A';
             document.getElementById('latency-p99').textContent =
-                data.latency.p99_ms ? `${data.latency.p99_ms.toFixed(0)} ms` : 'N/A';
+                (p99 !== null && p99 !== undefined && p99 > 0) ? `${p99.toFixed(0)} ms` : 'N/A';
 
             // For health tab
             if (document.getElementById('latency-p50-metric')) {
                 document.getElementById('latency-p50-metric').textContent =
-                    data.latency.p50_ms ? data.latency.p50_ms.toFixed(0) : '--';
+                    (p50 !== null && p50 !== undefined && p50 > 0) ? p50.toFixed(0) : '--';
             }
             if (document.getElementById('latency-p95-metric')) {
                 document.getElementById('latency-p95-metric').textContent =
-                    data.latency.p95_ms ? data.latency.p95_ms.toFixed(0) : '--';
+                    (p95 !== null && p95 !== undefined && p95 > 0) ? p95.toFixed(0) : '--';
             }
             if (document.getElementById('latency-p99-metric')) {
                 document.getElementById('latency-p99-metric').textContent =
-                    data.latency.p99_ms ? data.latency.p99_ms.toFixed(0) : '--';
+                    (p99 !== null && p99 !== undefined && p99 > 0) ? p99.toFixed(0) : '--';
             }
         }
 
@@ -335,23 +341,7 @@ async function fetchMemoryMetrics() {
     }
 }
 
-// Fetch cache metrics
-async function fetchCacheMetrics() {
-    try {
-        const response = await fetch('/actuator/metrics/cache.gets');
-
-        if (response.ok) {
-            const data = await response.json();
-            const hits = data.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
-            document.getElementById('cache-hit-rate').textContent = hits > 0 ? hits.toFixed(0) + ' hits' : 'No data';
-        } else {
-            document.getElementById('cache-hit-rate').textContent = 'N/A';
-        }
-    } catch (error) {
-        console.error('Error fetching cache metrics:', error);
-        // Don't change cache hit rate value, leave it as it is
-    }
-}
+// Cache metrics are provided by /v1/admin/stats - no separate fetch needed
 
 // Helper function to set placeholders for all loading elements
 function setLoadingPlaceholders(value) {
@@ -381,12 +371,10 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchDetailedAnalytics();
     fetchSystemHealth();
     fetchMemoryMetrics();
-    fetchCacheMetrics();
 
     // Refresh every 30 seconds
     setInterval(fetchPublicStats, 30000);
     setInterval(fetchDetailedAnalytics, 30000);
     setInterval(fetchSystemHealth, 30000);
     setInterval(fetchMemoryMetrics, 30000);
-    setInterval(fetchCacheMetrics, 30000);
 });

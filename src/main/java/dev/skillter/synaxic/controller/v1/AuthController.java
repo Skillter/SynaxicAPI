@@ -112,7 +112,7 @@ public class AuthController {
             userInfo.put("name", oauth2User.getAttribute("name"));
             userInfo.put("email", oauth2User.getAttribute("email"));
             userInfo.put("picture", oauth2User.getAttribute("picture"));
-            
+
             // Try to fetch DB user details if possible
             if (oauth2User.getAttribute("email") != null) {
                 User dbUser = userService.findByEmail(oauth2User.getAttribute("email")).orElse(null);
@@ -136,8 +136,8 @@ public class AuthController {
             }
         }
 
-        // Return 204 No Content if not logged in
-        return ResponseEntity.noContent().build();
+        // Return 401 Unauthorized if not logged in (was 204, causing frontend issues)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     // ... (rest of the controller methods remain unchanged) ...

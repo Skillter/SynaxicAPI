@@ -170,6 +170,13 @@
             text-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
         }
 
+        /* Container for centering */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
         /* Critical Dashboard Layout */
         .dashboard-container {
             max-width: 1200px;
@@ -304,6 +311,8 @@
             font-size: 24px;
             font-weight: 800;
             color: var(--primary);
+            min-width: 60px;
+            text-align: center;
         }
 
         .usage-stat-label {
@@ -341,11 +350,83 @@
             font-size: 24px;
             font-weight: 800;
             color: var(--primary);
+            min-width: 60px;
+            text-align: center;
         }
 
         .donut-label {
             font-size: 14px;
             color: var(--text-muted);
+        }
+
+        /* Donut Legend */
+        .donut-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 24px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .legend-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .legend-name {
+            font-weight: 500;
+        }
+
+        .legend-requests {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Dashboard Grid and Stats */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card-mini {
+            background: var(--bg-card);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .stat-card-mini .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card-mini .value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            min-width: 80px;
         }
 
         /* Button Styles */
@@ -519,7 +600,7 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <div class="nav-container">
+        <div class="container nav-container">
             <a href="/" class="logo">
                 <span class="logo-icon">⚡</span>
                 <span class="logo-text">Synaxic API</span>
@@ -531,9 +612,7 @@
                 <a href="/#contact">Contact</a>
                 <a href="/analytics">Analytics & Health</a>
                 <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
-                <button id="login-btn" class="btn btn-primary">
-                    <span>Dashboard</span>
-                </button>
+                <button id="logout-btn" class="btn btn-secondary" onclick="logout()">Logout</button>
             </div>
             <button class="mobile-menu-btn" id="mobile-menu-btn">
                 <span></span>
@@ -834,688 +913,6 @@
     </div>
 
     <script src="/js/main.js"></script>
-    <script data-cfasync="false">
-        const API_BASE = window.location.origin;
-        let currentUser = null;
-        let keyToDelete = null;
-        let apiKeyColors = new Map(); // Store consistent colors for API keys
-
-        // Create authenticated fetch headers
-        function getAuthHeaders() {
-            const headers = {};
-
-            // Check if we're using API key authentication (look for API key in URL or localStorage)
-            const urlParams = new URLSearchParams(window.location.search);
-            const apiKey = urlParams.get('api_key') || localStorage.getItem('apiKey');
-
-            if (apiKey) {
-                headers['Authorization'] = `ApiKey ${apiKey}`;
-            }
-
-            return headers;
-        }
-
-        // Create authenticated fetch function
-        async function authenticatedFetch(url, options = {}) {
-            const authHeaders = getAuthHeaders();
-            const headers = {
-                ...authHeaders,
-                ...(options.headers || {})
-            };
-
-            const apiKey = authHeaders.Authorization;
-            const response = await fetch(url, {
-                ...options,
-                headers,
-                credentials: apiKey ? 'omit' : 'include'
-            });
-
-            // Extract rate limit headers for real-time prediction
-            if (response.ok) {
-                const rateLimit = response.headers.get('X-RateLimit-Limit');
-                const remaining = response.headers.get('X-RateLimit-Remaining');
-
-                if (rateLimit && remaining) {
-                    updateRealTimeRateLimit(parseInt(rateLimit), parseInt(remaining));
-                }
-            }
-
-            return response;
-        }
-
-        // Color palette for API keys
-        const colorPalette = [
-            '#6366f1', // Primary blue
-            '#8b5cf6', // Purple
-            '#06b6d4', // Cyan
-            '#10b981', // Emerald
-            '#f59e0b', // Amber
-            '#ef4444', // Red
-            '#ec4899', // Pink
-            '#84cc16', // Lime
-            '#f97316', // Orange
-            '#14b8a6'  // Teal
-        ];
-
-        // Generate consistent color for API key based on its ID
-        function getKeyColor(keyId) {
-            if (!keyId || typeof keyId !== 'string') {
-                keyId = String(keyId || 'unknown');
-            }
-            if (!apiKeyColors.has(keyId)) {
-                const hash = keyId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const colorIndex = hash % colorPalette.length;
-                apiKeyColors.set(keyId, colorPalette[colorIndex]);
-            }
-            return apiKeyColors.get(keyId);
-        }
-
-        // Real-time usage prediction system
-        class RealTimeUsagePredictor {
-            constructor() {
-                this.rateLimit = 10000; // Default rate limit
-                this.lastServerUpdate = Date.now();
-                this.serverRemainingRequests = 10000; // Actual value from server
-                this.serverUsedRequests = 0; // Actual value from server
-                this.currentRemainingRequests = 10000; // Client-side predicted value
-                this.currentUsedRequests = 0; // Client-side predicted value
-
-                // Countdown calculation variables
-                this.countdownInterval = null;
-                this.serverSyncInterval = null;
-                this.countdownIntervalMs = 1000; // Update every second for smooth display
-            }
-
-            initialize(rateLimit, usedRequests, remainingRequests) {
-                console.log('Initializing usage predictor:', { rateLimit, usedRequests, remainingRequests });
-                this.rateLimit = rateLimit;
-                this.serverUsedRequests = usedRequests;
-                this.serverRemainingRequests = remainingRequests;
-                this.currentUsedRequests = usedRequests;
-                this.currentRemainingRequests = remainingRequests;
-                this.lastServerUpdate = Date.now();
-
-                // Start the countdown timer and update UI
-                this.startCountdown();
-                this.updateUI();
-            }
-
-            startCountdown() {
-                // Clear existing intervals
-                if (this.countdownInterval) clearInterval(this.countdownInterval);
-                if (this.serverSyncInterval) clearInterval(this.serverSyncInterval);
-
-                // Update every second for smooth display
-                this.countdownInterval = setInterval(() => {
-                    this.updatePredictedUsage();
-                }, this.countdownIntervalMs);
-
-                // Sync with server every 30 seconds to correct drift
-                this.serverSyncInterval = setInterval(() => {
-                    this.syncWithServer();
-                }, 30000);
-            }
-
-            updatePredictedUsage() {
-                const now = Date.now();
-                const timeSinceLastUpdate = (now - this.lastServerUpdate) / 1000; // seconds
-
-                // Predict usage based on time elapsed
-                // This is a simple linear prediction - you can make this more sophisticated
-                const predictedIncrease = Math.max(0, timeSinceLastUpdate * 0.1); // Rough estimate
-
-                this.currentUsedRequests = Math.min(
-                    this.serverUsedRequests + predictedIncrease,
-                    this.rateLimit
-                );
-                this.currentRemainingRequests = Math.max(
-                    0,
-                    this.rateLimit - this.currentUsedRequests
-                );
-
-                // Update UI
-                this.updateUI();
-            }
-
-            updateFromRateLimitHeaders(limit, remaining) {
-                // Validate and sanitize header data
-                if (!limit || limit <= 0 || !Number.isInteger(limit)) {
-                    console.warn('Invalid rate limit from headers:', limit);
-                    return; // Ignore invalid data
-                }
-
-                if (!remaining || remaining < 0 || remaining > limit) {
-                    console.warn('Invalid remaining requests from headers:', { limit, remaining });
-                    return; // Ignore invalid data
-                }
-
-                // Only update if this is for the account-level tier (10000 requests)
-                // Skip lower-tier limits like static resources (1000 requests)
-                if (limit < 5000) {
-                    console.log('Ignoring lower-tier rate limit:', limit);
-                    return;
-                }
-
-                const calculatedUsed = limit - remaining;
-
-                // Validate calculated used value
-                if (calculatedUsed < 0 || calculatedUsed > limit) {
-                    console.warn('Invalid calculated usage from headers:', { limit, remaining, calculatedUsed });
-                    return;
-                }
-
-                // Update server data and reset client prediction to match
-                // Ensure all values are integers
-                this.rateLimit = Math.floor(limit);
-                this.serverRemainingRequests = Math.floor(remaining);
-                this.serverUsedRequests = Math.floor(calculatedUsed);
-                this.currentRemainingRequests = Math.floor(remaining);
-                this.currentUsedRequests = Math.floor(calculatedUsed);
-                this.lastServerUpdate = Date.now();
-
-                console.log('Updated usage from headers:', {
-                    limit: this.rateLimit,
-                    used: this.currentUsedRequests,
-                    remaining: this.currentRemainingRequests,
-                    timeSinceUpdate: 0
-                });
-            }
-
-            syncWithServer() {
-                // Sync with actual server data to correct prediction drift
-                fetchAccountUsage();
-            }
-
-            updateUI() {
-                // Update account-level usage displays
-                const accountUsedEl = document.getElementById('account-used');
-                const accountLimitEl = document.getElementById('account-limit');
-                const donutPercentageEl = document.getElementById('donut-percentage');
-
-                if (accountUsedEl) {
-                    accountUsedEl.textContent = this.formatNumber(this.currentUsedRequests);
-                }
-                if (accountLimitEl) {
-                    accountLimitEl.textContent = this.formatNumber(this.rateLimit);
-                }
-                if (donutPercentageEl) {
-                    const percentage = Math.round((this.currentUsedRequests / this.rateLimit) * 100);
-                    donutPercentageEl.textContent = percentage + '%';
-                }
-
-                // Update donut chart
-                this.updateDonutChart();
-            }
-
-            updateDonutChart() {
-                const used = this.currentUsedRequests;
-                const limit = this.rateLimit;
-                const remaining = limit - used;
-
-                console.log('Updating donut chart:', { used, limit, remaining });
-                if (remaining < 0) {
-                    console.log('Donut chart update skipped: negative remaining');
-                    return; // Don't update if data is invalid
-                }
-
-                const percentage = (used / limit) * 100;
-                const angle = (percentage / 100) * 360;
-
-                const svg = document.getElementById('donut-chart');
-                if (!svg) return;
-
-                const radius = 120;
-                const centerX = 150;
-                const centerY = 150;
-
-                // Create the donut chart path
-                const path = this.createDonutPath(centerX, centerY, radius, 60, 0, angle);
-
-                // Clear existing content
-                svg.innerHTML = '';
-
-                // Background circle
-                const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                bgCircle.setAttribute('cx', centerX);
-                bgCircle.setAttribute('cy', centerY);
-                bgCircle.setAttribute('r', radius);
-                bgCircle.setAttribute('fill', 'none');
-                bgCircle.setAttribute('stroke', 'rgba(99, 102, 241, 0.1)');
-                bgCircle.setAttribute('stroke-width', '40');
-                svg.appendChild(bgCircle);
-
-                // Usage arc
-                if (used > 0) {
-                    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    pathElement.setAttribute('d', path);
-                    pathElement.setAttribute('fill', 'none');
-                    pathElement.setAttribute('stroke', 'url(#gradient)');
-                    pathElement.setAttribute('stroke-width', '40');
-                    pathElement.setAttribute('stroke-linecap', 'round');
-
-                    // Create gradient
-                    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                    gradient.setAttribute('id', 'gradient');
-                    gradient.setAttribute('x1', '0%');
-                    gradient.setAttribute('y1', '0%');
-                    gradient.setAttribute('x2', '100%');
-                    gradient.setAttribute('y2', '100%');
-
-                    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop1.setAttribute('offset', '0%');
-                    stop1.setAttribute('stop-color', '#6366f1');
-
-                    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop2.setAttribute('offset', '50%');
-                    stop2.setAttribute('stop-color', '#8b5cf6');
-
-                    const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    stop3.setAttribute('offset', '100%');
-                    stop3.setAttribute('stop-color', '#ec4899');
-
-                    gradient.appendChild(stop1);
-                    gradient.appendChild(stop2);
-                    gradient.appendChild(stop3);
-                    defs.appendChild(gradient);
-                    svg.appendChild(defs);
-                    svg.appendChild(pathElement);
-                }
-
-                // Update legend
-                this.updateLegend(used, remaining);
-            }
-
-            createDonutPath(cx, cy, outerRadius, innerRadius, startAngle, endAngle) {
-                const startAngleRad = (startAngle - 90) * Math.PI / 180;
-                const endAngleRad = (endAngle - 90) * Math.PI / 180;
-
-                const x1 = cx + outerRadius * Math.cos(startAngleRad);
-                const y1 = cy + outerRadius * Math.sin(startAngleRad);
-                const x2 = cx + outerRadius * Math.cos(endAngleRad);
-                const y2 = cy + outerRadius * Math.sin(endAngleRad);
-
-                const x3 = cx + innerRadius * Math.cos(endAngleRad);
-                const y3 = cy + innerRadius * Math.sin(endAngleRad);
-                const x4 = cx + innerRadius * Math.cos(startAngleRad);
-                const y4 = cy + innerRadius * Math.sin(startAngleRad);
-
-                const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-
-                return `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`;
-            }
-
-            updateLegend(used, remaining) {
-                const legendEl = document.getElementById('donut-legend');
-                if (!legendEl) return;
-
-                legendEl.innerHTML = '';
-
-                // Used item
-                const usedItem = document.createElement('div');
-                usedItem.className = 'legend-item';
-                usedItem.innerHTML = `
-                    <div class="legend-color" style="background: var(--gradient-1);"></div>
-                    <span>Used: ${this.formatNumber(used)}</span>
-                `;
-                legendEl.appendChild(usedItem);
-
-                // Remaining item
-                const remainingItem = document.createElement('div');
-                remainingItem.className = 'legend-item';
-                remainingItem.innerHTML = `
-                    <div class="legend-color" style="background: rgba(99, 102, 241, 0.1);"></div>
-                    <span>Available: ${this.formatNumber(remaining)}</span>
-                `;
-                legendEl.appendChild(remainingItem);
-            }
-
-            formatNumber(num) {
-                if (num >= 1000000) {
-                    return (num / 1000000).toFixed(1) + 'M';
-                } else if (num >= 1000) {
-                    return (num / 1000).toFixed(1) + 'K';
-                }
-                return Math.floor(num).toString();
-            }
-
-            destroy() {
-                if (this.countdownInterval) clearInterval(this.countdownInterval);
-                if (this.serverSyncInterval) clearInterval(this.serverSyncInterval);
-            }
-        }
-
-        // Initialize the predictor
-        const usagePredictor = new RealTimeUsagePredictor();
-
-        // Update real-time rate limit from headers
-        function updateRealTimeRateLimit(limit, remaining) {
-            usagePredictor.updateFromRateLimitHeaders(limit, remaining);
-        }
-
-        // Load account usage
-        async function fetchAccountUsage() {
-            try {
-                const response = await authenticatedFetch('/api/stats');
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Update total stats
-                    const totalKeysEl = document.getElementById('total-keys');
-                    const totalRequestsEl = document.getElementById('total-requests');
-                    const requestsTodayEl = document.getElementById('requests-today');
-
-                    if (totalKeysEl) totalKeysEl.textContent = data.totalApiKeys || 0;
-                    if (totalRequestsEl) totalRequestsEl.textContent = usagePredictor.formatNumber(data.totalRequests || 0);
-                    if (requestsTodayEl) requestsTodayEl.textContent = usagePredictor.formatNumber(data.requestsToday || 0);
-
-                    // Initialize usage predictor with actual data
-                    const rateLimit = data.rateLimit || 10000;
-                    const usedRequests = data.requestsThisMonth || 0;
-                    const remainingRequests = Math.max(0, rateLimit - usedRequests);
-
-                    usagePredictor.initialize(rateLimit, usedRequests, remainingRequests);
-                }
-            } catch (error) {
-                console.error('Error fetching account usage:', error);
-                // Initialize with default values on error
-                usagePredictor.initialize(10000, 0, 10000);
-            }
-        }
-
-        // Load user profile
-        
-        // Display API keys
-        function displayApiKeys(keys) {
-            const keysListEl = document.getElementById('api-keys-list');
-            if (!keysListEl) return;
-
-            if (keys.length === 0) {
-                keysListEl.innerHTML = `
-                    <div class="privacy-action">
-                        <div class="privacy-action-info">
-                            <div class="privacy-action-title">🔑 No API Keys</div>
-                            <div class="privacy-action-desc">You haven't created any API keys yet. Click "Create New Key" to get started.</div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            keysListEl.innerHTML = keys.map(key => `
-                <div class="api-key-card">
-                    <div class="api-key-header">
-                        <div class="api-key-info">
-                            <div class="api-key-name">${key.name || 'Unnamed Key'}</div>
-                            <div class="api-key-value">
-                                <span>${key.prefix}...</span>
-                                <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${key.prefix}')">Copy</button>
-                            </div>
-                        </div>
-                        <div class="api-key-actions">
-                            <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${key.prefix}')">Copy</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteApiKey('${key.id}', '${key.name || 'Unnamed Key'}')">Delete</button>
-                        </div>
-                    </div>
-                    <div class="api-key-stats">
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-value">${usagePredictor.formatNumber(key.totalRequests || 0)}</div>
-                            <div class="api-key-stat-label">Total Requests</div>
-                        </div>
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-value">${usagePredictor.formatNumber(key.requestsToday || 0)}</div>
-                            <div class="api-key-stat-label">Today</div>
-                        </div>
-                        <div class="api-key-stat">
-                            <div class="api-key-stat-value">${new Date(key.createdAt).toLocaleDateString()}</div>
-                            <div class="api-key-stat-label">Created</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Modal functions
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        }
-
-        function openCreateKeyModal() {
-            openModal('create-key-modal');
-        }
-
-        function openDeleteAccountModal() {
-            openModal('delete-account-modal');
-        }
-
-        // Create API key
-        async function createApiKey() {
-            const nameInput = document.getElementById('key-name');
-            const name = nameInput ? nameInput.value.trim() : '';
-
-            try {
-                const response = await authenticatedFetch('/v1/auth/api-key', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-
-                    // Show new key modal
-                    const newKeyInput = document.getElementById('new-key-value');
-                    if (newKeyInput) {
-                        newKeyInput.value = result.apiKey;
-                    }
-
-                    closeModal('create-key-modal');
-                    openModal('show-key-modal');
-                } else {
-                    const error = await response.text();
-                    throw new Error(error || 'Failed to create API key');
-                }
-            } catch (error) {
-                console.error('Error creating API key:', error);
-                showToast('Failed to create API key: ' + error.message, 'error');
-            }
-        }
-
-        // Delete API key
-        function deleteApiKey(keyId, keyName) {
-            keyToDelete = { id: keyId, name: keyName };
-            openModal('delete-key-modal');
-        }
-
-        async function confirmDeleteKey() {
-            if (!keyToDelete) return;
-
-            try {
-                const response = await authenticatedFetch(`/v1/auth/api-key/${keyToDelete.id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showToast(`API key "${keyToDelete.name}" deleted successfully`, 'success');
-                    closeModal('delete-key-modal');
-                    loadApiKeys();
-                    fetchAccountUsage(); // Refresh usage stats
-                } else {
-                    const error = await response.text();
-                    throw new Error(error || 'Failed to delete API key');
-                }
-            } catch (error) {
-                console.error('Error deleting API key:', error);
-                showToast('Failed to delete API key: ' + error.message, 'error');
-            }
-        }
-
-        // Copy to clipboard
-        async function copyToClipboard(text) {
-            try {
-                await navigator.clipboard.writeText(text);
-                showToast('Copied to clipboard!', 'success');
-            } catch (error) {
-                console.error('Error copying to clipboard:', error);
-                showToast('Failed to copy to clipboard', 'error');
-            }
-        }
-
-        function copyNewKey() {
-            const newKeyInput = document.getElementById('new-key-value');
-            if (newKeyInput) {
-                copyToClipboard(newKeyInput.value);
-            }
-        }
-
-        // Export data
-        async function requestDataExport() {
-            try {
-                const response = await authenticatedFetch('/v1/auth/export-data');
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `synaxic-data-export-${new Date().toISOString().split('T')[0]}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                    showToast('Data export downloaded successfully', 'success');
-                } else {
-                    throw new Error('Failed to export data');
-                }
-            } catch (error) {
-                console.error('Error exporting data:', error);
-                showToast('Failed to export data: ' + error.message, 'error');
-            }
-        }
-
-        // Delete account
-        async function confirmDeleteAccount() {
-            const confirmInput = document.getElementById('delete-confirm');
-            if (!confirmInput || confirmInput.value !== 'DELETE') {
-                showToast('Please type "DELETE" to confirm account deletion', 'error');
-                return;
-            }
-
-            try {
-                const response = await authenticatedFetch('/v1/auth/delete-account', {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showToast('Account deletion initiated. You will be logged out shortly.', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/logout';
-                    }, 3000);
-                } else {
-                    const error = await response.text();
-                    throw new Error(error || 'Failed to delete account');
-                }
-            } catch (error) {
-                console.error('Error deleting account:', error);
-                showToast('Failed to delete account: ' + error.message, 'error');
-            }
-        }
-
-        // Reset cookie consent
-        function resetCookieConsent() {
-            localStorage.removeItem('cookieConsent');
-            localStorage.removeItem('cookiePreferences');
-            showToast('Cookie consent reset. Page will reload to show consent banner.', 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        }
-
-        // Toast notifications
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-
-            document.body.appendChild(toast);
-
-            // Trigger animation
-            setTimeout(() => {
-                toast.classList.add('show');
-            }, 10);
-
-            // Remove after 3 seconds
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        document.body.removeChild(toast);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Close modals on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const activeModal = document.querySelector('.modal.active');
-                if (activeModal) {
-                    activeModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            }
-        });
-
-        // Close modals on background click
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
-
-        // Initialize everything on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load user data (will be handled by dashboard.js)
-            fetchAccountUsage();
-
-            // Set up form submissions
-            const createKeyForm = document.getElementById('create-key-form');
-            if (createKeyForm) {
-                createKeyForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    createApiKey();
-                });
-            }
-
-            // Initialize mobile menu if needed
-            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            const navLinks = document.querySelector('.nav-links');
-
-            if (mobileMenuBtn && navLinks) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                });
-            }
-        });
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-            usagePredictor.destroy();
-        });
-    </script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>
