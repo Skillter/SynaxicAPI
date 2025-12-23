@@ -1,3 +1,11 @@
+// Helper to safely update text content
+function safeSetText(id, text) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = text;
+    }
+}
+
 // Tab switching
 document.querySelectorAll('.dashboard-tab').forEach(tab => {
     tab.addEventListener('click', (e) => {
@@ -17,15 +25,18 @@ document.querySelectorAll('.dashboard-tab').forEach(tab => {
 async function fetchPublicStats() {
     try {
         const response = await fetch('/api/stats');
+        if (!response.ok) return;
+        
         const data = await response.json();
 
-        document.getElementById('total-requests-stat').textContent = data.totalRequests.toLocaleString();
-        document.getElementById('total-users-stat').textContent = data.totalUsers.toLocaleString();
-        document.getElementById('total-requests-metric').textContent = data.totalRequests.toLocaleString();
-        document.getElementById('users-metric').textContent = data.totalUsers.toLocaleString();
+        safeSetText('total-requests-stat', data.totalRequests.toLocaleString());
+        safeSetText('total-users-stat', data.totalUsers.toLocaleString());
+        
+        // Health tab metrics
+        safeSetText('total-requests-metric', data.totalRequests.toLocaleString());
+        safeSetText('users-metric', data.totalUsers.toLocaleString());
     } catch (error) {
-        console.error('Error fetching public stats:', error);
-        // Don't change values, leave them as they are
+        console.warn('Error fetching public stats:', error);
     }
 }
 
@@ -37,154 +48,103 @@ async function fetchDetailedAnalytics() {
             redirect: 'manual'
         });
 
-        // Handle redirect (not authenticated)
-        if (response.type === 'opaqueredirect' || response.status === 0) {
-            console.log('Admin stats requires authentication');
-            // Don't change values, just leave them as they are
-            return;
-        }
-
-        if (!response.ok) {
-            console.warn('Failed to fetch admin stats:', response.status);
-            // Don't change values, just leave them as they are
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
 
         // Update key metrics (top cards)
         if (data.responseTime) {
-            document.getElementById('avg-response-time').textContent =
-                data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
+            safeSetText('avg-response-time', data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A');
         }
 
         if (data.rates) {
-            document.getElementById('success-rate').textContent =
-                data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A';
-            document.getElementById('requests-per-min').textContent =
-                data.rates.requestsPerMinute ? data.rates.requestsPerMinute.toFixed(1) : 'N/A';
-            document.getElementById('error-rate').textContent =
-                data.rates.errorRatePercent ? `${data.rates.errorRatePercent.toFixed(2)}%` : '0%';
+            safeSetText('success-rate', data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A');
+            safeSetText('requests-per-min', data.rates.requestsPerMinute ? data.rates.requestsPerMinute.toFixed(1) : 'N/A');
+            safeSetText('error-rate', data.rates.errorRatePercent ? `${data.rates.errorRatePercent.toFixed(2)}%` : '0%');
         }
 
         // API Key stats
         if (data.apiKeys) {
-            document.getElementById('active-api-keys').textContent = data.apiKeys.activeKeysLast24h || '0';
-            document.getElementById('total-api-keys').textContent = data.apiKeys.totalKeys || '0';
+            safeSetText('active-api-keys', data.apiKeys.activeKeysLast24h || '0');
+            safeSetText('total-api-keys', data.apiKeys.totalKeys || '0');
         }
 
         // Cache stats
         if (data.cache) {
-            document.getElementById('cache-hit-rate').textContent =
-                data.cache.hitRatePercent ? `${data.cache.hitRatePercent.toFixed(1)}%` : 'N/A';
+            safeSetText('cache-hit-rate', data.cache.hitRatePercent ? `${data.cache.hitRatePercent.toFixed(1)}%` : 'N/A');
         }
 
         // Service breakdown
         if (data.serviceBreakdown) {
-            document.getElementById('ip-service-requests').textContent =
-                data.serviceBreakdown.ipInspectorRequests?.toLocaleString() || '0';
-            document.getElementById('email-service-requests').textContent =
-                data.serviceBreakdown.emailValidatorRequests?.toLocaleString() || '0';
-            document.getElementById('converter-service-requests').textContent =
-                data.serviceBreakdown.unitConverterRequests?.toLocaleString() || '0';
-            document.getElementById('other-service-requests').textContent =
-                data.serviceBreakdown.otherRequests?.toLocaleString() || '0';
+            safeSetText('ip-service-requests', data.serviceBreakdown.ipInspectorRequests?.toLocaleString() || '0');
+            safeSetText('email-service-requests', data.serviceBreakdown.emailValidatorRequests?.toLocaleString() || '0');
+            safeSetText('converter-service-requests', data.serviceBreakdown.unitConverterRequests?.toLocaleString() || '0');
+            safeSetText('other-service-requests', data.serviceBreakdown.otherRequests?.toLocaleString() || '0');
         }
 
         // Response time statistics
         if (data.responseTime) {
-            document.getElementById('response-min').textContent =
-                data.responseTime.minMs ? `${data.responseTime.minMs.toFixed(1)} ms` : 'N/A';
-            document.getElementById('response-avg').textContent =
-                data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
-            document.getElementById('response-max').textContent =
-                data.responseTime.maxMs ? `${data.responseTime.maxMs.toFixed(1)} ms` : 'N/A';
+            safeSetText('response-min', data.responseTime.minMs ? `${data.responseTime.minMs.toFixed(1)} ms` : 'N/A');
+            safeSetText('response-avg', data.responseTime.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A');
+            safeSetText('response-max', data.responseTime.maxMs ? `${data.responseTime.maxMs.toFixed(1)} ms` : 'N/A');
         }
 
         // Latency percentiles
         if (data.latency) {
-            document.getElementById('latency-p50').textContent =
-                data.latency.p50_ms ? `${data.latency.p50_ms.toFixed(0)} ms` : 'N/A';
-            document.getElementById('latency-p95').textContent =
-                data.latency.p95_ms ? `${data.latency.p95_ms.toFixed(0)} ms` : 'N/A';
-            document.getElementById('latency-p99').textContent =
-                data.latency.p99_ms ? `${data.latency.p99_ms.toFixed(0)} ms` : 'N/A';
+            safeSetText('latency-p50', data.latency.p50_ms ? `${data.latency.p50_ms.toFixed(0)} ms` : 'N/A');
+            safeSetText('latency-p95', data.latency.p95_ms ? `${data.latency.p95_ms.toFixed(0)} ms` : 'N/A');
+            safeSetText('latency-p99', data.latency.p99_ms ? `${data.latency.p99_ms.toFixed(0)} ms` : 'N/A');
 
             // For health tab
-            if (document.getElementById('latency-p50-metric')) {
-                document.getElementById('latency-p50-metric').textContent =
-                    data.latency.p50_ms ? data.latency.p50_ms.toFixed(0) : '--';
-            }
-            if (document.getElementById('latency-p95-metric')) {
-                document.getElementById('latency-p95-metric').textContent =
-                    data.latency.p95_ms ? data.latency.p95_ms.toFixed(0) : '--';
-            }
-            if (document.getElementById('latency-p99-metric')) {
-                document.getElementById('latency-p99-metric').textContent =
-                    data.latency.p99_ms ? data.latency.p99_ms.toFixed(0) : '--';
-            }
+            safeSetText('latency-p50-metric', data.latency.p50_ms ? data.latency.p50_ms.toFixed(0) : '--');
+            safeSetText('latency-p95-metric', data.latency.p95_ms ? data.latency.p95_ms.toFixed(0) : '--');
+            safeSetText('latency-p99-metric', data.latency.p99_ms ? data.latency.p99_ms.toFixed(0) : '--');
         }
 
         // System health
-        document.getElementById('uptime').textContent = data.uptime || 'N/A';
-        if (document.getElementById('uptime-metric')) {
-            document.getElementById('uptime-metric').textContent = data.uptime || 'N/A';
-        }
+        safeSetText('uptime', data.uptime || 'N/A');
+        safeSetText('uptime-metric', data.uptime || 'N/A');
 
         // For health tab metrics
-        if (data.rates && document.getElementById('avg-response-metric')) {
-            document.getElementById('avg-response-metric').textContent =
-                data.responseTime?.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A';
-            document.getElementById('success-rate-metric').textContent =
-                data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A';
+        if (data.rates) {
+            safeSetText('avg-response-metric', data.responseTime?.avgMs ? `${data.responseTime.avgMs.toFixed(1)} ms` : 'N/A');
+            safeSetText('success-rate-metric', data.rates.successRatePercent ? `${data.rates.successRatePercent.toFixed(1)}%` : 'N/A');
         }
 
         // Endpoint breakdown
-        if (data.breakdowns?.topEndpoints) {
+        if (data.breakdowns?.topEndpoints && document.getElementById('endpoint-breakdown')) {
             renderBreakdown('endpoint-breakdown', data.breakdowns.topEndpoints);
-        } else {
-            document.getElementById('endpoint-breakdown').innerHTML =
-                '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No endpoint data yet</p>';
         }
 
         // Error breakdown
         const errorBreakdown = [];
-        if (data.requests?.clientErrorCount > 0) {
-            errorBreakdown.push({ item: '4xx Client Errors', count: data.requests.clientErrorCount });
-        }
-        if (data.requests?.serverErrorCount > 0) {
-            errorBreakdown.push({ item: '5xx Server Errors', count: data.requests.serverErrorCount });
-        }
-        if (errorBreakdown.length > 0) {
-            renderBreakdown('error-breakdown', errorBreakdown);
-        } else {
-            document.getElementById('error-breakdown').innerHTML =
-                '<p style="color: var(--success); text-align: center; padding: 20px;">✅ No errors detected</p>';
+        if (data.requests?.clientErrorCount > 0) errorBreakdown.push({ item: '4xx Client Errors', count: data.requests.clientErrorCount });
+        if (data.requests?.serverErrorCount > 0) errorBreakdown.push({ item: '5xx Server Errors', count: data.requests.serverErrorCount });
+        
+        if (document.getElementById('error-breakdown')) {
+            if (errorBreakdown.length > 0) {
+                renderBreakdown('error-breakdown', errorBreakdown);
+            } else {
+                document.getElementById('error-breakdown').innerHTML = '<p style="color: var(--success); text-align: center; padding: 20px;">✅ No errors detected</p>';
+            }
         }
 
         // Top API Keys
-        if (data.breakdowns?.topApiKeys) {
+        if (data.breakdowns?.topApiKeys && document.getElementById('top-api-keys')) {
             const keysData = data.breakdowns.topApiKeys.map(k => ({
                 item: k.item.substring(0, 8) + '***' + k.item.substring(k.item.length - 4),
                 count: k.count
             }));
             renderBreakdown('top-api-keys', keysData);
-        } else {
-            document.getElementById('top-api-keys').innerHTML =
-                '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No API key data yet</p>';
         }
 
         // Top Countries
-        if (data.breakdowns?.topCountries) {
+        if (data.breakdowns?.topCountries && document.getElementById('top-countries')) {
             renderBreakdown('top-countries', data.breakdowns.topCountries);
-        } else {
-            document.getElementById('top-countries').innerHTML =
-                '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No country data yet</p>';
         }
 
     } catch (error) {
-        console.error('Error fetching detailed analytics:', error);
-        // Don't change values, just leave them as they are
+        console.warn('Error fetching detailed analytics:', error);
     }
 }
 
@@ -192,35 +152,29 @@ async function fetchDetailedAnalytics() {
 async function fetchSystemHealth() {
     try {
         const response = await fetch('/actuator/health');
-
-        if (!response.ok) {
-            console.warn('Failed to fetch system health:', response.status);
-            // Don't change status, leave it as it is
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
-
         const isUp = data.status === 'UP';
+        
         const overallStatus = document.getElementById('overall-status');
-        overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
-        overallStatus.innerHTML = `
-            <span class="status-indicator"></span>
-            <span>System Status: ${data.status}</span>
-        `;
+        if (overallStatus) {
+            overallStatus.className = `status-badge ${isUp ? 'up' : 'down'}`;
+            overallStatus.innerHTML = `
+                <span class="status-indicator"></span>
+                <span>System Status: ${data.status}</span>
+            `;
+        }
 
         // Build components for health tab
-        if (data.components) {
+        if (data.components && document.getElementById('health-components')) {
             const componentsHtml = Object.entries(data.components)
                 .map(([name, component]) => renderComponent(name, component))
                 .join('');
-            document.getElementById('health-components').innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 48px;">${componentsHtml}</div>`;
+            document.getElementById('health-components').innerHTML = componentsHtml;
         }
-
-        // Additional health data processing can be added here if needed
     } catch (error) {
-        console.error('Error fetching system health:', error);
-        // Don't change status, leave it as it is
+        console.warn('Error fetching system health:', error);
     }
 }
 
@@ -256,13 +210,7 @@ function renderComponent(name, component) {
 }
 
 function formatComponentName(name) {
-    const names = {
-        'db': 'Database',
-        'diskSpace': 'Disk Space',
-        'ping': 'Ping',
-        'redis': 'Redis Cache',
-        'ssl': 'SSL Certificates'
-    };
+    const names = { 'db': 'Database', 'diskSpace': 'Disk Space', 'ping': 'Ping', 'redis': 'Redis Cache', 'ssl': 'SSL Certificates' };
     return names[name] || name.charAt(0).toUpperCase() + name.slice(1);
 }
 
@@ -272,18 +220,12 @@ function formatKey(key) {
 
 function formatValue(value) {
     if (typeof value === 'number') {
-        if (value > 1000000000) {
-            return `${(value / 1000000000).toFixed(2)} GB`;
-        } else if (value > 1000000) {
-            return `${(value / 1000000).toFixed(2)} MB`;
-        } else if (value > 1000) {
-            return `${(value / 1000).toFixed(2)} KB`;
-        }
+        if (value > 1000000000) return `${(value / 1000000000).toFixed(2)} GB`;
+        if (value > 1000000) return `${(value / 1000000).toFixed(2)} MB`;
+        if (value > 1000) return `${(value / 1000).toFixed(2)} KB`;
         return value.toString();
     }
-    if (Array.isArray(value)) {
-        return value.length === 0 ? 'None' : value.join(', ');
-    }
+    if (Array.isArray(value)) return value.length === 0 ? 'None' : value.join(', ');
     return value.toString();
 }
 
@@ -297,6 +239,8 @@ function formatBytes(bytes) {
 
 function renderBreakdown(containerId, data) {
     const container = document.getElementById(containerId);
+    if (!container) return;
+    
     if (!data || data.length === 0) {
         container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No data available</p>';
         return;
@@ -321,17 +265,15 @@ function renderBreakdown(containerId, data) {
 async function fetchMemoryMetrics() {
     try {
         const response = await fetch('/actuator/metrics/jvm.memory.used');
-
         if (response.ok) {
             const data = await response.json();
             const memoryUsed = data.measurements?.[0]?.value || 0;
-            document.getElementById('memory-usage').textContent = formatBytes(memoryUsed);
+            safeSetText('memory-usage', formatBytes(memoryUsed));
         } else {
-            document.getElementById('memory-usage').textContent = 'N/A';
+            safeSetText('memory-usage', 'N/A');
         }
     } catch (error) {
-        console.error('Error fetching memory metrics:', error);
-        // Don't change memory usage value, leave it as it is
+        // Silent fail for metrics
     }
 }
 
@@ -339,44 +281,21 @@ async function fetchMemoryMetrics() {
 async function fetchCacheMetrics() {
     try {
         const response = await fetch('/actuator/metrics/cache.gets');
-
         if (response.ok) {
             const data = await response.json();
             const hits = data.measurements?.find(m => m.statistic === 'COUNT')?.value || 0;
-            document.getElementById('cache-hit-rate').textContent = hits > 0 ? hits.toFixed(0) + ' hits' : 'No data';
+            safeSetText('cache-hit-rate', hits > 0 ? hits.toFixed(0) + ' hits' : 'No data');
         } else {
-            document.getElementById('cache-hit-rate').textContent = 'N/A';
+            // 404 is expected if no cache hits have happened yet
+            safeSetText('cache-hit-rate', 'N/A');
         }
     } catch (error) {
-        console.error('Error fetching cache metrics:', error);
-        // Don't change cache hit rate value, leave it as it is
+        // Silent fail
     }
 }
 
-// Helper function to set placeholders for all loading elements
-function setLoadingPlaceholders(value) {
-    const ids = [
-        'avg-response-time', 'success-rate', 'requests-per-min', 'error-rate',
-        'active-api-keys', 'cache-hit-rate', 'total-api-keys',
-        'ip-service-requests', 'email-service-requests',
-        'converter-service-requests', 'other-service-requests',
-        'response-min', 'response-avg', 'response-max',
-        'latency-p50', 'latency-p95', 'latency-p99',
-        'uptime', 'memory-usage',
-        'latency-p50-metric', 'latency-p95-metric', 'latency-p99-metric',
-        'avg-response-metric', 'success-rate-metric', 'uptime-metric', 'sessions-metric'
-    ];
-
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el.textContent === 'Loading...') {
-            el.textContent = value;
-        }
-    });
-}
-
 // Load data on page load
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     fetchPublicStats();
     fetchDetailedAnalytics();
     fetchSystemHealth();
@@ -390,3 +309,4 @@ window.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchMemoryMetrics, 30000);
     setInterval(fetchCacheMetrics, 30000);
 });
+

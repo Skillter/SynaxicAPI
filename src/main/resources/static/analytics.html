@@ -4,156 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics - Synaxic API</title>
-    <link rel="stylesheet" href="/css/main.css?v=9">
-    <link rel="stylesheet" href="/css/dashboard.css?v=6">
+    <link rel="stylesheet" href="/css/main.css?v=12">
+    <link rel="stylesheet" href="/css/dashboard.css?v=8">
     <style>
-        .analytics-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
-        }
-        .analytics-stat-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 12px;
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .analytics-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px; }
+        .analytics-stat-card { background: var(--bg-card); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 24px; display: flex; align-items: center; gap: 16px; }
         .stat-icon { font-size: 32px; }
         .analytics-section { margin-bottom: 48px; }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="container nav-container">
-            <a href="/" class="logo">
-                <span class="logo-icon">⚡</span>
-                <span class="logo-text">Synaxic API</span>
-            </a>
+            <a href="/" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">Synaxic API</span></a>
             <div class="nav-links">
-                <a href="/#features">Features</a>
-                <a href="/#demo">Demo</a>
-                <a href="/#stack">Tech Stack</a>
-                <a href="/#contact">Contact</a>
-                <a href="/analytics">Analytics & Health</a>
-                <a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a>
-                <button id="login-btn" class="btn btn-primary"><span>Login with Google</span></button>
+                <a href="/#features">Features</a><a href="/#demo">Demo</a><a href="/#stack">Tech Stack</a><a href="/#contact">Contact</a><a href="/analytics">Analytics & Health</a><a href="/swagger-ui.html" class="external-link" target="_blank" rel="noopener">API Docs <span class="external-icon">↗</span></a><button id="login-btn" class="btn btn-primary"><span>Login with Google</span></button>
             </div>
             <button class="mobile-menu-btn" id="mobile-menu-btn"><span></span><span></span><span></span></button>
         </div>
     </nav>
 
-    <!-- Hero -->
     <section class="hero" style="min-height: 40vh; padding-top: 120px;">
         <div class="hero-background"></div>
         <div class="container hero-content">
             <h1 class="hero-title"><span class="gradient-text">Analytics & Health</span></h1>
             <p class="hero-subtitle">Real-time performance metrics and system status.</p>
-            <div id="overall-status" class="status-badge up">
-                <span class="status-indicator"></span>
-                <span>System Status: Checking...</span>
-            </div>
+            <div id="overall-status" class="status-badge up"><span class="status-indicator"></span><span>System Status: Checking...</span></div>
         </div>
     </section>
 
-    <!-- Content -->
     <div class="dashboard-container" style="padding-top: 40px;">
-        <!-- Tabs -->
         <div class="dashboard-tabs">
             <button class="dashboard-tab active" data-tab="analytics">📊 Analytics</button>
             <button class="dashboard-tab" data-tab="health">💚 System Health</button>
         </div>
 
-        <!-- Analytics Tab -->
         <div id="analytics" class="dashboard-content active">
-            <!-- Stats Grid -->
             <div class="analytics-stats-grid">
-                <div class="analytics-stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div>
-                        <div class="stat-label">Total Requests</div>
-                        <div class="stat-value" id="total-requests-stat">Loading...</div>
-                    </div>
-                </div>
-                <div class="analytics-stat-card">
-                    <div class="stat-icon">🚀</div>
-                    <div>
-                        <div class="stat-label">Requests/Min</div>
-                        <div class="stat-value" id="requests-per-min">Loading...</div>
-                    </div>
-                </div>
-                <div class="analytics-stat-card">
-                    <div class="stat-icon">⚡</div>
-                    <div>
-                        <div class="stat-label">Avg Latency</div>
-                        <div class="stat-value" id="avg-response-time">Loading...</div>
-                    </div>
-                </div>
-                <div class="analytics-stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div>
-                        <div class="stat-label">Success Rate</div>
-                        <div class="stat-value" id="success-rate">Loading...</div>
-                    </div>
+                <div class="analytics-stat-card"><div class="stat-icon">📊</div><div><div class="stat-label">Total Requests</div><div class="stat-value" id="total-requests-stat">Loading...</div></div></div>
+                <div class="analytics-stat-card"><div class="stat-icon">🚀</div><div><div class="stat-label">Requests/Min</div><div class="stat-value" id="requests-per-min">Loading...</div></div></div>
+                <div class="analytics-stat-card"><div class="stat-icon">⚡</div><div><div class="stat-label">Avg Latency</div><div class="stat-value" id="avg-response-time">Loading...</div></div></div>
+                <div class="analytics-stat-card"><div class="stat-icon">✅</div><div><div class="stat-label">Success Rate</div><div class="stat-value" id="success-rate">Loading...</div></div></div>
+            </div>
+            <div class="dashboard-section">
+                <div class="section-header"><h2 class="section-title">Service Breakdown</h2></div>
+                <div class="dashboard-grid">
+                    <div class="stat-card-mini"><div class="label">IP Inspector</div><div class="value" id="ip-service-requests">0</div></div>
+                    <div class="stat-card-mini"><div class="label">Email Validator</div><div class="value" id="email-service-requests">0</div></div>
+                    <div class="stat-card-mini"><div class="label">Converters</div><div class="value" id="converter-service-requests">0</div></div>
+                    <div class="stat-card-mini"><div class="label">Other</div><div class="value" id="other-service-requests">0</div></div>
                 </div>
             </div>
-
-            <!-- Breakdown Section -->
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <h2 class="section-title">Service Breakdown</h2>
-                </div>
-                <div class="dashboard-grid">
-                    <div class="stat-card-mini">
-                        <div class="label">IP Inspector</div>
-                        <div class="value" id="ip-service-requests">0</div>
-                    </div>
-                    <div class="stat-card-mini">
-                        <div class="label">Email Validator</div>
-                        <div class="value" id="email-service-requests">0</div>
-                    </div>
-                    <div class="stat-card-mini">
-                        <div class="label">Converters</div>
-                        <div class="value" id="converter-service-requests">0</div>
-                    </div>
-                    <div class="stat-card-mini">
-                        <div class="label">Other</div>
-                        <div class="value" id="other-service-requests">0</div>
-                    </div>
-                </div>
+            <!-- Additional Sections for robustness -->
+            <div class="analytics-section">
+                 <div class="section-header"><h2 class="section-title">System Health</h2></div>
+                 <div class="dashboard-grid">
+                     <div class="stat-card-mini"><div class="label">Uptime</div><div class="value" id="uptime">Loading...</div></div>
+                     <div class="stat-card-mini"><div class="label">Memory</div><div class="value" id="memory-usage">Loading...</div></div>
+                     <div class="stat-card-mini"><div class="label">API Keys</div><div class="value" id="total-api-keys">Loading...</div></div>
+                     <div class="stat-card-mini"><div class="label">Cache Hit Rate</div><div class="value" id="cache-hit-rate">Loading...</div></div>
+                 </div>
             </div>
         </div>
 
-        <!-- Health Tab -->
         <div id="health" class="dashboard-content">
-            <div id="health-components" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-                <!-- Populated by JS -->
+            <div id="health-components" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;"></div>
+            
+            <!-- Restored Performance & Usage Section to fix JS errors -->
+            <div style="margin-top: 48px;">
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-primary);">Performance & Usage</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                    <div class="component-card">
+                        <div class="component-header"><span class="component-name">Requests</span></div>
+                        <div class="component-details">
+                            <div class="detail-item"><span class="detail-label">Total Requests</span><span class="detail-value" id="total-requests-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">Avg Response Time</span><span class="detail-value" id="avg-response-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">Success Rate</span><span class="detail-value" id="success-rate-metric">--</span></div>
+                        </div>
+                    </div>
+                    <div class="component-card">
+                        <div class="component-header"><span class="component-name">System Info</span></div>
+                        <div class="component-details">
+                            <div class="detail-item"><span class="detail-label">Uptime</span><span class="detail-value" id="uptime-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">Registered Users</span><span class="detail-value" id="users-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">Active Sessions</span><span class="detail-value" id="sessions-metric">--</span></div>
+                        </div>
+                    </div>
+                    <div class="component-card">
+                        <div class="component-header"><span class="component-name">Latency (ms)</span></div>
+                        <div class="component-details">
+                            <div class="detail-item"><span class="detail-label">P50 (Median)</span><span class="detail-value" id="latency-p50-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">P95</span><span class="detail-value" id="latency-p95-metric">--</span></div>
+                            <div class="detail-item"><span class="detail-label">P99</span><span class="detail-value" id="latency-p99-metric">--</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Updated Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-brand">
-                    <a href="/" class="logo">
-                        <span class="logo-icon">⚡</span>
-                        <span class="logo-text">Synaxic API</span>
-                    </a>
-                    <p>Enterprise-grade developer utilities</p>
-                </div>
-                <div class="footer-links">
-                    <a href="/privacy-policy">Privacy Policy</a>
-                    <a href="/terms-of-service">Terms of Service</a>
-                    <a href="/fair-use-policy">Fair Use Policy</a>
-                </div>
-                <div class="footer-copyright">
-                    <p>&copy; 2025 Skillter. All rights reserved.</p>
+                <div class="footer-brand"><a href="/" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">Synaxic API</span></a><p>Enterprise-grade developer utilities</p></div>
+                <div class="footer-right">
+                    <div class="footer-copyright"><p>&copy; 2025 Skillter. All rights reserved.</p></div>
+                    <div class="footer-links"><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="/fair-use-policy">Fair Use Policy</a></div>
                 </div>
             </div>
         </div>
