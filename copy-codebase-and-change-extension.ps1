@@ -31,6 +31,8 @@ param(
 
     [switch]$AIFormatting,
 
+    [switch]$NoAiPrompt,
+
     [Parameter(Mandatory = $false)]
     [string]$MergedFileName = "merged_codebase.txt"
 )
@@ -372,8 +374,8 @@ else {
 
 if ($MergeToSingleFile -and $MergedContent) {
     $MergedFilePath = Join-Path $DestDir $MergedFileName
-    
-    if ($AIFormatting) {
+
+    if ($AIFormatting -and -not $NoAiPrompt) {
         $AIPreamble = "I'm providing the contents of the files with their relative paths. It's extremely important that when you provide files you strictly use the same format as the one here: start the code block with the language identifier (e.g. ```python), and on the very next line, include the relative file path as a comment (e.g. # src/file.py). You must provide the whole files contents when you're answering. The files you're going to provide strictly MUST be full and complete. The files I'm providing:"
         $MergedContent = $AIPreamble + "`n`n" + $MergedContent
     }
