@@ -68,8 +68,74 @@ n    <!-- Preconnect to external domains -->
     }
     </script>
 
-    <!-- Critical CSS for preventing layout shift on button -->
+    <!-- Critical CSS for preventing layout shift -->
     <style>
+        :root {
+            --primary: #6366f1;
+            --bg-primary: #0f172a;
+            --text-primary: #f1f5f9;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            --gradient-3: radial-gradient(circle at top right, rgba(99, 102, 241, 0.3), transparent 50%),
+                           radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.3), transparent 50%);
+            --bg-card: rgba(30, 41, 59, 0.8);
+            --text-secondary: #cbd5e1;
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-display: swap;
+            padding-top: 50px;
+        }
+
+        /* Hero Background - prevent layout shift */
+        .hero {
+            position: relative;
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 20px 60px;
+        }
+
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient-3);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        /* Success Container - prevent layout shift */
+        .success-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--border-radius);
+            padding: 48px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -82,8 +148,22 @@ n    <!-- Preconnect to external domains -->
             border: none;
             cursor: pointer;
             white-space: nowrap;
+            background: var(--gradient-1);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform, box-shadow;
         }
-    /* Critical fade-in animation - immediately visible */
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Critical fade-in animation - immediately visible */
+        .hero,
+        .hero-background,
+        .success-container,
         .success-icon,
         .success-title,
         .success-subtitle,
