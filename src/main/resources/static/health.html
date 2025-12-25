@@ -21,7 +21,8 @@
     <meta property="twitter:description" content="Real-time health monitoring for our enterprise-grade developer utilities infrastructure">
 
     <title>System Health - Synaxic API</title>
-n    <!-- Preconnect to external domains -->
+
+    <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -514,195 +515,21 @@ n    <!-- Preconnect to external domains -->
         .health-ready .metric-card {
             animation: fadeInUp 0.6s ease-out forwards;
         }
-    </style>
 
-    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
+        /* Additional health page specific styles */
         .header {
             text-align: center;
             margin-bottom: 48px;
         }
 
         .header h1 {
-            font-size: 48px;
+            font-size: clamp(32px, 5vw, 56px);
             margin-bottom: 12px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .header p {
             color: var(--text-secondary);
             font-size: 18px;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            margin-top: 16px;
-        }
-
-        .status-badge.up {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .status-badge.down {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--error);
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .status-indicator.up {
-            background: var(--success);
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        .status-indicator.down {
-            background: var(--error);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .components {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
-        }
-
-        .component-card {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 12px;
-            padding: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .component-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-        }
-
-        .component-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .component-name {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-            flex: 1;
-        }
-
-        .component-status {
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .component-status.up {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .component-status.down {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--error);
-        }
-
-        .component-details {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .detail-value {
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 600;
-            text-align: right;
-            /* Use tabular numbers for consistent width - prevents shifting */
-            font-variant-numeric: tabular-nums;
-            font-feature-settings: 'tnum' 1;
-        }
-
-        .detail-value.bytes {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-secondary);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
-            padding: 24px;
-            text-align: center;
-            color: var(--error);
         }
 
         .back-link {
@@ -711,7 +538,7 @@ n    <!-- Preconnect to external domains -->
             color: var(--primary);
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s ease;
+            transition: var(--transition);
         }
 
         .back-link:hover {
@@ -726,7 +553,21 @@ n    <!-- Preconnect to external domains -->
             padding-top: 24px;
             border-top: 1px solid rgba(99, 102, 241, 0.1);
         }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
+
+    <link rel="stylesheet" href="/css/main.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/css/main.css"></noscript>
 </head>
 <body>
     <!-- Cookie Consent Banner (GDPR Compliant) -->

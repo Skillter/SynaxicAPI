@@ -547,6 +547,64 @@ const Stats = {
         }
     },
 
+    // Helper to render static initial state with same structure as animation
+    renderStructuredStatic(el, value, useFullFormat) {
+        const formatFunc = useFullFormat ? this.formatFullNumber : this.formatNumber;
+        const text = formatFunc.call(this, value);
+
+        // If it's already structured (has children), don't break it
+        if (el.children.length > 0) return;
+
+        // Build the structure manually so it matches animation width
+        el.innerHTML = '';
+        const container = document.createElement('span');
+        container.className = 'odometer-container';
+        container.style.display = 'inline-flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.whiteSpace = 'nowrap';
+
+        const digitWidth = this.measureDigitWidth(el);
+
+        for (const char of text) {
+            const wrapper = document.createElement('span');
+            wrapper.className = 'odometer-digit-wrapper';
+            wrapper.style.display = 'inline-block';
+            wrapper.style.position = 'relative';
+            wrapper.style.overflow = 'hidden';
+            wrapper.style.height = '1.2em';
+            wrapper.style.lineHeight = '1.2em';
+            wrapper.style.verticalAlign = 'baseline';
+            wrapper.style.textAlign = 'center';
+            wrapper.style.margin = '0';
+            wrapper.style.padding = '0';
+            wrapper.style.fontWeight = 'inherit';
+            wrapper.style.transform = 'translateZ(0)';
+
+            // Apply the logic from getCharacterWidth
+            if (/\d/.test(char)) {
+                wrapper.style.width = digitWidth;
+                wrapper.style.minWidth = digitWidth;
+                wrapper.style.maxWidth = digitWidth;
+            } else {
+                wrapper.style.width = 'auto';
+            }
+
+            const staticChar = document.createElement('span');
+            staticChar.textContent = char;
+            staticChar.style.display = 'inline-block';
+            staticChar.style.height = '1.2em';
+            staticChar.style.lineHeight = '1.2em';
+            staticChar.style.verticalAlign = 'baseline';
+            staticChar.style.textAlign = 'center';
+            staticChar.style.fontWeight = 'inherit';
+
+            wrapper.appendChild(staticChar);
+            container.appendChild(wrapper);
+        }
+        el.appendChild(container);
+    },
+
     updateDisplay(data) {
         const requestsEl = document.getElementById('total-requests');
         const usersEl = document.getElementById('total-users');
@@ -558,8 +616,9 @@ const Stats = {
             const newRequestsText = this.formatNumber(data.totalRequests);
             if (newRequestsText !== oldRequestsText && oldRequestsText !== '0') {
                 this.animateNumberChange(requestsEl, this.currentStats.totalRequests, data.totalRequests);
-            } else {
-                requestsEl.textContent = newRequestsText;
+            } else if (requestsEl.children.length === 0) {
+                // Initial render: Use structured HTML, not textContent
+                this.renderStructuredStatic(requestsEl, data.totalRequests, false);
             }
             this.currentStats.totalRequests = data.totalRequests;
         }
@@ -577,8 +636,9 @@ const Stats = {
 
             if (newTodayText !== oldTodayText && oldTodayText !== '0') {
                 this.animateNumberChange(requestsTodayEl, currentValue, targetValue, true);
-            } else {
-                requestsTodayEl.textContent = newTodayText;
+            } else if (requestsTodayEl.children.length === 0) {
+                // Initial render: Use structured HTML, not textContent
+                this.renderStructuredStatic(requestsTodayEl, targetValue, true);
             }
             this.currentStats.requestsToday = targetValue;
 
@@ -592,8 +652,9 @@ const Stats = {
             const newUsersText = this.formatNumber(data.totalUsers);
             if (newUsersText !== oldUsersText && oldUsersText !== '0') {
                 this.animateNumberChange(usersEl, this.currentStats.totalUsers, data.totalUsers);
-            } else {
-                usersEl.textContent = newUsersText;
+            } else if (usersEl.children.length === 0) {
+                // Initial render: Use structured HTML, not textContent
+                this.renderStructuredStatic(usersEl, data.totalUsers, false);
             }
             this.currentStats.totalUsers = data.totalUsers;
         }
@@ -603,8 +664,8 @@ const Stats = {
         // Validate input values
         if (!this.isValidNumber(oldValue) || !this.isValidNumber(newValue)) {
             console.warn('Invalid animation values:', { oldValue, newValue });
-            const formatFunc = useFullFormat ? this.formatFullNumber : this.formatNumber;
-            element.textContent = formatFunc.call(this, newValue || 0);
+            // Use structured render to prevent layout shift
+            this.renderStructuredStatic(element, newValue || 0, useFullFormat);
             return;
         }
 
@@ -614,8 +675,8 @@ const Stats = {
 
         if (valueDiff > maxValue) {
             console.warn('Animation value difference too large, using instant update:', { oldValue, newValue, diff: valueDiff });
-            const formatFunc = useFullFormat ? this.formatFullNumber : this.formatNumber;
-            element.textContent = formatFunc.call(this, newValue);
+            // Use structured render to prevent layout shift
+            this.renderStructuredStatic(element, newValue, useFullFormat);
             return;
         }
 
@@ -665,7 +726,7 @@ const Stats = {
     // This prevents "breathing" caused by 1ch rounding differences during animation
     measureDigitWidth(element) {
         const testSpan = document.createElement('span');
-        testSpan.textContent = '0';
+        testSpan.textContent = '0'; // 0 is usually the widest digit in variable fonts
         testSpan.style.visibility = 'hidden';
         testSpan.style.position = 'absolute';
         testSpan.style.whiteSpace = 'nowrap';
@@ -674,14 +735,14 @@ const Stats = {
         testSpan.style.fontFamily = computed.fontFamily;
         testSpan.style.fontSize = computed.fontSize;
         testSpan.style.fontWeight = computed.fontWeight;
-        testSpan.style.fontVariantNumeric = computed.fontVariantNumeric;
+        testSpan.style.fontVariantNumeric = 'tabular-nums'; // Force tabular
 
         document.body.appendChild(testSpan);
+        // Use exact precision, do not round
         const width = testSpan.getBoundingClientRect().width;
         document.body.removeChild(testSpan);
 
-        // Add a tiny buffer (0.5px) to prevent clipping due to sub-pixel rendering
-        return Math.ceil(width) + 'px';
+        return width + 'px';
     },
 
     startContinuousRollingAnimation(animationId, element, startValue, endValue, useFullFormat) {
@@ -1009,22 +1070,43 @@ const Stats = {
                             AnimationProfile.capabilities.animationQuality === 'basic' ? 250 : 200;
 
         const cleanupId = setTimeout(() => {
-            // Clean up event listeners and computed styles with Safari compatibility
-            animatedElements.forEach(roller => {
+            // CRITICAL: Do NOT revert to textContent - maintain DOM structure to prevent layout shift
+            animatedElements.forEach((roller, index) => {
                 if (roller) {
-                    roller.style.willChange = 'auto';
+                    roller.style.transition = 'none';
                     roller.style.transform = '';
+                    roller.style.willChange = 'auto';
                     // Clean up Safari-specific properties
                     if (AnimationProfile.capabilities.isSafari && AnimationProfile.capabilities.safariVersion < 14) {
                         roller.style.webkitTransform = '';
                         roller.style.webkitBackfaceVisibility = '';
                         roller.style.backfaceVisibility = '';
                     }
+
+                    // Remove old characters, leaving only the target digit visible
+                    // This keeps the wrapper structure stable while removing animation artifacts
+                    const targetCharIndex = oldIsNegative ? index : index;
+                    const targetChar = newText.charAt(targetCharIndex);
+                    while (roller.firstChild) {
+                        const child = roller.firstChild;
+                        if (child.textContent === targetChar) {
+                            // This is the target digit - keep it visible
+                            child.style.display = 'block';
+                            child.style.height = '1.2em';
+                            child.style.lineHeight = '1.2em';
+                            child.style.textAlign = 'center';
+                            child.style.width = '100%';
+                            child.style.verticalAlign = 'baseline';
+                        } else {
+                            // Remove the old digit
+                            child.remove();
+                        }
+                    }
                 }
             });
 
-            // Clear element content and set final text
-            element.textContent = newText;
+            // CRITICAL: We do NOT set element.textContent = newText
+            // Leaving the DOM structured prevents the layout shift from text->DOM transition
 
             // Call completion callback
             if (onComplete) onComplete();
@@ -1114,14 +1196,13 @@ const Stats = {
 
     // Fallback animation for older browsers or reduced motion
     animateNumberChangeFallback(element, oldValue, newValue, useFullFormat = false) {
-        const formatFunc = useFullFormat ? this.formatFullNumber : this.formatNumber;
-
-        // Simple fade transition
+        // Simple fade transition with structured render to prevent layout shift
         element.style.opacity = '0';
         element.style.transition = 'opacity 0.3s ease-in-out';
 
         setTimeout(() => {
-            element.textContent = formatFunc.call(this, newValue);
+            // Use structured render instead of textContent to prevent layout shift
+            this.renderStructuredStatic(element, newValue, useFullFormat);
             element.style.opacity = '1';
         }, 150);
     },
